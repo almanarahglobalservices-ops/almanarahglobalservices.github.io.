@@ -879,59 +879,112 @@
     render();
   }
 
-  /* ---------- Prayer times, Makkah & Madinah (Umm Al-Qura method, calculated in the page) ---------- */
-  var PT_CITIES = [["makkah", 21.4225, 39.8262], ["madinah", 24.4672, 39.6111]];
-  function ptCalc(y, m, d, lat, lng, ramadan) {
+  /* ---------- Prayer times for the visitor's own location ---------- */
+  var PT_TZ = "Europe/Andorra|AD|42.5|1.52;Asia/Dubai|AE|25.3|55.3;Asia/Kabul|AF|34.52|69.2;America/Antigua|AG|17.05|-61.8;America/Anguilla|AI|18.2|-63.07;Europe/Tirane|AL|41.33|19.83;Asia/Yerevan|AM|40.18|44.5;Africa/Luanda|AO|-8.8|13.23;Antarctica/McMurdo|AQ|-77.83|166.6;Antarctica/Casey|AQ|-66.28|110.52;Antarctica/Davis|AQ|-68.58|77.97;Antarctica/DumontDUrville|AQ|-66.67|140.02;Antarctica/Mawson|AQ|-67.6|62.88;Antarctica/Palmer|AQ|-64.8|-64.1;Antarctica/Rothera|AQ|-67.57|-68.13;Antarctica/Syowa|AQ|-69.01|39.59;Antarctica/Troll|AQ|-72.01|2.53;Antarctica/Vostok|AQ|-78.4|106.9;America/Argentina/Buenos_Aires|AR|-34.6|-58.45;America/Argentina/Cordoba|AR|-31.4|-64.18;America/Argentina/Salta|AR|-24.78|-65.42;America/Argentina/Jujuy|AR|-24.18|-65.3;America/Argentina/Tucuman|AR|-26.82|-65.22;America/Argentina/Catamarca|AR|-28.47|-65.78;America/Argentina/La_Rioja|AR|-29.43|-66.85;America/Argentina/San_Juan|AR|-31.53|-68.52;America/Argentina/Mendoza|AR|-32.88|-68.82;America/Argentina/San_Luis|AR|-33.32|-66.35;America/Argentina/Rio_Gallegos|AR|-51.63|-69.22;America/Argentina/Ushuaia|AR|-54.8|-68.3;Pacific/Pago_Pago|AS|-14.27|-170.7;Europe/Vienna|AT|48.22|16.33;Australia/Lord_Howe|AU|-31.55|159.08;Antarctica/Macquarie|AU|-54.5|158.95;Australia/Hobart|AU|-42.88|147.32;Australia/Melbourne|AU|-37.82|144.97;Australia/Sydney|AU|-33.87|151.22;Australia/Broken_Hill|AU|-31.95|141.45;Australia/Brisbane|AU|-27.47|153.03;Australia/Lindeman|AU|-20.27|149;Australia/Adelaide|AU|-34.92|138.58;Australia/Darwin|AU|-12.47|130.83;Australia/Perth|AU|-31.95|115.85;Australia/Eucla|AU|-31.72|128.87;America/Aruba|AW|12.5|-69.97;Europe/Mariehamn|AX|60.1|19.95;Asia/Baku|AZ|40.38|49.85;Europe/Sarajevo|BA|43.87|18.42;America/Barbados|BB|13.1|-59.62;Asia/Dhaka|BD|23.72|90.42;Europe/Brussels|BE|50.83|4.33;Africa/Ouagadougou|BF|12.37|-1.52;Europe/Sofia|BG|42.68|23.32;Asia/Bahrain|BH|26.38|50.58;Africa/Bujumbura|BI|-3.38|29.37;Africa/Porto-Novo|BJ|6.48|2.62;America/St_Barthelemy|BL|17.88|-62.85;Atlantic/Bermuda|BM|32.28|-64.77;Asia/Brunei|BN|4.93|114.92;America/La_Paz|BO|-16.5|-68.15;America/Kralendijk|BQ|12.15|-68.28;America/Noronha|BR|-3.85|-32.42;America/Belem|BR|-1.45|-48.48;America/Fortaleza|BR|-3.72|-38.5;America/Recife|BR|-8.05|-34.9;America/Araguaina|BR|-7.2|-48.2;America/Maceio|BR|-9.67|-35.72;America/Bahia|BR|-12.98|-38.52;America/Sao_Paulo|BR|-23.53|-46.62;America/Campo_Grande|BR|-20.45|-54.62;America/Cuiaba|BR|-15.58|-56.08;America/Santarem|BR|-2.43|-54.87;America/Porto_Velho|BR|-8.77|-63.9;America/Boa_Vista|BR|2.82|-60.67;America/Manaus|BR|-3.13|-60.02;America/Eirunepe|BR|-6.67|-69.87;America/Rio_Branco|BR|-9.97|-67.8;America/Nassau|BS|25.08|-77.35;Asia/Thimphu|BT|27.47|89.65;Africa/Gaborone|BW|-24.65|25.92;Europe/Minsk|BY|53.9|27.57;America/Belize|BZ|17.5|-88.2;America/St_Johns|CA|47.57|-52.72;America/Halifax|CA|44.65|-63.6;America/Glace_Bay|CA|46.2|-59.95;America/Moncton|CA|46.1|-64.78;America/Goose_Bay|CA|53.33|-60.42;America/Blanc-Sablon|CA|51.42|-57.12;America/Toronto|CA|43.65|-79.38;America/Iqaluit|CA|63.73|-68.47;America/Atikokan|CA|48.76|-91.62;America/Winnipeg|CA|49.88|-97.15;America/Resolute|CA|74.7|-94.83;America/Rankin_Inlet|CA|62.82|-92.08;America/Regina|CA|50.4|-104.65;America/Swift_Current|CA|50.28|-107.83;America/Edmonton|CA|53.55|-113.47;America/Cambridge_Bay|CA|69.11|-105.05;America/Inuvik|CA|68.35|-133.72;America/Vancouver|CA|49.27|-123.12;America/Creston|CA|49.1|-116.52;America/Dawson_Creek|CA|55.77|-120.23;America/Fort_Nelson|CA|58.8|-122.7;America/Whitehorse|CA|60.72|-135.05;America/Dawson|CA|64.07|-139.42;Indian/Cocos|CC|-12.17|96.92;Africa/Kinshasa|CD|-4.3|15.3;Africa/Lubumbashi|CD|-11.67|27.47;Africa/Bangui|CF|4.37|18.58;Africa/Brazzaville|CG|-4.27|15.28;Europe/Zurich|CH|47.38|8.53;Africa/Abidjan|CI|5.32|-4.03;Pacific/Rarotonga|CK|-21.23|-159.77;America/Santiago|CL|-33.45|-70.67;America/Coyhaique|CL|-45.57|-72.07;America/Punta_Arenas|CL|-53.15|-70.92;Pacific/Easter|CL|-27.15|-109.43;Africa/Douala|CM|4.05|9.7;Asia/Shanghai|CN|31.23|121.47;Asia/Urumqi|CN|43.8|87.58;America/Bogota|CO|4.6|-74.08;America/Costa_Rica|CR|9.93|-84.08;America/Havana|CU|23.13|-82.37;Atlantic/Cape_Verde|CV|14.92|-23.52;America/Curacao|CW|12.18|-69;Indian/Christmas|CX|-10.42|105.72;Asia/Nicosia|CY|35.17|33.37;Asia/Famagusta|CY|35.12|33.95;Europe/Prague|CZ|50.08|14.43;Europe/Berlin|DE|52.5|13.37;Europe/Busingen|DE|47.7|8.68;Africa/Djibouti|DJ|11.6|43.15;Europe/Copenhagen|DK|55.67|12.58;America/Dominica|DM|15.3|-61.4;America/Santo_Domingo|DO|18.47|-69.9;Africa/Algiers|DZ|36.78|3.05;America/Guayaquil|EC|-2.17|-79.83;Pacific/Galapagos|EC|-0.9|-89.6;Europe/Tallinn|EE|59.42|24.75;Africa/Cairo|EG|30.05|31.25;Africa/El_Aaiun|EH|27.15|-13.2;Africa/Asmara|ER|15.33|38.88;Europe/Madrid|ES|40.4|-3.68;Africa/Ceuta|ES|35.88|-5.32;Atlantic/Canary|ES|28.1|-15.4;Africa/Addis_Ababa|ET|9.03|38.7;Europe/Helsinki|FI|60.17|24.97;Pacific/Fiji|FJ|-18.13|178.42;Atlantic/Stanley|FK|-51.7|-57.85;Pacific/Chuuk|FM|7.42|151.78;Pacific/Pohnpei|FM|6.97|158.22;Pacific/Kosrae|FM|5.32|162.98;Atlantic/Faroe|FO|62.02|-6.77;Europe/Paris|FR|48.87|2.33;Africa/Libreville|GA|0.38|9.45;Europe/London|GB|51.51|-0.13;America/Grenada|GD|12.05|-61.75;Asia/Tbilisi|GE|41.72|44.82;America/Cayenne|GF|4.93|-52.33;Europe/Guernsey|GG|49.45|-2.54;Africa/Accra|GH|5.55|-0.22;Europe/Gibraltar|GI|36.13|-5.35;America/Nuuk|GL|64.18|-51.73;America/Danmarkshavn|GL|76.77|-18.67;America/Scoresbysund|GL|70.48|-21.97;America/Thule|GL|76.57|-68.78;Africa/Banjul|GM|13.47|-16.65;Africa/Conakry|GN|9.52|-13.72;America/Guadeloupe|GP|16.23|-61.53;Africa/Malabo|GQ|3.75|8.78;Europe/Athens|GR|37.97|23.72;Atlantic/South_Georgia|GS|-54.27|-36.53;America/Guatemala|GT|14.63|-90.52;Pacific/Guam|GU|13.47|144.75;Africa/Bissau|GW|11.85|-15.58;America/Guyana|GY|6.8|-58.17;Asia/Hong_Kong|HK|22.28|114.15;America/Tegucigalpa|HN|14.1|-87.22;Europe/Zagreb|HR|45.8|15.97;America/Port-au-Prince|HT|18.53|-72.33;Europe/Budapest|HU|47.5|19.08;Asia/Jakarta|ID|-6.17|106.8;Asia/Pontianak|ID|-0.03|109.33;Asia/Makassar|ID|-5.12|119.4;Asia/Jayapura|ID|-2.53|140.7;Europe/Dublin|IE|53.33|-6.25;Asia/Jerusalem|IL|31.78|35.22;Europe/Isle_of_Man|IM|54.15|-4.47;Asia/Kolkata|IN|22.53|88.37;Indian/Chagos|IO|-7.33|72.42;Asia/Baghdad|IQ|33.35|44.42;Asia/Tehran|IR|35.67|51.43;Atlantic/Reykjavik|IS|64.15|-21.85;Europe/Rome|IT|41.9|12.48;Europe/Jersey|JE|49.18|-2.11;America/Jamaica|JM|17.97|-76.79;Asia/Amman|JO|31.95|35.93;Asia/Tokyo|JP|35.65|139.74;Africa/Nairobi|KE|-1.28|36.82;Asia/Bishkek|KG|42.9|74.6;Asia/Phnom_Penh|KH|11.55|104.92;Pacific/Tarawa|KI|1.42|173;Pacific/Kanton|KI|-2.78|-171.72;Pacific/Kiritimati|KI|1.87|-157.33;Indian/Comoro|KM|-11.68|43.27;America/St_Kitts|KN|17.3|-62.72;Asia/Pyongyang|KP|39.02|125.75;Asia/Seoul|KR|37.55|126.97;Asia/Kuwait|KW|29.33|47.98;America/Cayman|KY|19.3|-81.38;Asia/Almaty|KZ|43.25|76.95;Asia/Qyzylorda|KZ|44.8|65.47;Asia/Qostanay|KZ|53.2|63.62;Asia/Aqtobe|KZ|50.28|57.17;Asia/Aqtau|KZ|44.52|50.27;Asia/Atyrau|KZ|47.12|51.93;Asia/Oral|KZ|51.22|51.35;Asia/Vientiane|LA|17.97|102.6;Asia/Beirut|LB|33.88|35.5;America/St_Lucia|LC|14.02|-61;Europe/Vaduz|LI|47.15|9.52;Asia/Colombo|LK|6.93|79.85;Africa/Monrovia|LR|6.3|-10.78;Africa/Maseru|LS|-29.47|27.5;Europe/Vilnius|LT|54.68|25.32;Europe/Luxembourg|LU|49.6|6.15;Europe/Riga|LV|56.95|24.1;Africa/Tripoli|LY|32.9|13.18;Africa/Casablanca|MA|33.65|-7.58;Europe/Monaco|MC|43.7|7.38;Europe/Chisinau|MD|47|28.83;Europe/Podgorica|ME|42.43|19.27;America/Marigot|MF|18.07|-63.08;Indian/Antananarivo|MG|-18.92|47.52;Pacific/Majuro|MH|7.15|171.2;Pacific/Kwajalein|MH|9.08|167.33;Europe/Skopje|MK|41.98|21.43;Africa/Bamako|ML|12.65|-8;Asia/Yangon|MM|16.78|96.17;Asia/Ulaanbaatar|MN|47.92|106.88;Asia/Hovd|MN|48.02|91.65;Asia/Macau|MO|22.2|113.54;Pacific/Saipan|MP|15.2|145.75;America/Martinique|MQ|14.6|-61.08;Africa/Nouakchott|MR|18.1|-15.95;America/Montserrat|MS|16.72|-62.22;Europe/Malta|MT|35.9|14.52;Indian/Mauritius|MU|-20.17|57.5;Indian/Maldives|MV|4.17|73.5;Africa/Blantyre|MW|-15.78|35;America/Mexico_City|MX|19.4|-99.15;America/Cancun|MX|21.08|-86.77;America/Merida|MX|20.97|-89.62;America/Monterrey|MX|25.67|-100.32;America/Matamoros|MX|25.83|-97.5;America/Chihuahua|MX|28.63|-106.08;America/Ciudad_Juarez|MX|31.73|-106.48;America/Ojinaga|MX|29.57|-104.42;America/Mazatlan|MX|23.22|-106.42;America/Bahia_Banderas|MX|20.8|-105.25;America/Hermosillo|MX|29.07|-110.97;America/Tijuana|MX|32.53|-117.02;Asia/Kuala_Lumpur|MY|3.17|101.7;Asia/Kuching|MY|1.55|110.33;Africa/Maputo|MZ|-25.97|32.58;Africa/Windhoek|NA|-22.57|17.1;Pacific/Noumea|NC|-22.27|166.45;Africa/Niamey|NE|13.52|2.12;Pacific/Norfolk|NF|-29.05|167.97;Africa/Lagos|NG|6.45|3.4;America/Managua|NI|12.15|-86.28;Europe/Amsterdam|NL|52.37|4.9;Europe/Oslo|NO|59.92|10.75;Asia/Kathmandu|NP|27.72|85.32;Pacific/Nauru|NR|-0.52|166.92;Pacific/Niue|NU|-19.02|-169.92;Pacific/Auckland|NZ|-36.87|174.77;Pacific/Chatham|NZ|-43.95|-176.55;Asia/Muscat|OM|23.6|58.58;America/Panama|PA|8.97|-79.53;America/Lima|PE|-12.05|-77.05;Pacific/Tahiti|PF|-17.53|-149.57;Pacific/Marquesas|PF|-9|-139.5;Pacific/Gambier|PF|-23.13|-134.95;Pacific/Port_Moresby|PG|-9.5|147.17;Pacific/Bougainville|PG|-6.22|155.57;Asia/Manila|PH|14.59|120.97;Asia/Karachi|PK|24.87|67.05;Europe/Warsaw|PL|52.25|21;America/Miquelon|PM|47.05|-56.33;Pacific/Pitcairn|PN|-25.07|-130.08;America/Puerto_Rico|PR|18.47|-66.11;Asia/Gaza|PS|31.5|34.47;Asia/Hebron|PS|31.53|35.09;Europe/Lisbon|PT|38.72|-9.13;Atlantic/Madeira|PT|32.63|-16.9;Atlantic/Azores|PT|37.73|-25.67;Pacific/Palau|PW|7.33|134.48;America/Asuncion|PY|-25.27|-57.67;Asia/Qatar|QA|25.28|51.53;Indian/Reunion|RE|-20.87|55.47;Europe/Bucharest|RO|44.43|26.1;Europe/Belgrade|RS|44.83|20.5;Europe/Kaliningrad|RU|54.72|20.5;Europe/Moscow|RU|55.76|37.62;Europe/Simferopol|UA|44.95|34.1;Europe/Kirov|RU|58.6|49.65;Europe/Volgograd|RU|48.73|44.42;Europe/Astrakhan|RU|46.35|48.05;Europe/Saratov|RU|51.57|46.03;Europe/Ulyanovsk|RU|54.33|48.4;Europe/Samara|RU|53.2|50.15;Asia/Yekaterinburg|RU|56.85|60.6;Asia/Omsk|RU|55|73.4;Asia/Novosibirsk|RU|55.03|82.92;Asia/Barnaul|RU|53.37|83.75;Asia/Tomsk|RU|56.5|84.97;Asia/Novokuznetsk|RU|53.75|87.12;Asia/Krasnoyarsk|RU|56.02|92.83;Asia/Irkutsk|RU|52.27|104.33;Asia/Chita|RU|52.05|113.47;Asia/Yakutsk|RU|62|129.67;Asia/Khandyga|RU|62.66|135.55;Asia/Vladivostok|RU|43.17|131.93;Asia/Ust-Nera|RU|64.56|143.23;Asia/Magadan|RU|59.57|150.8;Asia/Sakhalin|RU|46.97|142.7;Asia/Srednekolymsk|RU|67.47|153.72;Asia/Kamchatka|RU|53.02|158.65;Asia/Anadyr|RU|64.75|177.48;Africa/Kigali|RW|-1.95|30.07;Asia/Riyadh|SA|24.63|46.72;Pacific/Guadalcanal|SB|-9.53|160.2;Indian/Mahe|SC|-4.67|55.47;Africa/Khartoum|SD|15.6|32.53;Europe/Stockholm|SE|59.33|18.05;Asia/Singapore|SG|1.28|103.85;Atlantic/St_Helena|SH|-15.92|-5.7;Europe/Ljubljana|SI|46.05|14.52;Arctic/Longyearbyen|SJ|78|16;Europe/Bratislava|SK|48.15|17.12;Africa/Freetown|SL|8.5|-13.25;Europe/San_Marino|SM|43.92|12.47;Africa/Dakar|SN|14.67|-17.43;Africa/Mogadishu|SO|2.07|45.37;America/Paramaribo|SR|5.83|-55.17;Africa/Juba|SS|4.85|31.62;Africa/Sao_Tome|ST|0.33|6.73;America/El_Salvador|SV|13.7|-89.2;America/Lower_Princes|SX|18.05|-63.05;Asia/Damascus|SY|33.5|36.3;Africa/Mbabane|SZ|-26.3|31.1;America/Grand_Turk|TC|21.47|-71.13;Africa/Ndjamena|TD|12.12|15.05;Indian/Kerguelen|TF|-49.35|70.22;Africa/Lome|TG|6.13|1.22;Asia/Bangkok|TH|13.75|100.52;Asia/Dushanbe|TJ|38.58|68.8;Pacific/Fakaofo|TK|-9.37|-171.23;Asia/Dili|TL|-8.55|125.58;Asia/Ashgabat|TM|37.95|58.38;Africa/Tunis|TN|36.8|10.18;Pacific/Tongatapu|TO|-21.13|-175.2;Europe/Istanbul|TR|41.02|28.97;America/Port_of_Spain|TT|10.65|-61.52;Pacific/Funafuti|TV|-8.52|179.22;Asia/Taipei|TW|25.05|121.5;Africa/Dar_es_Salaam|TZ|-6.8|39.28;Europe/Kyiv|UA|50.43|30.52;Africa/Kampala|UG|0.32|32.42;Pacific/Midway|UM|28.22|-177.37;Pacific/Wake|UM|19.28|166.62;America/New_York|US|40.71|-74.01;America/Detroit|US|42.33|-83.05;America/Kentucky/Louisville|US|38.25|-85.76;America/Kentucky/Monticello|US|36.83|-84.85;America/Indiana/Indianapolis|US|39.77|-86.16;America/Indiana/Vincennes|US|38.68|-87.53;America/Indiana/Winamac|US|41.05|-86.6;America/Indiana/Marengo|US|38.38|-86.34;America/Indiana/Petersburg|US|38.49|-87.28;America/Indiana/Vevay|US|38.75|-85.07;America/Chicago|US|41.85|-87.65;America/Indiana/Tell_City|US|37.95|-86.76;America/Indiana/Knox|US|41.3|-86.63;America/Menominee|US|45.11|-87.61;America/North_Dakota/Center|US|47.12|-101.3;America/North_Dakota/New_Salem|US|46.84|-101.41;America/North_Dakota/Beulah|US|47.26|-101.78;America/Denver|US|39.74|-104.98;America/Boise|US|43.61|-116.2;America/Phoenix|US|33.45|-112.07;America/Los_Angeles|US|34.05|-118.24;America/Anchorage|US|61.22|-149.9;America/Juneau|US|58.3|-134.42;America/Sitka|US|57.18|-135.3;America/Metlakatla|US|55.13|-131.58;America/Yakutat|US|59.55|-139.73;America/Nome|US|64.5|-165.41;America/Adak|US|51.88|-176.66;Pacific/Honolulu|US|21.31|-157.86;America/Montevideo|UY|-34.91|-56.21;Asia/Samarkand|UZ|39.67|66.8;Asia/Tashkent|UZ|41.33|69.3;Europe/Vatican|VA|41.9|12.45;America/St_Vincent|VC|13.15|-61.23;America/Caracas|VE|10.5|-66.93;America/Tortola|VG|18.45|-64.62;America/St_Thomas|VI|18.35|-64.93;Asia/Ho_Chi_Minh|VN|10.75|106.67;Pacific/Efate|VU|-17.67|168.42;Pacific/Wallis|WF|-13.3|-176.17;Pacific/Apia|WS|-13.83|-171.73;Asia/Aden|YE|12.75|45.2;Indian/Mayotte|YT|-12.78|45.23;Africa/Johannesburg|ZA|-26.25|28;Africa/Lusaka|ZM|-15.42|28.28;Africa/Harare|ZW|-17.83|31.05";
+  function ptZone(tz) {
+    var A = { "Asia/Calcutta": "Asia/Kolkata", "Asia/Katmandu": "Asia/Kathmandu", "Asia/Saigon": "Asia/Ho_Chi_Minh", "Asia/Rangoon": "Asia/Yangon", "Africa/Asmera": "Africa/Asmara", "Europe/Kiev": "Europe/Kyiv", "America/Buenos_Aires": "America/Argentina/Buenos_Aires" };
+    tz = A[tz] || tz; if (!tz) return null;
+    var i = PT_TZ.indexOf(tz + "|"); if (i < 0) return null;
+    var p = PT_TZ.slice(i, (PT_TZ.indexOf(";", i) + 1 || PT_TZ.length + 1) - 1).split("|");
+    return { name: p[0].split("/").pop().replace(/_/g, " "), cc: p[1], lat: +p[2], lng: +p[3], src: "tz" };
+  }
+  function ptMethod(cc) {
+    if (cc === "SA") return { n: "Umm Al-Qura", f: 18.5, im: 90 };
+    if (cc === "EG") return { n: "Egyptian General Authority", f: 19.5, i: 17.5 };
+    if (cc === "US" || cc === "CA") return { n: "ISNA", f: 15, i: 15 };
+    if (/^(PK|AF|BD|IN)$/.test(cc)) return { n: "Karachi (Hanafi Asr)", f: 18, i: 18, h: 1 };
+    if (/^(MY|SG|BN|ID)$/.test(cc)) return { n: "JAKIM / MUIS", f: 20, i: 18 };
+    if (cc === "AE") return { n: "UAE", f: 18.2, i: 18.2 };
+    if (cc === "QA") return { n: "Qatar", f: 18, im: 90 };
+    if (cc === "KW") return { n: "Kuwait", f: 18, i: 17.5 };
+    if (cc === "MA") return { n: "Morocco", f: 19, i: 17 };
+    return { n: "Muslim World League", f: 18, i: 17 };
+  }
+  // Returns prayer times as hours after 00:00 UTC of the given date (can be < 0 or > 24).
+  function ptCalc(y, m, d, lat, lng, M, ramadan) {
     var rad = Math.PI / 180, deg = 180 / Math.PI;
-    function fix(a, b) { a = a - b * Math.floor(a / b); return a < 0 ? a + b : a; }
-    var jd = 367 * y - Math.floor(7 * (y + Math.floor((m + 9) / 12)) / 4) + Math.floor(275 * m / 9) + d + 1721013.5 + 0.5 - 3 / 24;
-    var D = jd - 2451545.0;
+    function fix(a, b) { return a - b * Math.floor(a / b); }
+    var jd = 367 * y - Math.floor(7 * (y + Math.floor((m + 9) / 12)) / 4) + Math.floor(275 * m / 9) + d + 1721013.5;
+    var D = jd + 0.5 - lng / 360 - 2451545.0;
     var g = fix(357.529 + 0.98560028 * D, 360), q = fix(280.459 + 0.98564736 * D, 360);
     var L = fix(q + 1.915 * Math.sin(g * rad) + 0.020 * Math.sin(2 * g * rad), 360);
     var e = 23.439 - 0.00000036 * D;
     var RA = fix(Math.atan2(Math.cos(e * rad) * Math.sin(L * rad), Math.cos(L * rad)) * deg / 15, 24);
     var decl = Math.asin(Math.sin(e * rad) * Math.sin(L * rad)) * deg;
-    var eqt = q / 15 - RA;
-    var noon = fix(12 + 3 - lng / 15 - eqt, 24);
+    var eqt = fix(q / 15 - RA + 12, 24) - 12;
+    var noon = 12 - lng / 15 - eqt;
     function T(angle) { return Math.acos((-Math.sin(angle * rad) - Math.sin(decl * rad) * Math.sin(lat * rad)) / (Math.cos(decl * rad) * Math.cos(lat * rad))) * deg / 15; }
     function A(f) { var a = Math.atan(1 / (f + Math.tan(Math.abs(lat - decl) * rad))) * deg; return Math.acos((Math.sin(a * rad) - Math.sin(decl * rad) * Math.sin(lat * rad)) / (Math.cos(decl * rad) * Math.cos(lat * rad))) * deg / 15; }
-    var maghrib = noon + T(0.833);
-    return { fajr: noon - T(18.5), sunrise: noon - T(0.833), dhuhr: noon, asr: noon + A(1), maghrib: maghrib, isha: maghrib + (ramadan ? 2 : 1.5) };
+    var sr = noon - T(0.833), ss = noon + T(0.833), night = 24 - (ss - sr);
+    var fajr = noon - T(M.f), pf = night * M.f / 60;
+    if (isNaN(fajr) || sr - fajr > pf) fajr = sr - pf; // high-latitude rule (angle-based)
+    var isha;
+    if (M.im) isha = ss + (M.im + (ramadan && M.n === "Umm Al-Qura" ? 30 : 0)) / 60;
+    else { isha = noon + T(M.i); var pi = night * M.i / 60; if (isNaN(isha) || isha - ss > pi) isha = ss + pi; }
+    return { fajr: fajr, sunrise: sr, dhuhr: noon + 1 / 60, asr: noon + A(M.h ? 2 : 1), maghrib: ss + 1 / 60, isha: isha };
   }
-  function ptFmt(h) { var m = Math.round(h * 60); return String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
   function initPrayer() {
     var header = document.querySelector(".header"); if (!header) return;
     var open = false; try { open = localStorage.getItem("ptOpen") === "1"; } catch (e) {}
     var bar = mk("section", { "class": "pt-bar" + (open ? " open" : ""), "aria-label": "Prayer times" });
-    bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-grid"></div><p class="pt-note"></p></div></div>';
+    bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-loc"><span class="pt-where"></span><button type="button" class="pt-gps"></button></div><div class="pt-grid"></div><p class="pt-note"></p></div></div>';
     header.parentNode.insertBefore(bar, header.nextSibling);
-    var head = bar.querySelector(".pt-head");
+    var head = bar.querySelector(".pt-head"), gpsBtn = bar.querySelector(".pt-gps"), gpsMsg = "";
     head.addEventListener("click", function () { open = !open; bar.classList.toggle("open", open); head.setAttribute("aria-expanded", String(open)); try { localStorage.setItem("ptOpen", open ? "1" : "0"); } catch (e) {} draw(); });
     var KEYS = ["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"];
+    var devTz = ""; try { devTz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+    var LOC = ptZone(devTz) || { name: "Makkah", cc: "SA", lat: 21.4225, lng: 39.8262, src: "tz" };
+    function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    function load(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
+    function country(cc, fr) { try { return new Intl.DisplayNames([fr ? "fr" : "en"], { type: "region" }).of(cc); } catch (e) { return cc; } }
     function names(fr, friday) { return { fajr: "Fajr", sunrise: fr ? "Chourouq" : "Sunrise", dhuhr: friday ? (fr ? "Joumou’a" : "Jumu’ah") : (fr ? "Dhohr" : "Dhuhr"), asr: "Asr", maghrib: "Maghrib", isha: fr ? "Icha" : "Isha" }; }
-    function hijri(dt, fr) { try { return new Intl.DateTimeFormat((fr ? "fr" : "en") + "-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Riyadh" }).format(dt); } catch (e) { return ""; } }
-    function ramadan(dt) { try { return new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { month: "numeric", timeZone: "Asia/Riyadh" }).format(dt) === "9"; } catch (e) { return false; } }
+    function hijri(dt, fr) { try { return new Intl.DateTimeFormat((fr ? "fr" : "en") + "-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" }).format(dt); } catch (e) { return ""; } }
+    function ramadan(dt) { try { return new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { month: "numeric" }).format(dt) === "9"; } catch (e) { return false; } }
+    function at(y, m, d, h) { return new Date(Date.UTC(y, m - 1, d) + Math.round(h * 60) * 60000); }
+    function hm(dt) { return String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0"); }
+    function day(dt) { var t = ptCalc(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), LOC.lat, LOC.lng, ptMethod(LOC.cc), ramadan(dt)), o = {}; KEYS.forEach(function (k) { o[k] = at(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), t[k]); }); return o; }
     function draw() {
-      var fr = lang === "fr", now = new Date(), ksa = new Date(now.getTime() + 3 * 3600000);
-      var y = ksa.getUTCFullYear(), m = ksa.getUTCMonth() + 1, d = ksa.getUTCDate(), friday = ksa.getUTCDay() === 5;
-      var nowH = ksa.getUTCHours() + ksa.getUTCMinutes() / 60 + ksa.getUTCSeconds() / 3600, N = names(fr, friday), rm = ramadan(now);
-      var grid = "", summary = "";
-      PT_CITIES.forEach(function (c, ci) {
-        var t = ptCalc(y, m, d, c[1], c[2], rm), next = null;
-        ["fajr", "dhuhr", "asr", "maghrib", "isha"].forEach(function (k) { if (!next && Math.round(t[k] * 60) / 60 > nowH) next = k; });
-        var nextH = next ? t[next] : ptCalc(new Date(Date.UTC(y, m - 1, d + 1)).getUTCFullYear(), new Date(Date.UTC(y, m - 1, d + 1)).getUTCMonth() + 1, new Date(Date.UTC(y, m - 1, d + 1)).getUTCDate(), c[1], c[2], rm).fajr + 24;
-        var mins = Math.max(0, Math.round((Math.round(nextH * 60) / 60 - nowH) * 60)), left = (mins >= 60 ? Math.floor(mins / 60) + " h " : "") + (mins % 60) + " min";
-        var city = c[0] === "makkah" ? (fr ? "La Mecque" : "Makkah") : (fr ? "Médine" : "Madinah");
-        if (ci === 0) summary = "<b>" + (fr ? "Heures de prière" : "Prayer times") + "</b><span class=\"pt-next\">" + (fr ? "Prochaine à La Mecque : " : "Next in Makkah: ") + "<b>" + N[next || "fajr"] + " " + ptFmt(nextH) + "</b> · " + (fr ? "dans " : "in ") + left + "</span>";
-        grid += '<div class="pt-city"><h4>' + city + "</h4><ul>" + KEYS.map(function (k) { return '<li class="' + (k === next ? "now" : "") + (k === "sunrise" ? " sun" : "") + '"><span>' + N[k] + "</span><b>" + ptFmt(t[k]) + "</b></li>"; }).join("") + "</ul></div>";
-      });
-      bar.querySelector(".pt-sum").innerHTML = summary;
+      var fr = lang === "fr", now = new Date(), N = names(fr, now.getDay() === 5), t = day(now), next = null, nextAt;
+      ["fajr", "dhuhr", "asr", "maghrib", "isha"].forEach(function (k) { if (!next && t[k] > now) next = k; });
+      if (next) nextAt = t[next]; else { next = "fajr"; nextAt = day(new Date(now.getTime() + 86400000)).fajr; }
+      var mins = Math.max(0, Math.round((nextAt - now) / 60000)), left = (mins >= 60 ? Math.floor(mins / 60) + " h " : "") + (mins % 60) + " min";
+      var place = LOC.name || (fr ? "Ma position" : "My location");
+      bar.querySelector(".pt-sum").innerHTML = "<b>" + (fr ? "Heures de prière" : "Prayer times") + " · " + place.replace(/</g, "") + "</b><span class=\"pt-next\">" + (fr ? "Prochaine : " : "Next: ") + "<b>" + N[next] + " " + hm(nextAt) + "</b> · " + (fr ? "dans " : "in ") + left + "</span>";
       bar.querySelector(".pt-tog").textContent = open ? "−" : "+";
-      if (open) {
-        bar.querySelector(".pt-grid").innerHTML = grid;
-        var dateTxt = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Riyadh" }).format(now);
-        bar.querySelector(".pt-note").textContent = dateTxt + (hijri(now, fr) ? " · " + hijri(now, fr) : "") + " · " + (fr ? "Heure saoudienne (GMT+3), méthode Umm Al-Qura. Peut différer de 1 à 2 min de l’adhan du Haram." : "Saudi time (GMT+3), Umm Al-Qura method. May differ by 1–2 min from the Haram adhan.");
+      if (!open) return;
+      bar.querySelector(".pt-grid").innerHTML = '<div class="pt-city"><ul>' + KEYS.map(function (k) { return '<li class="' + (k === next && t[k] > now ? "now" : "") + (k === "sunrise" ? " sun" : "") + '"><span>' + N[k] + "</span><b>" + hm(t[k]) + "</b></li>"; }).join("") + "</ul></div>";
+      var how = LOC.src === "gps" ? (fr ? "votre position exacte" : "your exact position") : LOC.src === "ip" ? (fr ? "votre ville (approximative)" : "your city (approximate)") : (fr ? "le fuseau horaire de votre appareil" : "your device’s time zone");
+      bar.querySelector(".pt-where").innerHTML = "📍 <b>" + place.replace(/</g, "") + (LOC.name && LOC.cc ? ", " + country(LOC.cc, fr) : "") + "</b> <small>(" + (fr ? "d’après " : "based on ") + how + ")</small>";
+      gpsBtn.textContent = gpsMsg || (LOC.src === "gps" ? (fr ? "Actualiser ma position" : "Update my location") : (fr ? "Utiliser ma position exacte" : "Use my exact location"));
+      var dateTxt = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(now);
+      bar.querySelector(".pt-note").textContent = dateTxt + (hijri(now, fr) ? " · " + hijri(now, fr) : "") + " · " + (fr ? "Heure locale, méthode " : "Local time, ") + ptMethod(LOC.cc).n + (fr ? "" : " method") + ". " + (fr ? "Peut différer de quelques minutes de votre mosquée." : "May differ by a few minutes from your local mosque.");
+    }
+    function setLoc(l) { LOC = l; draw(); }
+    function gps(silent) {
+      if (!navigator.geolocation) return;
+      if (!silent) { gpsMsg = lang === "fr" ? "Localisation…" : "Locating…"; draw(); }
+      navigator.geolocation.getCurrentPosition(function (p) {
+        gpsMsg = ""; var cc = LOC.cc, ip = load("ptIp"); if (ip && ip.cc) cc = ip.cc;
+        var la = +p.coords.latitude.toFixed(3), lo = +p.coords.longitude.toFixed(3), near = ip && Math.abs(ip.lat - la) < 0.5 && Math.abs(ip.lng - lo) < 0.5;
+        var l = { name: near ? ip.name : "", cc: cc, lat: la, lng: lo, src: "gps" };
+        save("ptGps", l); setLoc(l);
+      }, function () { gpsMsg = silent ? "" : (lang === "fr" ? "Position refusée — heures selon votre ville" : "Location not allowed — using your city"); draw(); setTimeout(function () { gpsMsg = ""; draw(); }, 5000); }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 });
+    }
+    gpsBtn.addEventListener("click", function () { gps(false); });
+    var saved = load("ptGps");
+    if (saved && saved.src === "gps") LOC = saved;
+    else {
+      var ipc = load("ptIp");
+      if (ipc && ipc.t > Date.now() - 86400000) LOC = ipc;
+      else if (window.fetch) {
+        var ctl = window.AbortController ? new AbortController() : null; if (ctl) setTimeout(function () { ctl.abort(); }, 5000);
+        fetch("https://get.geojs.io/v1/ip/geo.json", ctl ? { signal: ctl.signal } : {}).then(function (r) { return r.json(); }).then(function (j) {
+          var la = parseFloat(j.latitude), lo = parseFloat(j.longitude); if (isNaN(la) || isNaN(lo)) return;
+          var l = { name: j.city || j.region || country(j.country_code, false), cc: j.country_code || LOC.cc, lat: la, lng: lo, src: "ip", t: Date.now() };
+          save("ptIp", l); if (LOC.src !== "gps") setLoc(l);
+        }).catch(function () {});
       }
+      try { navigator.permissions.query({ name: "geolocation" }).then(function (s) { if (s.state === "granted") gps(true); }); } catch (e) {}
     }
     promoEls.push(draw);
     draw(); setInterval(draw, 30000);
