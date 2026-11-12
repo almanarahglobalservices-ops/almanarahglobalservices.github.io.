@@ -649,7 +649,7 @@
       2: [["Jayden Hotel", "Under 1 km", "Moins de 1 km"], ["coov hotel", "Madinah", "Médine"], ["Zaha Taiba Hotel", "Madinah", "Médine"], ["Jiwar Al Madina Hotel", "Madinah", "Médine"], ["Wardh Rahiq Hotel", "Madinah", "Médine"], ["Madinah Deluxe Hotel", "Madinah", "Médine"], ["Almaghreby Hotel 2", "Qurban · 5 min by car", "Qurban · 5 min en voiture"], ["Al Eairy Apartments Madinah 9", "Furnished apartments", "Appartements meublés"]]
     }
   };
-  var HB = { city: "both", nMak: 5, nMed: 4, date: "", stars: 4, hMak: "", hMed: "", dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
+  var HB = { city: "both", nMak: 5, nMed: 4, date: "", stars: 4, hMak: "", hMed: "", oMak: "", oMed: "", dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
   function initNavHotels() {
     var menu = document.getElementById("menu");
     if (menu && !menu.querySelector('[data-nav="hotels"]')) {
@@ -664,15 +664,15 @@
     var fr = lang === "fr", L = [];
     var cityName = { makkah: fr ? "La Mecque" : "Makkah", madinah: fr ? "Médine" : "Madinah" };
     var rec = fr ? "hôtel à choisir" : "hotel not chosen yet", oth = fr ? "autre hôtel (à préciser par téléphone)" : "another hotel (to discuss by phone)";
-    function hn(v) { return v === "Other" ? oth : (v || rec); }
+    function hn(v, city, typed) { if (v === "Other") return typed ? typed + (fr ? " (non listé)" : " (not listed)") : oth; if (!v) return rec; var a = (HOTELS[city][HB.stars] || []).filter(function (h) { return h[0] === v; })[0]; return v + (a ? " (" + (fr ? a[2] : a[1]) + ")" : ""); }
     var distT = { closest: fr ? "Le plus proche du Haram" : "Closest to the Haram", walk: fr ? "À distance de marche" : "Walking distance", shuttle: fr ? "Avec navette (économique)" : "With shuttle (economy)" };
     var mealT = { ro: fr ? "Chambre seule" : "Room only", bb: fr ? "Petit-déjeuner" : "Breakfast", hb: fr ? "Demi-pension" : "Half board", fb: fr ? "Pension complète" : "Full board" };
     L.push((fr ? "Demande d’hôtel" : "Hotel request") + " — " + HB.stars + "★");
-    if (HB.city !== "madinah") L.push(cityName.makkah + ": " + HB.nMak + (fr ? " nuits — " : " nights — ") + hn(HB.hMak));
-    if (HB.city !== "makkah") L.push(cityName.madinah + ": " + HB.nMed + (fr ? " nuits — " : " nights — ") + hn(HB.hMed));
+    if (HB.city !== "madinah") L.push(cityName.makkah + ": " + HB.nMak + (fr ? " nuits — " : " nights — ") + hn(HB.hMak, "makkah", HB.oMak));
+    if (HB.city !== "makkah") L.push(cityName.madinah + ": " + HB.nMed + (fr ? " nuits — " : " nights — ") + hn(HB.hMed, "madinah", HB.oMed));
     L.push((fr ? "Arrivée" : "Check-in") + ": " + (HB.date || (fr ? "à confirmer" : "to be confirmed")));
     L.push((fr ? "Chambres" : "Rooms") + ": " + HB.rooms + " × " + HB.room + " · " + HB.adults + (fr ? " adulte(s)" : " adult(s)") + (HB.kids ? ", " + HB.kids + (fr ? " enfant(s)" : " child(ren)") : ""));
-    L.push((fr ? "Distance" : "Distance") + ": " + distT[HB.dist] + " · " + (fr ? "Repas" : "Meals") + ": " + mealT[HB.meals]);
+    L.push((fr ? "Repas" : "Meals") + ": " + mealT[HB.meals]);
     if (HB.budget) L.push((fr ? "Budget" : "Budget") + ": " + HB.budget);
     return L.join("\n");
   }
@@ -691,7 +691,8 @@
       var stars = "★".repeat(HB.stars), other = fr ? "Un autre hôtel (non listé)" : "Another hotel (not listed)";
       var html = '<div class="hb-q"><h4>' + title + " · " + stars + '</h4><div class="hb-hotels">';
       HOTELS[city][HB.stars].forEach(function (h) { html += '<button type="button" class="hb-hotel' + (HB[key] === h[0] ? " on" : "") + '" data-h="' + key + '" data-v="' + h[0] + '"><span class="hb-stars">' + stars + "</span>" + h[0] + "<small>" + (fr ? h[2] : h[1]) + "</small></button>"; });
-      html += '<button type="button" class="hb-hotel hb-other' + (HB[key] === "Other" ? " on" : "") + '" data-h="' + key + '" data-v="Other">' + other + "<small>" + (fr ? "Nous vous appelons pour le nom" : "We will call you for the name") + "</small></button>";
+      html += '<button type="button" class="hb-hotel hb-other' + (HB[key] === "Other" ? " on" : "") + '" data-h="' + key + '" data-v="Other">' + other + "<small>" + (fr ? "Écrivez le nom ci-dessous" : "Type the name below") + "</small></button>";
+      if (HB[key] === "Other") { var ok = city === "makkah" ? "oMak" : "oMed"; html += '<input type="text" class="hb-otherin" data-o="' + ok + '" value="' + String(HB[ok]).replace(/"/g, "&quot;") + '" placeholder="' + (fr ? "Nom de l’hôtel souhaité" : "Name of the hotel you want") + '">'; }
       html += "</div></div>";
       return html;
     }
@@ -711,8 +712,7 @@
       html += "</div>";
       html += '<div class="hb-q"><h4>5. ' + (fr ? "Chambres et voyageurs" : "Rooms & guests") + "</h4>" + chips("room", [["Double", "Double"], ["Triple", "Triple"], ["Quad", fr ? "Quadruple" : "Quad"], ["Suite", fr ? "Suite familiale" : "Family suite"]]);
       html += '<div class="hb-row"><div><small>' + (fr ? "Chambres" : "Rooms") + "</small>" + stepper("rooms", 1, 20) + "</div><div><small>" + (fr ? "Adultes" : "Adults") + "</small>" + stepper("adults", 1, 60) + "</div><div><small>" + (fr ? "Enfants" : "Children") + "</small>" + stepper("kids", 0, 20) + "</div></div></div>";
-      html += '<div class="hb-q"><h4>6. ' + (fr ? "Distance du Haram" : "Distance to the Haram") + "</h4>" + chips("dist", [["closest", fr ? "Le plus proche" : "Closest"], ["walk", fr ? "À pied" : "Walking distance"], ["shuttle", fr ? "Navette" : "Shuttle"]]) + "</div>";
-      html += '<div class="hb-q"><h4>7. ' + (fr ? "Repas" : "Meals") + "</h4>" + chips("meals", [["ro", fr ? "Chambre seule" : "Room only"], ["bb", fr ? "Petit-déj." : "Breakfast"], ["hb", fr ? "Demi-pension" : "Half board"], ["fb", fr ? "Pension complète" : "Full board"]]) + "</div>";
+      html += '<div class="hb-q"><h4>6. ' + (fr ? "Repas" : "Meals") + "</h4>" + chips("meals", [["ro", fr ? "Chambre seule" : "Room only"], ["bb", fr ? "Petit-déj." : "Breakfast"], ["hb", fr ? "Demi-pension" : "Half board"], ["fb", fr ? "Pension complète" : "Full board"]]) + "</div>";
       box.innerHTML = html;
       sum.value = hbText();
     }
@@ -725,6 +725,7 @@
       render();
     });
     box.addEventListener("change", function (e) { if (e.target.classList.contains("hb-date")) { HB.date = e.target.value; sum.value = hbText(); } });
+    box.addEventListener("input", function (e) { var o = e.target.dataset && e.target.dataset.o; if (o) { HB[o] = e.target.value.slice(0, 80); sum.value = hbText(); } });
     promoEls.push(function () {
       render();
       if (CFG.formEndpoint) { var b = form.querySelector('button[type="submit"] span'); if (b) { b.textContent = lang === "fr" ? "Demander mon devis" : "Request my quotation"; b.setAttribute("data-fr", "Demander mon devis"); } }
