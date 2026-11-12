@@ -511,3 +511,6 @@ html[lang="en"] .l-fr,html[lang="fr"] .l-en{display:none!important}
 
 /* Green top strip removed at owner request */
 .topbar{display:none!important}
+
+/* Hero labels removed at owner request (RC number stays in the footer) */
+.hero .chips{display:none!important}
