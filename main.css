@@ -727,3 +727,10 @@ section:has(.why){display:none!important}
 .phone-row .cc{flex:0 0 132px;width:132px;padding-left:8px;padding-right:4px;text-overflow:ellipsis}
 .phone-row input{flex:1;min-width:0}
 @media (max-width:700px){.phone-row .cc{flex-basis:112px;width:112px;font-size:.85rem}}
+
+/* Hotel buttons: name + distance under it; free-text box for unlisted hotel */
+.hb-hotel{border-radius:12px!important;text-align:left}
+.hb-hotel small{display:block!important;font-size:.66rem;font-weight:600;color:var(--muted);margin-top:1px}
+.hb-hotel.on small{color:#cfe8d9}
+.hb-otherin{width:100%;margin-top:8px;border:1.5px solid var(--green-500);border-radius:12px;padding:10px 12px;font:600 .9rem var(--sans);color:var(--ink);background:#fff}
+[data-theme="dark"] .hb-otherin{background:#0e1f15}
