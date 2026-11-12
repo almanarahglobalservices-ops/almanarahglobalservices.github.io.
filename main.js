@@ -426,7 +426,7 @@
     ["visas.html", "Saudi visas", "Visas saoudiens", "visa saudi saoudien umrah tourist touristique family business evisa documents passport passeport"],
     ["services.html", "All services", "Tous les services", "services flights vols hotels hôtels transfer transfert transport train haramain ziyarah import export trade commerce"],
     ["services.html#travel", "Flight reservations", "Réservation de vols", "flight flights vol vols plane avion ticket billet jeddah médine"],
-    ["contact.html?service=hotels", "Hotels in Makkah / Madinah", "Hôtels La Mecque / Médine", "hotel hotels hôtel makkah madinah mecque médine room chambre"],
+    ["hotels.html", "Hotels in Makkah / Madinah", "Hôtels La Mecque / Médine", "hotel hotels hôtel makkah madinah mecque médine room chambre"],
     ["contact.html?service=transfer", "Transfers & ground transport", "Transferts et transport", "transfer transport car voiture bus airport aéroport"],
     ["contact.html?service=train", "Haramain train", "Train Haramain", "train haramain railway"],
     ["contact.html?service=ziyarah", "Ziyarah", "Ziyarah", "ziyarah visit visite tour"],
@@ -634,12 +634,100 @@
     });
   }
 
+  /* ---------- Hotel booking builder (hotels.html) ---------- */
+  var HOTELS = {
+    makkah: ["Fairmont Makkah Clock Royal Tower", "Raffles Makkah Palace", "Swissôtel Makkah", "Swissôtel Al Maqam Makkah", "Pullman ZamZam Makkah", "Mövenpick Hotel & Residences Hajar Tower", "Hilton Suites Makkah", "Conrad Makkah", "Jabal Omar Hyatt Regency Makkah", "Jabal Omar Marriott Hotel Makkah"],
+    madinah: ["The Oberoi Madina", "Anwar Al Madinah Mövenpick", "Pullman ZamZam Madinah", "Dar Al Taqwa Hotel", "Madinah Hilton", "Dar Al Iman InterContinental", "Crowne Plaza Madinah"]
+  };
+  var HB = { city: "both", nMak: 5, nMed: 4, date: "", stars: 4, hMak: "", hMed: "", dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
+  function initNavHotels() {
+    var menu = document.getElementById("menu");
+    if (menu && !menu.querySelector('[data-nav="hotels"]')) {
+      var u = menu.querySelector('[data-nav="umrah"]');
+      var a = mk("a", { href: "hotels.html", "data-nav": "hotels", "data-fr": "Hôtels" }); a.textContent = "Hotels";
+      if (document.body.dataset.page === "hotels") { a.className = "active"; a.setAttribute("aria-current", "page"); }
+      if (u) u.parentNode.insertBefore(a, u.nextSibling); else menu.appendChild(a);
+    }
+    document.querySelectorAll('a[href="contact.html?service=hotels"]').forEach(function (l) { l.href = "hotels.html"; });
+  }
+  function hbText() {
+    var fr = lang === "fr", L = [];
+    var cityName = { makkah: fr ? "La Mecque" : "Makkah", madinah: fr ? "Médine" : "Madinah" };
+    var rec = fr ? "recommandé par AL MANARAH" : "recommended by AL MANARAH";
+    var distT = { closest: fr ? "Le plus proche du Haram" : "Closest to the Haram", walk: fr ? "À distance de marche" : "Walking distance", shuttle: fr ? "Avec navette (économique)" : "With shuttle (economy)" };
+    var mealT = { ro: fr ? "Chambre seule" : "Room only", bb: fr ? "Petit-déjeuner" : "Breakfast", hb: fr ? "Demi-pension" : "Half board", fb: fr ? "Pension complète" : "Full board" };
+    L.push((fr ? "Demande d’hôtel" : "Hotel request") + " — " + HB.stars + "★");
+    if (HB.city !== "madinah") L.push(cityName.makkah + ": " + HB.nMak + (fr ? " nuits — " : " nights — ") + (HB.hMak || rec));
+    if (HB.city !== "makkah") L.push(cityName.madinah + ": " + HB.nMed + (fr ? " nuits — " : " nights — ") + (HB.hMed || rec));
+    L.push((fr ? "Arrivée" : "Check-in") + ": " + (HB.date || (fr ? "à confirmer" : "to be confirmed")));
+    L.push((fr ? "Chambres" : "Rooms") + ": " + HB.rooms + " × " + HB.room + " · " + HB.adults + (fr ? " adulte(s)" : " adult(s)") + (HB.kids ? ", " + HB.kids + (fr ? " enfant(s)" : " child(ren)") : ""));
+    L.push((fr ? "Distance" : "Distance") + ": " + distT[HB.dist] + " · " + (fr ? "Repas" : "Meals") + ": " + mealT[HB.meals]);
+    if (HB.budget) L.push((fr ? "Budget" : "Budget") + ": " + HB.budget);
+    return L.join("\n");
+  }
+  function initHotels() {
+    var box = document.getElementById("hotelBuilder"); if (!box) return;
+    var form = document.getElementById("hotelForm"), sum = document.getElementById("h_summary");
+    var today = new Date(); today.setDate(today.getDate() + 3);
+    var minDate = today.toISOString().slice(0, 10);
+    function chips(key, opts) {
+      return '<div class="hb-chips">' + opts.map(function (o) { return '<button type="button" class="hb-chip' + (String(HB[key]) === String(o[0]) ? " on" : "") + '" data-k="' + key + '" data-v="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>";
+    }
+    function stepper(key, min, max) { var a = ' data-s="' + key + '" data-min="' + min + '" data-max="' + max + '"'; return '<div class="hb-step"><button type="button"' + a + ' data-d="-1" aria-label="-">−</button><b>' + HB[key] + '</b><button type="button"' + a + ' data-d="1" aria-label="+">+</button></div>'; }
+    function hotelList(city) {
+      var fr = lang === "fr", key = city === "makkah" ? "hMak" : "hMed";
+      var title = city === "makkah" ? (fr ? "Hôtel à La Mecque" : "Hotel in Makkah") : (fr ? "Hôtel à Médine" : "Hotel in Madinah");
+      var recLabel = fr ? "Le meilleur hôtel " + HB.stars + "★ disponible — recommandé par AL MANARAH" : "Best available " + HB.stars + "★ hotel — recommended by AL MANARAH";
+      var html = '<div class="hb-q"><h4>' + title + '</h4><div class="hb-hotels">';
+      html += '<button type="button" class="hb-hotel' + (!HB[key] ? " on" : "") + '" data-h="' + key + '" data-v=""><span class="hb-stars">' + "★".repeat(HB.stars) + "</span>" + recLabel + "</button>";
+      if (HB.stars === 5) HOTELS[city].forEach(function (n) { html += '<button type="button" class="hb-hotel' + (HB[key] === n ? " on" : "") + '" data-h="' + key + '" data-v="' + n + '"><span class="hb-stars">★★★★★</span>' + n + "</button>"; });
+      html += "</div></div>";
+      return html;
+    }
+    function render() {
+      var fr = lang === "fr";
+      var html = "<h3>" + (fr ? "Réservez votre hôtel" : "Book your hotel") + "</h3>";
+      html += '<div class="hb-q"><h4>1. ' + (fr ? "Ville" : "City") + "</h4>" + chips("city", [["makkah", fr ? "La Mecque" : "Makkah"], ["madinah", fr ? "Médine" : "Madinah"], ["both", fr ? "Les deux" : "Both"]]) + "</div>";
+      html += '<div class="hb-q"><h4>2. ' + (fr ? "Nombre de nuits" : "Number of nights") + '</h4><div class="hb-row">';
+      if (HB.city !== "madinah") html += "<div><small>" + (fr ? "La Mecque" : "Makkah") + "</small>" + stepper("nMak", 1, 30) + "</div>";
+      if (HB.city !== "makkah") html += "<div><small>" + (fr ? "Médine" : "Madinah") + "</small>" + stepper("nMed", 1, 30) + "</div>";
+      html += '<div><small>' + (fr ? "Date d’arrivée" : "Check-in date") + '</small><input type="date" class="hb-date" min="' + minDate + '" value="' + HB.date + '"></div></div></div>';
+      html += '<div class="hb-q"><h4>3. ' + (fr ? "Catégorie" : "Hotel category") + "</h4>" + chips("stars", [[2, "★★"], [3, "★★★"], [4, "★★★★"], [5, "★★★★★"]]) + "</div>";
+      html += '<div class="hb-q hb-num"><h4>4. ' + (fr ? "Choisissez l’hôtel" : "Choose the hotel") + "</h4>";
+      if (HB.city !== "madinah") html += hotelList("makkah");
+      if (HB.city !== "makkah") html += hotelList("madinah");
+      if (HB.stars < 5) html += '<p class="note">' + (fr ? "Pour les catégories 2★ à 4★, nous vous proposons les meilleurs hôtels disponibles près du Haram dans votre devis." : "For 2★ to 4★ we propose the best available hotels near the Haram in your quotation.") + "</p>";
+      html += "</div>";
+      html += '<div class="hb-q"><h4>5. ' + (fr ? "Chambres et voyageurs" : "Rooms & guests") + "</h4>" + chips("room", [["Double", "Double"], ["Triple", "Triple"], ["Quad", fr ? "Quadruple" : "Quad"], ["Suite", fr ? "Suite familiale" : "Family suite"]]);
+      html += '<div class="hb-row"><div><small>' + (fr ? "Chambres" : "Rooms") + "</small>" + stepper("rooms", 1, 20) + "</div><div><small>" + (fr ? "Adultes" : "Adults") + "</small>" + stepper("adults", 1, 60) + "</div><div><small>" + (fr ? "Enfants" : "Children") + "</small>" + stepper("kids", 0, 20) + "</div></div></div>";
+      html += '<div class="hb-q"><h4>6. ' + (fr ? "Distance du Haram" : "Distance to the Haram") + "</h4>" + chips("dist", [["closest", fr ? "Le plus proche" : "Closest"], ["walk", fr ? "À pied" : "Walking distance"], ["shuttle", fr ? "Navette" : "Shuttle"]]) + "</div>";
+      html += '<div class="hb-q"><h4>7. ' + (fr ? "Repas" : "Meals") + "</h4>" + chips("meals", [["ro", fr ? "Chambre seule" : "Room only"], ["bb", fr ? "Petit-déj." : "Breakfast"], ["hb", fr ? "Demi-pension" : "Half board"], ["fb", fr ? "Pension complète" : "Full board"]]) + "</div>";
+      html += '<div class="hb-q"><h4>8. ' + (fr ? "Budget (facultatif)" : "Budget (optional)") + "</h4>" + chips("budget", [["", fr ? "Pas de préférence" : "No preference"], ["Economy", fr ? "Économique" : "Economy"], ["Standard", "Standard"], ["Comfort", fr ? "Confort" : "Comfort"], ["Luxury", fr ? "Luxe" : "Luxury"]]) + "</div>";
+      box.innerHTML = html;
+      sum.value = hbText();
+    }
+    box.addEventListener("click", function (e) {
+      var c = e.target.closest(".hb-chip"), s = e.target.closest("[data-s]"), h = e.target.closest(".hb-hotel");
+      if (c) { var k = c.dataset.k, v = c.dataset.v; HB[k] = (k === "stars") ? +v : v; if (k === "stars" && +v < 5) { HB.hMak = ""; HB.hMed = ""; } }
+      else if (s) { var key = s.dataset.s; HB[key] = Math.min(+s.dataset.max, Math.max(+s.dataset.min, HB[key] + (+s.dataset.d))); }
+      else if (h) { HB[h.dataset.h] = h.dataset.v; }
+      else return;
+      render();
+    });
+    box.addEventListener("change", function (e) { if (e.target.classList.contains("hb-date")) { HB.date = e.target.value; sum.value = hbText(); } });
+    promoEls.push(function () {
+      render();
+      if (CFG.formEndpoint) { var b = form.querySelector('button[type="submit"] span'); if (b) { b.textContent = lang === "fr" ? "Demander mon devis" : "Request my quotation"; b.setAttribute("data-fr", "Demander mon devis"); } }
+    });
+    render();
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     var waSym = document.getElementById("i-wa"); if (waSym) waSym.innerHTML = '<path d="' + WA_PATH + '"/>';
     initIcons(); initChoices();
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
-    initPromo(); initSoon();
+    initPromo(); initSoon(); initNavHotels(); initHotels();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
   }
