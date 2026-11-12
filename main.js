@@ -748,7 +748,7 @@
       if (inp.parentNode.classList.contains("phone-row")) return;
       var sel = document.createElement("select");
       sel.className = "cc"; sel.setAttribute("aria-label", "Country code / Indicatif");
-      DIAL.forEach(function (d) { var o = mk("option", { value: d[3], "data-iso": d[0], "data-fr": flag(d[0]) + " +" + d[3] + " " + d[2] }); o.textContent = flag(d[0]) + " +" + d[3] + " " + d[1]; sel.appendChild(o); });
+      DIAL.forEach(function (d) { var o = mk("option", { value: d[3], "data-iso": d[0], "data-fr": "+" + d[3] + " " + d[2] }); o.textContent = "+" + d[3] + " " + d[1]; sel.appendChild(o); });
       sel.value = "225";
       var row = mk("div", { "class": "phone-row" });
       inp.parentNode.insertBefore(row, inp); row.appendChild(sel); row.appendChild(inp);
@@ -798,7 +798,7 @@
     }
     function render() {
       var fr = lang === "fr", h = "<h3>" + (fr ? "Votre visa saoudien" : "Your Saudi visa") + "</h3>";
-      h += '<div class="hb-q"><h4>1. ' + (fr ? "Votre nationalité" : "Your nationality") + '</h4><select class="vb-nat">' + DIAL.filter(function (d) { return NO_VISA_NEEDED.indexOf(d[0]) < 0; }).sort(function (a, b) { return (fr ? a[2] : a[1]).localeCompare(fr ? b[2] : b[1], fr ? "fr" : "en"); }).map(function (d) { return '<option value="' + d[0] + '"' + (VB.nat === d[0] ? " selected" : "") + ">" + flag(d[0]) + " " + (fr ? d[2] : d[1]) + "</option>"; }).join("") + "</select></div>";
+      h += '<div class="hb-q"><h4>1. ' + (fr ? "Votre nationalité" : "Your nationality") + '</h4><select class="vb-nat">' + DIAL.filter(function (d) { return NO_VISA_NEEDED.indexOf(d[0]) < 0; }).sort(function (a, b) { return (fr ? a[2] : a[1]).localeCompare(fr ? b[2] : b[1], fr ? "fr" : "en"); }).map(function (d) { return '<option value="' + d[0] + '"' + (VB.nat === d[0] ? " selected" : "") + ">" + (fr ? d[2] : d[1]) + "</option>"; }).join("") + "</select></div>";
       h += '<div class="hb-q"><h4>2. ' + (fr ? "Type de visa" : "Visa type") + "</h4>" + chips("type", [["Umrah", fr ? "Omra" : "Umrah"], ["Tourist", fr ? "Touristique" : "Tourist"], ["Family visit", fr ? "Visite familiale" : "Family visit"], ["Business", fr ? "Affaires" : "Business"]]) + "</div>";
       h += '<div class="hb-q"><h4>3. ' + (fr ? "Avez-vous un visa US, UK ou Schengen valide (déjà utilisé) ?" : "Do you hold a valid US, UK or Schengen visa (already used)?") + "</h4>" + yn("other") + "</div>";
       h += '<div class="hb-q"><button type="button" class="btn btn-gold btn-sm vb-check">' + (fr ? "Vérifier mon éligibilité" : "Check my eligibility") + "</button>";
