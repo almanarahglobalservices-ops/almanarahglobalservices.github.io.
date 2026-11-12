@@ -294,13 +294,19 @@
       if (!CFG.formEndpoint) { setStatus(form, "info", T[lang].track_off); return; }
       if (CFG.turnstileSiteKey && !token(form)) { setStatus(form, "error", T[lang].captcha); return; }
       setStatus(form, "info", T[lang].sending.replace("Sending", "Checking").replace("Envoi en cours", "Vérification"));
-      api({ action: "track", ref: form.ref.value, phone: form.phone.value.trim(), turnstile_token: token(form) })
-        .then(function (r) {
-          if (r && r.error === "rate_limited") return setStatus(form, "error", T[lang].track_limit);
-          if (!r || !r.ok) return setStatus(form, "error", T[lang].track_none);
-          form.querySelector(".status").className = "status";
-          render(out, r.file);
-        }).catch(function () { setStatus(form, "error", T[lang].failed); }).then(resetCaptcha);
+      // Try the full international number first, then the local forms used by older enquiries.
+      var raw = form.phone.value.trim(), local = raw.replace(/^\+\d{1,4}\s*/, ""), tries = [raw];
+      if (local !== raw) { tries.push(local); if (local.charAt(0) !== "0") tries.push("0" + local); }
+      (function attempt(i) {
+        api({ action: "track", ref: form.ref.value, phone: tries[i], turnstile_token: token(form) })
+          .then(function (r) {
+            if (r && r.error === "rate_limited") return setStatus(form, "error", T[lang].track_limit);
+            if ((!r || !r.ok) && i + 1 < tries.length) return attempt(i + 1);
+            if (!r || !r.ok) return setStatus(form, "error", T[lang].track_none);
+            form.querySelector(".status").className = "status";
+            render(out, r.file);
+          }).catch(function () { setStatus(form, "error", T[lang].failed); }).then(resetCaptcha);
+      })(0);
     });
   }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
