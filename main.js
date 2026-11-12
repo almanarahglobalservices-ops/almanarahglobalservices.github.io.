@@ -829,12 +829,70 @@
     render();
   }
 
+  /* ---------- Prayer times, Makkah & Madinah (Umm Al-Qura method, calculated in the page) ---------- */
+  var PT_CITIES = [["makkah", 21.4225, 39.8262], ["madinah", 24.4672, 39.6111]];
+  function ptCalc(y, m, d, lat, lng, ramadan) {
+    var rad = Math.PI / 180, deg = 180 / Math.PI;
+    function fix(a, b) { a = a - b * Math.floor(a / b); return a < 0 ? a + b : a; }
+    var jd = 367 * y - Math.floor(7 * (y + Math.floor((m + 9) / 12)) / 4) + Math.floor(275 * m / 9) + d + 1721013.5 + 0.5 - 3 / 24;
+    var D = jd - 2451545.0;
+    var g = fix(357.529 + 0.98560028 * D, 360), q = fix(280.459 + 0.98564736 * D, 360);
+    var L = fix(q + 1.915 * Math.sin(g * rad) + 0.020 * Math.sin(2 * g * rad), 360);
+    var e = 23.439 - 0.00000036 * D;
+    var RA = fix(Math.atan2(Math.cos(e * rad) * Math.sin(L * rad), Math.cos(L * rad)) * deg / 15, 24);
+    var decl = Math.asin(Math.sin(e * rad) * Math.sin(L * rad)) * deg;
+    var eqt = q / 15 - RA;
+    var noon = fix(12 + 3 - lng / 15 - eqt, 24);
+    function T(angle) { return Math.acos((-Math.sin(angle * rad) - Math.sin(decl * rad) * Math.sin(lat * rad)) / (Math.cos(decl * rad) * Math.cos(lat * rad))) * deg / 15; }
+    function A(f) { var a = Math.atan(1 / (f + Math.tan(Math.abs(lat - decl) * rad))) * deg; return Math.acos((Math.sin(a * rad) - Math.sin(decl * rad) * Math.sin(lat * rad)) / (Math.cos(decl * rad) * Math.cos(lat * rad))) * deg / 15; }
+    var maghrib = noon + T(0.833);
+    return { fajr: noon - T(18.5), sunrise: noon - T(0.833), dhuhr: noon, asr: noon + A(1), maghrib: maghrib, isha: maghrib + (ramadan ? 2 : 1.5) };
+  }
+  function ptFmt(h) { var m = Math.round(h * 60); return String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
+  function initPrayer() {
+    var header = document.querySelector(".header"); if (!header) return;
+    var open = false; try { open = localStorage.getItem("ptOpen") === "1"; } catch (e) {}
+    var bar = mk("section", { "class": "pt-bar" + (open ? " open" : ""), "aria-label": "Prayer times" });
+    bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-grid"></div><p class="pt-note"></p></div></div>';
+    header.parentNode.insertBefore(bar, header.nextSibling);
+    var head = bar.querySelector(".pt-head");
+    head.addEventListener("click", function () { open = !open; bar.classList.toggle("open", open); head.setAttribute("aria-expanded", String(open)); try { localStorage.setItem("ptOpen", open ? "1" : "0"); } catch (e) {} draw(); });
+    var KEYS = ["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"];
+    function names(fr, friday) { return { fajr: "Fajr", sunrise: fr ? "Chourouq" : "Sunrise", dhuhr: friday ? (fr ? "Joumou’a" : "Jumu’ah") : (fr ? "Dhohr" : "Dhuhr"), asr: "Asr", maghrib: "Maghrib", isha: fr ? "Icha" : "Isha" }; }
+    function hijri(dt, fr) { try { return new Intl.DateTimeFormat((fr ? "fr" : "en") + "-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Riyadh" }).format(dt); } catch (e) { return ""; } }
+    function ramadan(dt) { try { return new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { month: "numeric", timeZone: "Asia/Riyadh" }).format(dt) === "9"; } catch (e) { return false; } }
+    function draw() {
+      var fr = lang === "fr", now = new Date(), ksa = new Date(now.getTime() + 3 * 3600000);
+      var y = ksa.getUTCFullYear(), m = ksa.getUTCMonth() + 1, d = ksa.getUTCDate(), friday = ksa.getUTCDay() === 5;
+      var nowH = ksa.getUTCHours() + ksa.getUTCMinutes() / 60 + ksa.getUTCSeconds() / 3600, N = names(fr, friday), rm = ramadan(now);
+      var grid = "", summary = "";
+      PT_CITIES.forEach(function (c, ci) {
+        var t = ptCalc(y, m, d, c[1], c[2], rm), next = null;
+        ["fajr", "dhuhr", "asr", "maghrib", "isha"].forEach(function (k) { if (!next && Math.round(t[k] * 60) / 60 > nowH) next = k; });
+        var nextH = next ? t[next] : ptCalc(new Date(Date.UTC(y, m - 1, d + 1)).getUTCFullYear(), new Date(Date.UTC(y, m - 1, d + 1)).getUTCMonth() + 1, new Date(Date.UTC(y, m - 1, d + 1)).getUTCDate(), c[1], c[2], rm).fajr + 24;
+        var mins = Math.max(0, Math.round((Math.round(nextH * 60) / 60 - nowH) * 60)), left = (mins >= 60 ? Math.floor(mins / 60) + " h " : "") + (mins % 60) + " min";
+        var city = c[0] === "makkah" ? (fr ? "La Mecque" : "Makkah") : (fr ? "Médine" : "Madinah");
+        if (ci === 0) summary = "<b>" + (fr ? "Heures de prière" : "Prayer times") + "</b><span class=\"pt-next\">" + (fr ? "Prochaine à La Mecque : " : "Next in Makkah: ") + "<b>" + N[next || "fajr"] + " " + ptFmt(nextH) + "</b> · " + (fr ? "dans " : "in ") + left + "</span>";
+        grid += '<div class="pt-city"><h4>' + city + "</h4><ul>" + KEYS.map(function (k) { return '<li class="' + (k === next ? "now" : "") + (k === "sunrise" ? " sun" : "") + '"><span>' + N[k] + "</span><b>" + ptFmt(t[k]) + "</b></li>"; }).join("") + "</ul></div>";
+      });
+      bar.querySelector(".pt-sum").innerHTML = summary;
+      bar.querySelector(".pt-tog").textContent = open ? "−" : "+";
+      if (open) {
+        bar.querySelector(".pt-grid").innerHTML = grid;
+        var dateTxt = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Riyadh" }).format(now);
+        bar.querySelector(".pt-note").textContent = dateTxt + (hijri(now, fr) ? " · " + hijri(now, fr) : "") + " · " + (fr ? "Heure saoudienne (GMT+3), méthode Umm Al-Qura. Peut différer de 1 à 2 min de l’adhan du Haram." : "Saudi time (GMT+3), Umm Al-Qura method. May differ by 1–2 min from the Haram adhan.");
+      }
+    }
+    promoEls.push(draw);
+    draw(); setInterval(draw, 30000);
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     var waSym = document.getElementById("i-wa"); if (waSym) waSym.innerHTML = '<path d="' + WA_PATH + '"/>';
     initIcons(); initChoices(); initPhones();
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
-    initPromo(); initSoon(); initNavHotels(); initHotels(); initVisa();
+    initPromo(); initSoon(); initPrayer(); initNavHotels(); initHotels(); initVisa();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
   }
