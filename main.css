@@ -644,3 +644,32 @@ h2{font-size:clamp(1.4rem,2.6vw,2.1rem)}
 
 /* "Why AL MANARAH" section removed at owner request */
 section:has(.why){display:none!important}
+
+/* ===== Compact footer ===== */
+.footer{padding:34px 0 14px;font-size:.84rem}
+.fgrid-foot{gap:22px}
+.footer .brand{margin-bottom:8px}
+.footer .brand img{width:42px;height:42px}
+.fgrid-foot>div:first-child>p{display:none}
+.rc{margin-top:4px;padding:6px 10px;font-size:.74rem}
+.footer h4{margin-bottom:8px;font-size:.66rem}
+.footer a{padding:2px 0}
+.fgrid-foot>div:nth-child(2) a,.fgrid-foot>div:nth-child(3) a{display:inline-block;margin-right:12px}
+.fgrid-foot>div:last-child p{margin:6px 0 0!important;font-size:.76rem}
+.footbottom{margin-top:18px;padding-top:12px;font-size:.72rem}
+.footer .wa-ico,.footer .tt-ico{width:20px;height:20px}.footer .wa-ico svg{width:13px;height:13px}.footer .tt-ico svg{width:11px;height:11px}
+@media (max-width:700px){
+  .footer{padding:24px 0 12px;font-size:.78rem}
+  .fgrid-foot{grid-template-columns:1fr 1fr;gap:14px 16px}
+  .fgrid-foot>div:first-child{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .fgrid-foot>div:first-child .brand{margin:0}
+  .fgrid-foot>div:last-child{grid-column:1/-1}
+  .fgrid-foot>div:last-child .wa-line,.fgrid-foot>div:last-child>a{display:inline-flex;width:49%;vertical-align:top;margin:0}
+  .fgrid-foot>div:nth-child(2) a,.fgrid-foot>div:nth-child(3) a{margin-right:8px}
+  .footbottom{flex-direction:column;gap:4px;margin-top:14px}
+}
+/* WhatsApp logo: white glyph on WhatsApp green */
+.wa-ico{background:#25d366}
+.wa-ico svg{width:14px;height:14px}
+.btn-wa,.wa-float{background:#25d366!important;color:#fff!important}
+.btn-wa:hover,.wa-float:hover{background:#1ebe5b!important}
