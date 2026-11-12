@@ -84,48 +84,43 @@
 <div class="crumb"><a href="index.html" data-fr="Accueil">Home</a> / <span data-fr="Visas">Visas</span></div>
 <h1 data-fr="Assistance visa saoudien">Saudi visa assistance</h1><p data-fr="Une aide méthodique pour les demandes éligibles — la décision reste toujours aux autorités saoudiennes.">Methodical help with eligible Saudi visa applications — the decision always remains with the Saudi authorities.</p></div></section>
 <!-- F. VISAS -->
-<section class="section" id="visas">
-  <div class="container split">
-    <div class="reveal">
-      <span class="kicker" data-fr="Services visa">Visa services</span>
-      <h2 data-fr="Une demande de visa préparée avec méthode.">Visa applications, prepared methodically.</h2>
-      <p class="lead" data-fr="Nous accompagnons les demandes éligibles de visa saoudien. L’éligibilité dépend de votre nationalité, de votre pays de résidence, de la catégorie de visa et de la réglementation saoudienne en vigueur.">We assist with eligible Saudi visa applications. Eligibility depends on your nationality, country of residence, visa category and current Saudi regulations.</p>
-      <div class="visa-types">
-        <div><b data-fr="Visa Omra">Umrah visa</b><span data-fr="Via les canaux autorisés liés à votre forfait">Through authorised channels linked to your package</span></div>
-        <div><b data-fr="Visa touristique">Tourist visa</b><span data-fr="Selon les règles d’éligibilité de votre nationalité">Subject to the rules for your nationality</span></div>
-        <div><b data-fr="Visite familiale">Family visit visa</b><span data-fr="Avec invitation d’un membre de la famille résidant">With an invitation from a resident family member</span></div>
-        <div><b data-fr="Visa affaires">Business visa</b><span data-fr="Selon l’objet du voyage et l’invitation">Depending on purpose and invitation</span></div>
-      </div>
-      <ul class="checks">
-        <li data-fr="Conseils sur la préparation des documents selon votre cas">Document preparation guidance for your case</li>
-        <li data-fr="Assistance pour la demande et le dépôt">Application and submission assistance</li>
-        <li data-fr="Suivi de la demande et communication régulière">Application follow-up and regular communication</li>
-        <li data-fr="Informations à jour sur les exigences de traitement">Updates on processing requirements</li>
-      </ul>
-      <a class="btn btn-primary" href="contact.html?service=visa" data-enquire="visa" data-fr="Vérifier mon éligibilité">Check my eligibility</a>
+<section class="section tint" id="visas">
+  <div class="container">
+    <div class="hotel-wrap">
+      <div id="visaBuilder" class="form hb"></div>
+      <form class="form reveal hb-form" id="visaForm" novalidate data-formtype="enquiry">
+        <h3 data-fr="Déposer ma demande">Apply now</h3>
+        <div class="fgrid">
+          <input type="hidden" name="service" value="visa">
+          <div class="field full hb-sumwrap"><label for="v_summary" data-fr="Votre demande de visa">Your visa request</label><textarea id="v_summary" name="message" required readonly></textarea></div>
+          <div class="field"><label for="vb_name"><span data-fr="Nom complet">Full name</span> <span class="req">*</span></label><input id="vb_name" name="name" required autocomplete="name"><span class="err" data-fr="Veuillez indiquer votre nom.">Please enter your name.</span></div>
+          <div class="field"><label for="vb_phone"><span data-fr="Téléphone / WhatsApp">Phone / WhatsApp</span> <span class="req">*</span></label><input id="vb_phone" name="phone" type="tel" required autocomplete="tel"><span class="err" data-fr="Numéro de téléphone invalide.">Please enter a valid phone number.</span></div>
+          <div class="field full"><label for="vb_email" data-fr="E-mail (facultatif)">Email (optional)</label><input id="vb_email" name="email" type="email" autocomplete="email"><span class="err" data-fr="Adresse e-mail invalide.">Please enter a valid email address.</span></div>
+          <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+          <div class="field full"><label class="consent"><input type="checkbox" name="consent" required> <span data-fr-html="J’accepte que mes informations soient utilisées pour répondre à cette demande, conformément à la <a href='privacy.html'>politique de confidentialité</a>.">I agree that my details will be used to respond to this request, as described in the <a href="privacy.html">privacy policy</a>.</span></label></div>
+          <div class="cf-turnstile-slot full"></div>
+          <div class="form-actions full">
+            <button class="btn btn-wa" type="submit" data-channel="whatsapp"><svg><use href="#i-wa"/></svg><span data-fr="Déposer ma demande">Apply now</span></button>
+            <button class="btn btn-outline" type="submit" data-channel="email" data-fr="Envoyer par e-mail">Send by email</button>
+          </div>
+        </div>
+        <p class="note" data-fr="Après l’envoi, appuyez sur « Continuer sur WhatsApp » pour nous envoyer votre billet ou votre réservation d’hôtel. N’envoyez pas de passeport ici.">After sending, tap “Continue on WhatsApp” to send us your ticket or hotel booking. Do not send passports here.</p>
+        <div class="status" role="status" aria-live="polite"></div>
+      </form>
     </div>
-    <div class="panel reveal">
-      <h3 data-fr="Conditions importantes">Important conditions</h3>
-      <ul>
-        <li data-fr="Aucune approbation de visa n’est garantie ; seules les autorités saoudiennes décident.">No visa approval is guaranteed; only the Saudi authorities decide.</li>
-        <li data-fr="Aucun délai de traitement fixe n’est promis ; les délais et frais officiels peuvent changer.">No fixed processing time is promised; official timelines and fees can change.</li>
-        <li data-fr="Nos frais de service, les frais officiels et les conditions de remboursement sont indiqués par écrit avant tout paiement.">Our service fee, official fees and refund conditions are stated in writing before any payment.</li>
-        <li data-fr-html="<b>N’envoyez pas de passeport via ce site.</b> Nous vous communiquerons un canal sécurisé lorsque des documents seront nécessaires."><b>Do not send passports through this website.</b> We will give you a secure channel when documents are needed.</li>
-      </ul>
-      <p class="note" style="margin:16px 0 0"><a href="terms.html#visa" data-fr="Lire l’avertissement complet sur les visas →">Read the full visa disclaimer →</a></p>
-    </div>
+    <p class="note visa-cond" data-fr-html="Aucune approbation de visa n’est garantie : seules les autorités saoudiennes décident. Délais et frais officiels peuvent changer ; nos frais sont confirmés par écrit avant tout paiement. <a href='terms.html#visa'>Avertissement visas →</a>">No visa approval is guaranteed: only the Saudi authorities decide. Official timelines and fees can change; our fees are confirmed in writing before any payment. <a href="terms.html#visa">Visa disclaimer →</a></p>
   </div>
 </section>
 
-<section class="section tint">
+<section class="section" style="padding-top:24px;padding-bottom:24px">
   <div class="container">
-    <div class="head center reveal"><span class="kicker" data-fr="Déroulement">The process</span><h2 data-fr="Comment se déroule l’assistance visa.">How visa assistance works.</h2></div>
-    <div class="steps">
-      <div class="step reveal"><h3 data-fr="Vérification d’éligibilité">Eligibility check</h3><p data-fr="Nationalité, résidence, objet du voyage et catégorie de visa.">Nationality, residence, travel purpose and visa category.</p></div>
-      <div class="step reveal"><h3 data-fr="Liste de documents">Document checklist</h3><p data-fr="Une liste adaptée à votre cas, avec nos frais et les frais officiels par écrit.">A checklist for your case, with our fee and official fees in writing.</p></div>
-      <div class="step reveal"><h3 data-fr="Dépôt sécurisé">Secure submission</h3><p data-fr="Documents transmis via un canal sécurisé confirmé par écrit, puis demande déposée.">Documents sent via a secure channel confirmed in writing, then the application is submitted.</p></div>
-      <div class="step reveal"><h3 data-fr="Suivi et décision">Follow-up &amp; decision</h3><p data-fr="Nous suivons la demande ; la décision appartient aux autorités saoudiennes.">We follow up; the decision belongs to the Saudi authorities.</p></div>
-    </div>
+    <h3 class="mini-title" data-fr="Comment ça marche">How it works</h3>
+    <ol class="mini-steps">
+      <li><b>1</b><span data-fr="Vérification d’éligibilité">Eligibility check</span></li>
+      <li><b>2</b><span data-fr="Liste des documents et frais par écrit">Document list &amp; fees in writing</span></li>
+      <li><b>3</b><span data-fr="Envoi sécurisé du dossier">Secure submission</span></li>
+      <li><b>4</b><span data-fr="Suivi jusqu’à la décision">Follow-up to decision</span></li>
+    </ol>
   </div>
 </section>
 
