@@ -713,7 +713,6 @@
       html += '<div class="hb-row"><div><small>' + (fr ? "Chambres" : "Rooms") + "</small>" + stepper("rooms", 1, 20) + "</div><div><small>" + (fr ? "Adultes" : "Adults") + "</small>" + stepper("adults", 1, 60) + "</div><div><small>" + (fr ? "Enfants" : "Children") + "</small>" + stepper("kids", 0, 20) + "</div></div></div>";
       html += '<div class="hb-q"><h4>6. ' + (fr ? "Distance du Haram" : "Distance to the Haram") + "</h4>" + chips("dist", [["closest", fr ? "Le plus proche" : "Closest"], ["walk", fr ? "À pied" : "Walking distance"], ["shuttle", fr ? "Navette" : "Shuttle"]]) + "</div>";
       html += '<div class="hb-q"><h4>7. ' + (fr ? "Repas" : "Meals") + "</h4>" + chips("meals", [["ro", fr ? "Chambre seule" : "Room only"], ["bb", fr ? "Petit-déj." : "Breakfast"], ["hb", fr ? "Demi-pension" : "Half board"], ["fb", fr ? "Pension complète" : "Full board"]]) + "</div>";
-      html += '<div class="hb-q"><h4>8. ' + (fr ? "Budget (facultatif)" : "Budget (optional)") + "</h4>" + chips("budget", [["", fr ? "Pas de préférence" : "No preference"], ["Economy", fr ? "Économique" : "Economy"], ["Standard", "Standard"], ["Comfort", fr ? "Confort" : "Comfort"], ["Luxury", fr ? "Luxe" : "Luxury"]]) + "</div>";
       box.innerHTML = html;
       sum.value = hbText();
     }
