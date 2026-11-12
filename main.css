@@ -705,3 +705,9 @@ section:has(.why){display:none!important}
 [data-theme="dark"] .hb-chip.on{background:var(--green-700);color:#fff}
 [data-theme="dark"] .hb-hotel.on{background:#183526}
 @media (max-width:700px){.hb-hotels{grid-template-columns:1fr}.hb-chip{padding:8px 12px;font-size:.8rem}.hb-q{padding:11px 0}}
+
+/* Hotel list: name + detail line */
+.hb-hotel small{display:block;font-weight:600;font-size:.72rem;color:var(--muted);margin-top:3px}
+.hb-hotel:first-child{grid-column:auto}
+.hb-other{border-style:dashed}
+.hb-hotel.on small{color:var(--green-700)}
