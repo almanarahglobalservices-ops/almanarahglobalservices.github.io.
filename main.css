@@ -641,3 +641,6 @@ h2{font-size:clamp(1.4rem,2.6vw,2.1rem)}
   .hero-ring{width:110px;height:110px;right:-20px}
   .about-media .frame{aspect-ratio:16/10}
 }
+
+/* "Why AL MANARAH" section removed at owner request */
+section:has(.why){display:none!important}
