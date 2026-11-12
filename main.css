@@ -629,3 +629,15 @@ h2{font-size:clamp(1.4rem,2.6vw,2.1rem)}
   .soon-ribbon{font-size:.6rem;padding:5px 10px;top:-11px}
   .wa-float{padding:12px 15px}
 }
+
+/* Compact photos on phones */
+@media (max-width:700px){
+  .teaser{grid-template-columns:repeat(3,1fr)!important;gap:6px}
+  .teaser a{aspect-ratio:1/1;border-radius:10px}
+  .hero-media{max-width:250px!important}
+  .arch{border-width:5px}
+  .hero-badge{padding:10px 12px;bottom:18px;max-width:220px}
+  .hero-badge b{font-size:.82rem}.hero-badge small{font-size:.7rem}
+  .hero-ring{width:110px;height:110px;right:-20px}
+  .about-media .frame{aspect-ratio:16/10}
+}
