@@ -956,7 +956,7 @@
       bar.querySelector(".pt-tog").textContent = open ? "−" : "+";
       if (!open) return;
       bar.querySelector(".pt-grid").innerHTML = '<div class="pt-city"><ul>' + KEYS.map(function (k) { return '<li class="' + (k === next && t[k] > now ? "now" : "") + (k === "sunrise" ? " sun" : "") + '"><span>' + N[k] + "</span><b>" + hm(t[k]) + "</b></li>"; }).join("") + "</ul></div>";
-      var how = LOC.src === "gps" ? (fr ? "votre position exacte" : "your exact position") : LOC.src === "ip" ? (fr ? "votre ville (approximative)" : "your city (approximate)") : (fr ? "le fuseau horaire de votre appareil" : "your device’s time zone");
+      var how = LOC.src === "gps" ? (fr ? "votre position exacte" : "your exact position") : LOC.src === "ip" ? (fr ? "votre connexion internet" : "your internet connection") : (fr ? "le fuseau horaire de votre appareil" : "your device’s time zone");
       bar.querySelector(".pt-where").innerHTML = "📍 <b>" + place.replace(/</g, "") + (LOC.name && LOC.cc ? ", " + country(LOC.cc, fr) : "") + "</b> <small>(" + (fr ? "d’après " : "based on ") + how + ")</small>";
       gpsBtn.textContent = gpsMsg || (LOC.src === "gps" ? (fr ? "Actualiser ma position" : "Update my location") : (fr ? "Utiliser ma position exacte" : "Use my exact location"));
       var dateTxt = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(now);
