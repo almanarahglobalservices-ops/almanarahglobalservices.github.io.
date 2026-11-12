@@ -94,14 +94,13 @@
           <input type="hidden" name="service" value="hotels">
           <div class="field full hb-sumwrap"><label for="h_summary" data-fr="Votre demande d’hôtel">Your hotel request</label><textarea id="h_summary" name="message" required readonly></textarea></div>
           <div class="field"><label for="hb_name"><span data-fr="Nom complet">Full name</span> <span class="req">*</span></label><input id="hb_name" name="name" required autocomplete="name"><span class="err" data-fr="Veuillez indiquer votre nom.">Please enter your name.</span></div>
-          <div class="field"><label for="hb_phone"><span data-fr="Téléphone / WhatsApp">Phone / WhatsApp</span> <span class="req">*</span></label><input id="hb_phone" name="phone" type="tel" required autocomplete="tel" placeholder="+225 …"><span class="err" data-fr="Numéro de téléphone invalide.">Please enter a valid phone number.</span></div>
+          <div class="field"><label for="hb_phone"><span data-fr="Téléphone">Phone number</span> <span class="req">*</span></label><input id="hb_phone" name="phone" type="tel" required autocomplete="tel" placeholder="+225 …"><span class="err" data-fr="Numéro de téléphone invalide.">Please enter a valid phone number.</span></div>
           <div class="field full"><label for="hb_email" data-fr="E-mail (facultatif)">Email (optional)</label><input id="hb_email" name="email" type="email" autocomplete="email"><span class="err" data-fr="Adresse e-mail invalide.">Please enter a valid email address.</span></div>
           <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
           <div class="field full"><label class="consent"><input type="checkbox" name="consent" required> <span data-fr-html="J’accepte que mes informations soient utilisées pour répondre à cette demande, conformément à la <a href='privacy.html'>politique de confidentialité</a>.">I agree that my details will be used to respond to this request, as described in the <a href="privacy.html">privacy policy</a>.</span></label></div>
           <div class="cf-turnstile-slot full"></div>
           <div class="form-actions full">
-            <button class="btn btn-wa" type="submit" data-channel="whatsapp"><svg><use href="#i-wa"/></svg><span data-fr="Demander mon devis">Request my quotation</span></button>
-            <button class="btn btn-outline" type="submit" data-channel="email" data-fr="Envoyer par e-mail">Send by email</button>
+            <button class="btn btn-primary" type="submit" data-channel="form"><span data-fr="Envoyer la demande">Submit enquiry</span></button>
           </div>
         </div>
         <p class="note" data-fr="Les prix ne sont pas affichés : nous vous envoyons un devis selon les disponibilités.">Prices are not shown: we send you a quotation based on availability.</p>
@@ -159,7 +158,7 @@
   </div>
 </footer>
 
-<a class="wa-float" href="https://wa.me/2250506122337" data-wa="general" target="_blank" rel="noopener" aria-label="WhatsApp AL MANARAH"><svg><use href="#i-wa"/></svg><span data-fr="WhatsApp">WhatsApp us</span></a>
+<a class="quote-float" href="contact.html#enquiryForm" data-quick aria-label="Get a quote"><span class="qf-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h7M8.5 13.5h4.5"/></svg></span><span class="qf-txt" data-fr="Demander un devis">Get a quote</span></a>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
   <button class="lb-btn lb-close" type="button" aria-label="Close">✕</button>

@@ -18,16 +18,16 @@
       fix: "Please correct the highlighted fields.",
       sending: "Sending…",
       sent: "Thank you — your enquiry has been received. We will reply by WhatsApp, phone or email.",
-      failed: "Sorry, your enquiry could not be sent. Nothing was submitted. Please try again or contact us on WhatsApp.",
+      failed: "Sorry, your enquiry could not be sent. Nothing was submitted. Please try again or call us on +225 05 06 12 23 37.",
       spam: "Your enquiry could not be processed.",
       captcha: "Please complete the security check.",
       ref_label: "Your reference number:",
       ref_keep: "Keep this number — use it on the Track page or when you contact us.",
       continue_wa: "Continue on WhatsApp",
       track_bad: "Please check your reference number and phone number.",
-      track_none: "No file matches this reference and phone number. Check both and try again, or contact us on WhatsApp.",
+      track_none: "No file matches this reference and phone number. Check both and try again, or call us on +225 05 06 12 23 37.",
       track_limit: "Too many attempts. Please wait 15 minutes and try again.",
-      track_off: "Online tracking is not active yet. Please contact us on WhatsApp with your reference number.",
+      track_off: "Online tracking is not active yet. Please call us with your reference number.",
       t_status: "Current status", t_payment: "Payment", t_updated: "Last updated", t_note: "Message from our team", t_progress: "Booking progress",
       subject: "Website enquiry",
       partner: "Travel partnership",
@@ -40,16 +40,16 @@
       fix: "Veuillez corriger les champs signalés.",
       sending: "Envoi en cours…",
       sent: "Merci — votre demande a bien été reçue. Nous vous répondrons par WhatsApp, téléphone ou e-mail.",
-      failed: "Désolé, votre demande n’a pas pu être envoyée. Rien n’a été transmis. Réessayez ou contactez-nous sur WhatsApp.",
+      failed: "Désolé, votre demande n’a pas pu être envoyée. Rien n’a été transmis. Réessayez ou appelez-nous au +225 05 06 12 23 37.",
       spam: "Votre demande n’a pas pu être traitée.",
       captcha: "Veuillez compléter la vérification de sécurité.",
       ref_label: "Votre numéro de référence :",
       ref_keep: "Conservez ce numéro — utilisez-le sur la page Suivi ou lorsque vous nous contactez.",
       continue_wa: "Continuer sur WhatsApp",
       track_bad: "Veuillez vérifier votre numéro de référence et votre téléphone.",
-      track_none: "Aucun dossier ne correspond à cette référence et à ce numéro. Vérifiez et réessayez, ou contactez-nous sur WhatsApp.",
+      track_none: "Aucun dossier ne correspond à cette référence et à ce numéro. Vérifiez et réessayez, ou appelez-nous au +225 05 06 12 23 37.",
       track_limit: "Trop de tentatives. Veuillez patienter 15 minutes.",
-      track_off: "Le suivi en ligne n’est pas encore actif. Contactez-nous sur WhatsApp avec votre référence.",
+      track_off: "Le suivi en ligne n’est pas encore actif. Appelez-nous avec votre référence.",
       t_status: "Statut actuel", t_payment: "Paiement", t_updated: "Dernière mise à jour", t_note: "Message de notre équipe", t_progress: "Avancement de la réservation",
       subject: "Demande depuis le site",
       partner: "Partenariat voyage",
@@ -264,13 +264,58 @@
       var box = document.createElement("div"); box.className = "ref-box";
       var lab = document.createElement("span"); lab.textContent = T[lang].ref_label;
       var code = document.createElement("code"); code.textContent = res.ref;
-      var wa = document.createElement("a"); wa.className = "btn btn-wa btn-sm"; wa.target = "_blank"; wa.rel = "noopener";
-      wa.href = waUrl(MAIN, "[" + res.ref + "] " + body); wa.textContent = T[lang].continue_wa;
-      box.appendChild(lab); box.appendChild(code); box.appendChild(wa); s.appendChild(box);
+      box.appendChild(lab); box.appendChild(code); s.appendChild(box);
       var p2 = document.createElement("p"); p2.className = "note"; p2.style.margin = "10px 0 0"; p2.textContent = T[lang].ref_keep; s.appendChild(p2);
-      form.reset(); showFieldsets(); bSet([]);
+      form.reset(); showFieldsets(); if (!form.hasAttribute("data-quickform")) bSet([]);
     }).catch(function () { setStatus(form, "error", T[lang].failed); })
       .then(function () { btns.forEach(function (b) { b.disabled = false; }); resetCaptcha(); });
+  }
+
+
+  /* ---------- Quick quote pop-up (every page) ---------- */
+  function initQuick() {
+    var page = document.body.dataset.page;
+    var floats = document.querySelectorAll("[data-quick]");
+    if (page === "contact") { floats.forEach(function (a) { a.hidden = true; }); return; }
+    if (!floats.length || !CFG.formEndpoint) return;
+    var SV = [["umrah","Umrah package","Forfait Omra"],["hajj","Hajj guidance","Accompagnement Hajj"],["visa","Saudi visa","Visa saoudien"],["flights","Flights","Vols"],["hotels","Hotels in Makkah / Madinah","Hôtels La Mecque / Médine"],["transfer","Transfers / transport","Transferts / transport"],["partner","Travel partnership","Partenariat agence"],["general","General enquiry","Demande générale"]];
+    var opts = '<option value="" data-fr="Choisir un service">Choose a service</option>' + SV.map(function (o) { return '<option value="' + o[0] + '" data-fr="' + o[2] + '">' + o[1] + '</option>'; }).join("");
+    var dlg = document.createElement("div");
+    dlg.className = "qm"; dlg.hidden = true; dlg.setAttribute("role", "dialog"); dlg.setAttribute("aria-modal", "true"); dlg.setAttribute("aria-labelledby", "qmTitle");
+    dlg.innerHTML = '<div class="qm-back" data-close></div><div class="qm-card">' +
+      '<button type="button" class="qm-x" data-close aria-label="Close">×</button>' +
+      '<form class="form qm-form" id="quickForm" novalidate data-formtype="enquiry" data-quickform>' +
+      '<span class="kicker" data-fr="Réponse rapide">Quick reply</span>' +
+      '<h3 id="qmTitle" data-fr="Demander un devis">Request a quotation</h3>' +
+      '<p class="note" data-fr="Quelques détails suffisent. Nous vous recontactons avec un devis écrit.">A few details are enough. We will get back to you with a written quotation.</p>' +
+      '<div class="fgrid">' +
+      '<div class="field full"><label for="q_service"><span data-fr="Service">Service</span> <span class="req">*</span></label><select id="q_service" name="service" required>' + opts + '</select><span class="err" data-fr="Veuillez choisir un service.">Please choose a service.</span></div>' +
+      '<div class="field full"><label for="q_name"><span data-fr="Nom complet">Full name</span> <span class="req">*</span></label><input id="q_name" name="name" required autocomplete="name"><span class="err" data-fr="Veuillez indiquer votre nom.">Please enter your name.</span></div>' +
+      '<div class="field full"><label for="q_phone"><span data-fr="Téléphone">Phone</span> <span class="req">*</span></label><input id="q_phone" name="phone" type="tel" required autocomplete="tel"><span class="err" data-fr="Veuillez indiquer un numéro valide.">Please enter a valid phone number.</span></div>' +
+      '<div class="field full"><label for="q_msg"><span data-fr="Votre demande">Your request</span> <span class="req">*</span></label><textarea id="q_msg" name="message" rows="3" required data-fr-placeholder="ex. 2 personnes, départ d’Abidjan en décembre" placeholder="e.g. 2 people, leaving from Abidjan in December"></textarea><span class="err" data-fr="Veuillez écrire au moins 10 caractères.">Please write at least 10 characters.</span></div>' +
+      '<div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>' +
+      '<div class="field full"><label class="consent"><input type="checkbox" name="consent" required> <span data-fr-html="J’accepte la <a href=\'privacy.html\'>politique de confidentialité</a>.">I agree to the <a href="privacy.html">privacy policy</a>.</span></label></div>' +
+      '<div class="cf-turnstile-slot full"></div>' +
+      '<div class="form-actions full"><button class="btn btn-primary" type="submit"><span data-fr="Envoyer la demande">Send my request</span></button></div>' +
+      '</div><div class="status" role="status" aria-live="polite"></div></form></div>';
+    document.body.appendChild(dlg);
+    var last = null;
+    function open(e) {
+      if (e) e.preventDefault();
+      last = document.activeElement; dlg.hidden = false; document.documentElement.classList.add("qm-open");
+      var map = { umrah: "umrah", hajj: "hajj", visas: "visa", hotels: "hotels", partners: "partner" };
+      var sel = dlg.querySelector("#q_service"); if (!sel.value && map[page]) sel.value = map[page];
+      setTimeout(function () { var n = dlg.querySelector(sel.value ? "#q_name" : "#q_service"); if (n) n.focus(); }, 30);
+    }
+    function close() { dlg.hidden = true; document.documentElement.classList.remove("qm-open"); if (last && last.focus) last.focus(); }
+    floats.forEach(function (a) { a.addEventListener("click", open); });
+    // Plain "request a quotation" links open the pop-up; basket buttons (data-enquire) keep their own behaviour.
+    document.querySelectorAll('a[href^="contact.html?service="]:not([data-enquire])').forEach(function (a) {
+      if (/&/.test(a.getAttribute("href"))) return;
+      a.addEventListener("click", function (e) { var m = (a.getAttribute("href").match(/service=(\w+)/) || [])[1]; open(e); if (m) dlg.querySelector("#q_service").value = m; });
+    });
+    dlg.addEventListener("click", function (e) { if (e.target.hasAttribute("data-close")) close(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !dlg.hidden) close(); });
   }
 
   /* ---------- Tracking page ---------- */
@@ -370,6 +415,7 @@
 
   /* ---------- Extras: icons, dropdown fields, search, theme, basket ---------- */
   var WA_PATH = 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z';
+  var SVG_PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
   var SVG_WA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + WA_PATH + '"/></svg>';
   var SVG_TT = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.6 2.6 0 0 1-2.6-2.6 2.6 2.6 0 0 1 3.37-2.48V9.66a5.730 5.730 0 0 0-.79-.05A5.68 5.68 0 0 0 4.17 15.3 5.68 5.68 0 0 0 9.86 21a5.68 5.68 0 0 0 5.68-5.68V9.01a7.35 7.35 0 0 0 4.29 1.37V7.3a4.3 4.3 0 0 1-3.23-1.48z"/></svg>';
   var SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
@@ -385,7 +431,7 @@
       if (a.closest(".wa-line")) return;
       var num = a.getAttribute("href").replace(/[^0-9]/g, "");
       var wrap = mk("span", { "class": "wa-line" });
-      var ico = mk("a", { "class": "wa-ico", href: "https://wa.me/" + num, target: "_blank", rel: "noopener", "aria-label": "WhatsApp +" + num }, SVG_WA);
+      var ico = mk("span", { "class": "ph-ico", "aria-hidden": "true" }, SVG_PHONE);
       a.parentNode.insertBefore(wrap, a); wrap.appendChild(ico); wrap.appendChild(a);
     });
     document.querySelectorAll('a[href*="tiktok.com"]').forEach(function (a) {
@@ -612,7 +658,7 @@
         sec.querySelector(".pf-badge").textContent = "★ " + t.badge; sec.querySelector(".ps-title").textContent = t.title + " " + t.now;
         sec.querySelector(".ps-sub").textContent = lang === "fr" ? "Places limitées. Visa, vols, hôtels et transferts pris en charge — réservez tôt." : "Limited places. Visa, flights, hotels and transfers handled for you — book early.";
         sec.querySelector(".ps-dates").textContent = "🗓 " + t.dates; sec.querySelector(".ps-from").textContent = "✈ " + t.from;
-        sec.querySelector(".ps-price").textContent = t.price; sec.querySelector(".ps-count").textContent = t.count; sec.querySelector(".ps-book").textContent = t.book;
+        var pp = t.price.split(/ (?=per person|\/ personne)/), pe = sec.querySelector(".ps-price"); pe.textContent = pp[0]; if (pp[1]) { var sm = document.createElement("small"); sm.textContent = pp[1].replace(/^\/ /, ""); pe.appendChild(sm); } sec.querySelector(".ps-count").textContent = t.count; sec.querySelector(".ps-book").textContent = t.book;
       });
     }
     // Arriving from an offer link: put the offer in the basket
@@ -625,7 +671,7 @@
     if (page !== "index" && page !== "umrah") return;
     var item = { id: "umrah|ramadan2027", svc: "umrah", pkg: "", en: "Ramadan Umrah 2027 — please keep me updated", fr: "Omra du Ramadan 2027 — tenez-moi informé(e)" };
     var sec = mk("section", { "class": "soon-sec" });
-    sec.innerHTML = '<div class="container"><div class="soon-box"><span class="soon-ribbon"></span><div class="soon-icon">☾</div><div class="soon-text"><h3></h3><p></p></div><div class="soon-actions"><a class="btn btn-wa btn-sm soon-wa" target="_blank" rel="noopener">' + SVG_WA + '<span></span></a><a class="btn btn-outline btn-sm soon-reg" href="contact.html?service=umrah&basket=1"></a></div></div></div>';
+    sec.innerHTML = '<div class="container"><div class="soon-box"><span class="soon-ribbon"></span><div class="soon-icon">☾</div><div class="soon-text"><h3></h3><p></p></div><div class="soon-actions"><a class="btn btn-primary btn-sm soon-reg" href="contact.html?service=umrah&basket=1#enquiryForm"></a></div></div></div>';
     var after = document.querySelector(".promo-sec") || document.querySelector("#main > section");
     if (after && after.parentNode) after.parentNode.insertBefore(sec, after.nextSibling);
     sec.querySelector(".soon-reg").addEventListener("click", function () { var v = bGet(); if (!v.some(function (x) { return x.id === item.id; })) { v.push(item); bSet(v); } });
@@ -634,8 +680,6 @@
       sec.querySelector(".soon-ribbon").textContent = fr ? "Bientôt disponible" : "Coming soon";
       sec.querySelector("h3").textContent = fr ? "Omra du Ramadan 2027" : "Ramadan Umrah 2027";
       sec.querySelector("p").textContent = fr ? "Les dates, le programme et les prix seront publiés très bientôt. Inscrivez-vous pour être informé(e) en premier." : "Dates, programme and prices will be published very soon. Register now to be the first to know.";
-      sec.querySelector(".soon-wa span").textContent = fr ? "M’informer sur WhatsApp" : "Keep me updated on WhatsApp";
-      sec.querySelector(".soon-wa").href = waUrl(MAIN, fr ? "Bonjour AL MANARAH GLOBAL SERVICES, merci de me tenir informé(e) de l’Omra du Ramadan 2027." : "Hello AL MANARAH GLOBAL SERVICES, please keep me updated about the Ramadan Umrah 2027.");
       sec.querySelector(".soon-reg").textContent = fr ? "Enregistrer mon intérêt" : "Register my interest";
     });
   }
@@ -812,7 +856,7 @@
       h += "</div>";
       h += '<div class="hb-q"><h4>4. ' + (fr ? "Votre voyage" : "Your trip") + '</h4><div class="hb-row"><div><small>' + (fr ? "Date de voyage" : "Travel date") + '</small><input type="date" class="hb-date" min="' + minDate + '" value="' + VB.date + '"></div><div><small>' + (fr ? "Voyageurs" : "Travellers") + '</small><div class="hb-step"><button type="button" data-p="-1">−</button><b>' + VB.pax + '</b><button type="button" data-p="1">+</button></div></div></div></div>';
       h += '<div class="hb-q"><h4>5. ' + (fr ? "Billet d’avion confirmé ?" : "Confirmed flight ticket?") + "</h4>" + yn("ticket") + "<h4 style=\"margin-top:12px\">" + (fr ? "Réservation d’hôtel confirmée ?" : "Confirmed hotel booking?") + "</h4>" + yn("hotel");
-      if (VB.ticket === "yes" || VB.hotel === "yes") h += '<p class="note vb-up">📎 ' + (fr ? "Après l’envoi, appuyez sur « Continuer sur WhatsApp » pour joindre votre billet / réservation." : "After you apply, tap “Continue on WhatsApp” to attach your ticket / booking.") + "</p>";
+      if (VB.ticket === "yes" || VB.hotel === "yes") h += '<p class="note vb-up">📎 ' + (fr ? "Après l’envoi, nous vous contacterons pour recevoir votre billet / réservation de façon sécurisée." : "After you apply, we will contact you to collect your ticket / booking securely.") + "</p>";
       h += "</div>";
       box.innerHTML = h; sum.value = text();
     }
@@ -909,7 +953,7 @@
     var q = new URLSearchParams(location.search).get("lang");
     var initial = q || store.get("lang") || ((navigator.language || "").toLowerCase().indexOf("fr") === 0 ? "fr" : "en");
     document.querySelectorAll("[data-setlang]").forEach(function (b) { b.addEventListener("click", function () { applyLang(b.dataset.setlang); }); });
-    initNav(); initReveal(); initImages(); initRouting(); initForms(); initLightbox(); initTrack(); initTurnstile();
+    initNav(); initReveal(); initImages(); initRouting(); initQuick(); initForms(); initLightbox(); initTrack(); initTurnstile();
     initExtras();
     applyLang(initial);
   });
