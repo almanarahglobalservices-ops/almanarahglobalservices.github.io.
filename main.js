@@ -78,6 +78,7 @@
     var og = document.querySelector('meta[property="og:locale"]'); if (og) og.content = fr ? "fr_FR" : "en_GB";
     store.set("lang", lang);
     updateWaLinks();
+    refreshBasket();
   }
   // data-fr="" on attribute-based swaps must not wipe text: dataset keys are frPlaceholder etc.
   // (data-fr-placeholder -> dataset.frPlaceholder; data-fr -> dataset.fr)
@@ -266,7 +267,7 @@
       wa.href = waUrl(MAIN, "[" + res.ref + "] " + body); wa.textContent = T[lang].continue_wa;
       box.appendChild(lab); box.appendChild(code); box.appendChild(wa); s.appendChild(box);
       var p2 = document.createElement("p"); p2.className = "note"; p2.style.margin = "10px 0 0"; p2.textContent = T[lang].ref_keep; s.appendChild(p2);
-      form.reset(); showFieldsets();
+      form.reset(); showFieldsets(); bSet([]);
     }).catch(function () { setStatus(form, "error", T[lang].failed); })
       .then(function () { btns.forEach(function (b) { b.disabled = false; }); resetCaptcha(); });
   }
@@ -360,6 +361,198 @@
     });
   }
 
+  /* ---------- Extras: icons, dropdown fields, search, theme, basket ---------- */
+  var SVG_WA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.8 14.03c-.24.68-1.42 1.3-1.96 1.36-.5.06-1.13.08-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.8-4.17-4.940-4.360-.14-.2-1.18-1.57-1.18-3 0-1.42.75-2.12 1.01-2.41.27-.29.58-.36.78-.36h.56c.18 0 .42-.07.66.5.24.58.82 2 .89 2.14.07.15.12.32.02.51-.1.2-.15.32-.29.49-.15.17-.31.38-.44.51-.15.15-.3.3-.13.6.17.29.76 1.25 1.63 2.02 1.12 1 2.06 1.3 2.36 1.45.29.15.46.12.63-.07.17-.2.73-.85.92-1.14.2-.29.39-.24.66-.15.27.1 1.7.8 2 .95.29.15.49.22.56.34.07.12.07.7-.17 1.38z"/></svg>';
+  var SVG_TT = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.6 2.6 0 0 1-2.6-2.6 2.6 2.6 0 0 1 3.37-2.48V9.66a5.730 5.730 0 0 0-.79-.05A5.68 5.68 0 0 0 4.17 15.3 5.68 5.68 0 0 0 9.86 21a5.68 5.68 0 0 0 5.68-5.68V9.01a7.35 7.35 0 0 0 4.29 1.37V7.3a4.3 4.3 0 0 1-3.23-1.48z"/></svg>';
+  var SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+  var SVG_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var SVG_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>';
+  var SVG_BAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>';
+  function tx(en, fr) { return lang === "fr" ? fr : en; }
+  function mk(tag, attrs, html) { var e = document.createElement(tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (html != null) e.innerHTML = html; return e; }
+
+  // 1. WhatsApp icon beside every phone number, TikTok icon beside TikTok links
+  function initIcons() {
+    document.querySelectorAll('a[href^="tel:"]').forEach(function (a) {
+      if (a.closest(".wa-line")) return;
+      var num = a.getAttribute("href").replace(/[^0-9]/g, "");
+      var wrap = mk("span", { "class": "wa-line" });
+      var ico = mk("a", { "class": "wa-ico", href: "https://wa.me/" + num, target: "_blank", rel: "noopener", "aria-label": "WhatsApp +" + num }, SVG_WA);
+      a.parentNode.insertBefore(wrap, a); wrap.appendChild(ico); wrap.appendChild(a);
+    });
+    document.querySelectorAll('a[href*="tiktok.com"]').forEach(function (a) {
+      if (a.querySelector(".tt-ico")) return;
+      var s = mk("span", { "class": "tt-ico" }, SVG_TT); a.insertBefore(s, a.firstChild); a.classList.add("tt-link");
+    });
+  }
+
+  // 2. Replace typed fields with ready-made choices
+  var COUNTRIES = [["Côte d'Ivoire","Côte d’Ivoire"],["Nigeria","Nigéria"],["Saudi Arabia","Arabie saoudite"],["Ghana","Ghana"],["Senegal","Sénégal"],["Mali","Mali"],["Burkina Faso","Burkina Faso"],["Guinea","Guinée"],["Niger","Niger"],["Benin","Bénin"],["Togo","Togo"],["Cameroon","Cameroun"],["Chad","Tchad"],["Liberia","Libéria"],["Sierra Leone","Sierra Leone"],["Gambia","Gambie"],["Guinea-Bissau","Guinée-Bissau"],["Mauritania","Mauritanie"],["Morocco","Maroc"],["Algeria","Algérie"],["Tunisia","Tunisie"],["Egypt","Égypte"],["Sudan","Soudan"],["Ethiopia","Éthiopie"],["Kenya","Kenya"],["Tanzania","Tanzanie"],["Uganda","Ouganda"],["Somalia","Somalie"],["South Africa","Afrique du Sud"],["DR Congo","RD Congo"],["Congo","Congo"],["Gabon","Gabon"],["Central African Republic","Centrafrique"],["United Arab Emirates","Émirats arabes unis"],["Qatar","Qatar"],["Kuwait","Koweït"],["Oman","Oman"],["Bahrain","Bahreïn"],["Jordan","Jordanie"],["Turkey","Turquie"],["United Kingdom","Royaume-Uni"],["France","France"],["Belgium","Belgique"],["Italy","Italie"],["Spain","Espagne"],["Germany","Allemagne"],["United States","États-Unis"],["Canada","Canada"],["Other","Autre"]];
+  var CITIES = [["Abidjan","Abidjan"],["Bouaké","Bouaké"],["Lagos","Lagos"],["Abuja","Abuja"],["Kano","Kano"],["Ilorin","Ilorin"],["Kaduna","Kaduna"],["Accra","Accra"],["Dakar","Dakar"],["Bamako","Bamako"],["Ouagadougou","Ouagadougou"],["Conakry","Conakry"],["Niamey","Niamey"],["Cotonou","Cotonou"],["Lomé","Lomé"],["Douala","Douala"],["Yaoundé","Yaoundé"],["N'Djamena","N’Djamena"],["Other","Autre"]];
+  function people(max) { var o = []; for (var i = 1; i <= max; i++) o.push([i + (i === 1 ? " person" : " people"), i + (i === 1 ? " personne" : " personnes")]); o.push(["More than " + max, "Plus de " + max]); return o; }
+  function nums(max) { var o = []; for (var i = 1; i <= max; i++) o.push([String(i), String(i)]); o.push([max + "+", max + "+"]); return o; }
+  var CHOICES = {
+    f_country: COUNTRIES, p_country: COUNTRIES, h_nat: COUNTRIES, v_nat: COUNTRIES,
+    u_city: CITIES, fl_from: CITIES,
+    u_nights: [["7","7"],["10","10"],["14","14"],["15","15"],["21","21"],["30","30"],["Other","Autre"]],
+    u_pax: people(10), fl_pax: people(10), t_pax: people(10),
+    h_pax: nums(10), v_pax: nums(10),
+    h_year: [["2027","2027"],["2028","2028"],["2029","2029"],["2030","2030"]],
+    ho_rooms: [["1 room · 1–2 people","1 chambre · 1–2 personnes"],["1 room · 3–4 people","1 chambre · 3–4 personnes"],["2 rooms","2 chambres"],["3 rooms","3 chambres"],["4 rooms or more (group)","4 chambres ou plus (groupe)"]],
+    t_route: [["Jeddah Airport → Makkah","Aéroport de Djeddah → La Mecque"],["Madinah Airport → Madinah","Aéroport de Médine → Médine"],["Makkah → Madinah","La Mecque → Médine"],["Madinah → Makkah","Médine → La Mecque"],["Makkah → Jeddah Airport","La Mecque → Aéroport de Djeddah"],["Madinah → Jeddah Airport","Médine → Aéroport de Djeddah"],["Ziyarah tour in Makkah","Ziyarah à La Mecque"],["Ziyarah tour in Madinah","Ziyarah à Médine"],["Full programme (all transfers)","Programme complet (tous les transferts)"],["Other","Autre"]],
+    tr_budget: [["Under $1,000","Moins de 1 000 $"],["$1,000 – $5,000","1 000 – 5 000 $"],["$5,000 – $20,000","5 000 – 20 000 $"],["Over $20,000","Plus de 20 000 $"],["To be discussed","À discuter"]]
+  };
+  function initChoices() {
+    Object.keys(CHOICES).forEach(function (id) {
+      var inp = document.getElementById(id);
+      if (!inp || inp.tagName !== "INPUT") return;
+      var sel = document.createElement("select");
+      sel.id = inp.id; sel.name = inp.name; if (inp.required) sel.required = true;
+      var first = mk("option", { value: "", "data-fr": "Sélectionner" }); first.textContent = "Select"; sel.appendChild(first);
+      CHOICES[id].forEach(function (c) { var o = mk("option", { value: c[0], "data-fr": c[1] }); o.textContent = c[0]; sel.appendChild(o); });
+      if (id === "f_country") sel.value = "Côte d'Ivoire";
+      inp.parentNode.replaceChild(sel, inp);
+      sel.addEventListener("change", function () { var f = sel.closest(".field"); if (f) f.classList.remove("invalid"); });
+    });
+  }
+
+  // 3. Search
+  var PAGES = [
+    ["index.html", "Home", "Accueil", "home accueil al manarah global services umrah hajj travel voyage"],
+    ["umrah.html", "Umrah packages", "Forfaits Omra", "umrah omra package forfait essential essentiel comfort confort premium makkah madinah price prix"],
+    ["hajj.html", "Hajj guidance", "Accompagnement Hajj", "hajj guidance accompagnement registration inscription"],
+    ["visas.html", "Saudi visas", "Visas saoudiens", "visa saudi saoudien umrah tourist touristique family business evisa documents passport passeport"],
+    ["services.html", "All services", "Tous les services", "services flights vols hotels hôtels transfer transfert transport train haramain ziyarah import export trade commerce"],
+    ["services.html#travel", "Flight reservations", "Réservation de vols", "flight flights vol vols plane avion ticket billet jeddah médine"],
+    ["contact.html?service=hotels", "Hotels in Makkah / Madinah", "Hôtels La Mecque / Médine", "hotel hotels hôtel makkah madinah mecque médine room chambre"],
+    ["contact.html?service=transfer", "Transfers & ground transport", "Transferts et transport", "transfer transport car voiture bus airport aéroport"],
+    ["contact.html?service=train", "Haramain train", "Train Haramain", "train haramain railway"],
+    ["contact.html?service=ziyarah", "Ziyarah", "Ziyarah", "ziyarah visit visite tour"],
+    ["partners.html", "Agency partnership", "Partenariat agences", "partner partenaire agency agence representative représentant commission"],
+    ["experiences.html", "Pilgrim experiences & photos", "Expériences et photos", "photos gallery galerie experiences témoignages testimonials pilgrims pèlerins"],
+    ["about.html", "About us", "À propos", "about propos company société abidjan cac registration"],
+    ["contact.html", "Contact & quotation", "Contact et devis", "contact quotation devis enquiry demande phone téléphone whatsapp email address adresse"],
+    ["track.html", "Track my booking", "Suivre mon dossier", "track suivi reference référence booking réservation status statut"],
+    ["terms.html", "Terms, cancellation & refunds", "Conditions, annulation et remboursement", "terms conditions cancellation annulation refund remboursement"],
+    ["privacy.html", "Privacy policy", "Confidentialité", "privacy confidentialité data données"]
+  ];
+  function norm(s) { return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function initSearch(actions) {
+    var btn = mk("button", { type: "button", "class": "icon-btn", "aria-label": "Search / Rechercher" }, SVG_SEARCH);
+    actions.insertBefore(btn, actions.firstChild);
+    var ov = mk("div", { "class": "search-ov", role: "dialog", "aria-modal": "true", hidden: "" });
+    ov.innerHTML = '<div class="search-box"><div class="search-row">' + SVG_SEARCH + '<input type="search" autocomplete="off"><button type="button" class="search-x" aria-label="Close">✕</button></div><div class="search-res"></div></div>';
+    document.body.appendChild(ov);
+    var inp = ov.querySelector("input"), res = ov.querySelector(".search-res");
+    function draw() {
+      var q = norm(inp.value.trim()), words = q.split(/\s+/).filter(Boolean);
+      var hits = PAGES.filter(function (p) { var hay = norm(p[1] + " " + p[2] + " " + p[3]); return words.every(function (w) { return hay.indexOf(w) > -1; }); });
+      if (!words.length) hits = PAGES.slice(0, 8);
+      res.innerHTML = "";
+      if (!hits.length) { res.appendChild(mk("p", { "class": "search-none" })).textContent = tx("No result. Try “Umrah”, “visa”, “hotel”…", "Aucun résultat. Essayez « Omra », « visa », « hôtel »…"); return; }
+      hits.forEach(function (p) { var a = mk("a", { href: p[0] }); a.textContent = tx(p[1], p[2]); res.appendChild(a); });
+    }
+    function open() { ov.hidden = false; inp.placeholder = tx("Search the site…", "Rechercher sur le site…"); inp.value = ""; draw(); setTimeout(function () { inp.focus(); }, 30); }
+    function close() { ov.hidden = true; }
+    btn.addEventListener("click", open);
+    ov.querySelector(".search-x").addEventListener("click", close);
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+    inp.addEventListener("input", draw);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { var a = res.querySelector("a"); if (a) location.href = a.href; } if (e.key === "Escape") close(); });
+  }
+
+  // 4. Day / night mode
+  function initTheme(actions) {
+    var btn = mk("button", { type: "button", "class": "icon-btn", "aria-label": "Day / night mode" });
+    function set(t) { document.documentElement.setAttribute("data-theme", t); btn.innerHTML = t === "dark" ? SVG_SUN : SVG_MOON; store.set("theme", t); }
+    set(store.get("theme") === "dark" ? "dark" : "light");
+    btn.addEventListener("click", function () { set(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); });
+    actions.insertBefore(btn, actions.firstChild.nextSibling);
+  }
+
+  // 5. Basket
+  var basketMem = null;
+  function bGet() { try { var v = JSON.parse(localStorage.getItem("basket") || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return basketMem || []; } }
+  function bSet(v) { basketMem = v; try { localStorage.setItem("basket", JSON.stringify(v)); } catch (e) {} refreshBasket(); }
+  var bCount, bPanel;
+  function itemName(it) { return lang === "fr" ? (it.fr || it.en) : it.en; }
+  function refreshBasket() {
+    var items = bGet();
+    if (bCount) { bCount.textContent = items.length; bCount.hidden = !items.length; }
+    document.querySelectorAll(".add-basket").forEach(function (b) {
+      var inB = items.some(function (it) { return it.id === b.dataset.id; });
+      b.classList.toggle("added", inB);
+      b.querySelector("span").textContent = inB ? tx("In basket ✓", "Dans le panier ✓") : tx("Add to basket", "Ajouter au panier");
+    });
+    if (bPanel) {
+      var list = bPanel.querySelector(".bk-list"); list.innerHTML = "";
+      bPanel.querySelector("h3").textContent = tx("My basket", "Mon panier");
+      if (!items.length) list.appendChild(mk("p", { "class": "note" })).textContent = tx("Your basket is empty. Press “Add to basket” on any service or package.", "Votre panier est vide. Appuyez sur « Ajouter au panier » sur un service ou un forfait.");
+      items.forEach(function (it, i) {
+        var row = mk("div", { "class": "bk-item" }); row.appendChild(mk("span")).textContent = itemName(it);
+        var rm = mk("button", { type: "button", "aria-label": "Remove" }, "✕"); rm.addEventListener("click", function () { var v = bGet(); v.splice(i, 1); bSet(v); });
+        row.appendChild(rm); list.appendChild(row);
+      });
+      var go = bPanel.querySelector(".bk-go"); go.textContent = tx("Request a quotation", "Demander un devis"); go.hidden = !items.length;
+      var cl = bPanel.querySelector(".bk-clear"); cl.textContent = tx("Empty basket", "Vider le panier"); cl.hidden = !items.length;
+    }
+    fillBasketField();
+  }
+  function fillBasketField() {
+    var box = document.getElementById("basketBox"); if (!box) return;
+    var items = bGet(), f = document.getElementById("f_basket");
+    box.hidden = !items.length;
+    box.querySelector("b").textContent = tx("Your selection:", "Votre sélection :");
+    box.querySelector("span").textContent = items.map(itemName).join(" · ");
+    f.value = items.map(itemName).join("; ");
+  }
+  function initBasket(actions) {
+    var btn = mk("button", { type: "button", "class": "icon-btn bk-btn", "aria-label": "Basket / Panier" }, SVG_BAG + '<b class="bk-count" hidden>0</b>');
+    actions.insertBefore(btn, actions.querySelector(".lang"));
+    bCount = btn.querySelector(".bk-count");
+    bPanel = mk("aside", { "class": "bk-panel", hidden: "" });
+    bPanel.innerHTML = '<div class="bk-head"><h3></h3><button type="button" class="bk-x" aria-label="Close">✕</button></div><div class="bk-list"></div><a class="btn btn-primary bk-go" href="contact.html?basket=1"></a><button type="button" class="bk-clear"></button>';
+    document.body.appendChild(bPanel);
+    btn.addEventListener("click", function () { bPanel.hidden = !bPanel.hidden; });
+    bPanel.querySelector(".bk-x").addEventListener("click", function () { bPanel.hidden = true; });
+    bPanel.querySelector(".bk-clear").addEventListener("click", function () { bSet([]); });
+    // "Add to basket" on every service card and package
+    document.querySelectorAll("a[data-enquire]").forEach(function (a) {
+      var card = a.closest(".card, .pkg"); if (!card || card.querySelector(".add-basket")) return;
+      var h = card.querySelector("h3"); if (!h) return;
+      var en = h.dataset.en || h.textContent.trim(), fr = h.dataset.fr || en;
+      var id = a.dataset.enquire + "|" + (a.dataset.package || en);
+      var b = mk("button", { type: "button", "class": "btn btn-outline btn-sm add-basket", "data-id": id }, SVG_BAG + "<span></span>");
+      b.addEventListener("click", function () {
+        var v = bGet(), i = -1; v.forEach(function (it, k) { if (it.id === id) i = k; });
+        if (i > -1) v.splice(i, 1); else v.push({ id: id, svc: a.dataset.enquire, pkg: a.dataset.package || "", en: en, fr: fr });
+        bSet(v); if (i < 0) { btn.classList.remove("bump"); void btn.offsetWidth; btn.classList.add("bump"); }
+      });
+      a.parentNode.insertBefore(b, a.nextSibling);
+    });
+    // Contact form: show the selection and send it with the enquiry
+    var form = document.getElementById("enquiryForm");
+    if (form) {
+      var grid = form.querySelector(".fgrid");
+      var box = mk("div", { "class": "field full basket-box", id: "basketBox", hidden: "" }, '<label for="f_basket" class="visually-hidden">Basket</label><div>' + SVG_BAG + '<b></b> <span></span></div><input type="hidden" id="f_basket" name="basket">');
+      grid.insertBefore(box, grid.firstChild);
+      var items = bGet();
+      if (items.length && new URLSearchParams(location.search).get("basket")) {
+        var s = document.getElementById("f_service");
+        if (s && !s.value) { s.value = items.length === 1 ? items[0].svc : "general"; s.dispatchEvent(new Event("change")); }
+        var ps = document.getElementById("u_pkg"); if (ps && items.length === 1 && items[0].pkg) ps.value = items[0].pkg;
+      }
+    }
+  }
+
+  function initExtras() {
+    var actions = document.querySelector(".nav-actions");
+    initIcons(); initChoices();
+    if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
+    refreshBasket();
+    window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
+  }
+
   /* ---------- Boot ---------- */
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".year").forEach(function (y) { y.textContent = new Date().getFullYear(); });
@@ -367,6 +560,7 @@
     var initial = q || store.get("lang") || ((navigator.language || "").toLowerCase().indexOf("fr") === 0 ? "fr" : "en");
     document.querySelectorAll("[data-setlang]").forEach(function (b) { b.addEventListener("click", function () { applyLang(b.dataset.setlang); }); });
     initNav(); initReveal(); initImages(); initRouting(); initForms(); initLightbox(); initTrack(); initTurnstile();
+    initExtras();
     applyLang(initial);
   });
 })();
