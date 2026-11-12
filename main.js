@@ -880,6 +880,19 @@
   }
 
   /* ---------- Hajj request builder (year, nationality, pilgrims) ---------- */
+
+  // Live chat (tawk.to)
+  function initChat() {
+    if (window.Tawk_API && window.Tawk_API.__amg) return;
+    window.Tawk_API = window.Tawk_API || {}; window.Tawk_API.__amg = true;
+    window.Tawk_LoadStart = new Date();
+    var s = document.createElement("script");
+    s.async = true; s.src = "https://embed.tawk.to/6af61ade35380b3c3eb7e441/default";
+    s.charset = "UTF-8"; s.setAttribute("crossorigin", "*");
+    document.body.appendChild(s);
+    document.body.classList.add("has-chat");
+  }
+
   function initHajj() {
     var box = document.getElementById("hajjBuilder"); if (!box) return;
     var form = document.getElementById("hajjForm"), sum = document.getElementById("hj_summary");
@@ -1070,7 +1083,7 @@
     var q = new URLSearchParams(location.search).get("lang");
     var initial = q || store.get("lang") || ((navigator.language || "").toLowerCase().indexOf("fr") === 0 ? "fr" : "en");
     document.querySelectorAll("[data-setlang]").forEach(function (b) { b.addEventListener("click", function () { applyLang(b.dataset.setlang); }); });
-    initNav(); initReveal(); initImages(); initRouting(); initQuick(); initForms(); initLightbox(); initTrack(); initTurnstile();
+    initNav(); initReveal(); initImages(); initRouting(); initQuick(); initChat(); initForms(); initLightbox(); initTrack(); initTurnstile();
     initExtras();
     applyLang(initial);
   });
