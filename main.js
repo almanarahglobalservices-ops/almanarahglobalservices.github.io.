@@ -762,12 +762,77 @@
     });
   }
 
+  /* ---------- Visa application builder (visas.html) ---------- */
+  var VB = { nat: "CI", other: "no", type: "Umrah", checked: false, ticket: "no", hotel: "no", pax: 1, date: "" };
+  var EVISA = ["GB", "FR", "BE", "IT", "ES", "DE", "US", "CA", "ZA"], GCC = ["AE", "QA", "KW", "OM", "BH"];
+  function visaElig() {
+    var fr = lang === "fr", n = VB.nat;
+    if (n === "SA") return [fr ? "Aucun visa nécessaire" : "No visa needed", fr ? "Les citoyens saoudiens n’ont pas besoin de visa." : "Saudi citizens do not need a visa."];
+    if (GCC.indexOf(n) > -1) return [fr ? "Aucun visa nécessaire" : "No visa needed", fr ? "Les citoyens du CCG entrent en Arabie saoudite sans visa. Nous pouvons organiser votre voyage." : "GCC citizens enter Saudi Arabia without a visa. We can still arrange your trip."];
+    if (VB.type === "Family visit") return [fr ? "Sur invitation" : "Invitation required", fr ? "Le visa de visite familiale nécessite une invitation d’un membre de la famille résidant en Arabie saoudite. Nous préparons le dossier." : "The family visit visa needs an invitation from a family member living in Saudi Arabia. We prepare the file."];
+    if (VB.type === "Business") return [fr ? "Sur invitation" : "Invitation required", fr ? "Le visa d’affaires nécessite une invitation d’une entreprise saoudienne. Nous préparons le dossier." : "The business visa needs an invitation from a Saudi company. We prepare the file."];
+    if (EVISA.indexOf(n) > -1) return [fr ? "Éligible au e-Visa" : "eVisa eligible", fr ? "Votre nationalité peut obtenir le e-Visa touristique en ligne, qui permet aussi l’Omra (hors saison du Hajj). Nous faisons la demande pour vous." : "Your nationality can get the tourist eVisa online, which also allows Umrah (outside the Hajj season). We apply for you."];
+    if (VB.other === "yes") return [fr ? "Probablement éligible au e-Visa" : "Likely eVisa eligible", fr ? "Avec un visa américain, britannique ou Schengen valide et déjà utilisé, vous pouvez obtenir le e-Visa ou un visa à l’arrivée. Nous vérifions et faisons la demande." : "With a valid US, UK or Schengen visa that you have already used, you can get the eVisa or a visa on arrival. We check and apply for you."];
+    if (VB.type === "Umrah") return [fr ? "Visa via canal agréé" : "Visa through an authorised channel", fr ? "Votre nationalité passe par un visa Omra délivré via un canal agréé, lié à votre forfait. AL MANARAH prépare et dépose la demande." : "Your nationality needs an Umrah visa issued through an authorised channel, linked to your package. AL MANARAH prepares and submits the application."];
+    return [fr ? "Visa consulaire" : "Embassy visa", fr ? "Votre nationalité passe par l’ambassade ou le consulat saoudien. Nous préparons le dossier et vous guidons pour le dépôt." : "Your nationality applies through the Saudi embassy or consulate. We prepare the file and guide the submission."];
+  }
+  function initVisa() {
+    var box = document.getElementById("visaBuilder"); if (!box) return;
+    var form = document.getElementById("visaForm"), sum = document.getElementById("v_summary");
+    var d0 = new Date(); d0.setDate(d0.getDate() + 3); var minDate = d0.toISOString().slice(0, 10);
+    function natName(iso) { var d = DIAL.filter(function (x) { return x[0] === iso; })[0]; return d ? (lang === "fr" ? d[2] : d[1]) : iso; }
+    function chips(key, opts) { return '<div class="hb-chips">' + opts.map(function (o) { return '<button type="button" class="hb-chip' + (VB[key] === o[0] ? " on" : "") + '" data-k="' + key + '" data-v="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>"; }
+    function yn(key) { var fr = lang === "fr"; return chips(key, [["yes", fr ? "Oui" : "Yes"], ["no", fr ? "Non" : "No"]]); }
+    function text() {
+      var fr = lang === "fr", L = [], e = visaElig(), y = function (v) { return v === "yes" ? (fr ? "Oui" : "Yes") : (fr ? "Non" : "No"); };
+      var types = { "Umrah": fr ? "Omra" : "Umrah", "Tourist": fr ? "Touristique" : "Tourist", "Family visit": fr ? "Visite familiale" : "Family visit", "Business": fr ? "Affaires" : "Business" };
+      L.push((fr ? "Demande de visa — " : "Visa application — ") + types[VB.type]);
+      L.push((fr ? "Nationalité" : "Nationality") + ": " + natName(VB.nat));
+      L.push((fr ? "Visa US/UK/Schengen valide" : "Valid US/UK/Schengen visa") + ": " + y(VB.other));
+      L.push((fr ? "Date de voyage" : "Travel date") + ": " + (VB.date || (fr ? "à confirmer" : "to be confirmed")) + " · " + (fr ? "Voyageurs" : "Travellers") + ": " + VB.pax);
+      L.push((fr ? "Billet d’avion confirmé" : "Confirmed flight ticket") + ": " + y(VB.ticket) + " · " + (fr ? "Hôtel confirmé" : "Confirmed hotel") + ": " + y(VB.hotel));
+      L.push((fr ? "Éligibilité (indicative)" : "Eligibility (indicative)") + ": " + e[0]);
+      return L.join("\n");
+    }
+    function render() {
+      var fr = lang === "fr", h = "<h3>" + (fr ? "Votre visa saoudien" : "Your Saudi visa") + "</h3>";
+      h += '<div class="hb-q"><h4>1. ' + (fr ? "Votre nationalité" : "Your nationality") + '</h4><select class="vb-nat">' + DIAL.map(function (d) { return '<option value="' + d[0] + '"' + (VB.nat === d[0] ? " selected" : "") + ">" + flag(d[0]) + " " + (fr ? d[2] : d[1]) + "</option>"; }).join("") + "</select></div>";
+      h += '<div class="hb-q"><h4>2. ' + (fr ? "Type de visa" : "Visa type") + "</h4>" + chips("type", [["Umrah", fr ? "Omra" : "Umrah"], ["Tourist", fr ? "Touristique" : "Tourist"], ["Family visit", fr ? "Visite familiale" : "Family visit"], ["Business", fr ? "Affaires" : "Business"]]) + "</div>";
+      h += '<div class="hb-q"><h4>3. ' + (fr ? "Avez-vous un visa US, UK ou Schengen valide (déjà utilisé) ?" : "Do you hold a valid US, UK or Schengen visa (already used)?") + "</h4>" + yn("other") + "</div>";
+      h += '<div class="hb-q"><button type="button" class="btn btn-gold btn-sm vb-check">' + (fr ? "Vérifier mon éligibilité" : "Check my eligibility") + "</button>";
+      if (VB.checked) { var e = visaElig(); h += '<div class="vb-result"><b>✔ ' + e[0] + "</b><p>" + e[1] + '</p><small>' + (fr ? "Indicatif — les règles peuvent changer ; nous confirmons votre cas par écrit." : "Indicative — rules can change; we confirm your case in writing.") + "</small></div>"; }
+      h += "</div>";
+      h += '<div class="hb-q"><h4>4. ' + (fr ? "Votre voyage" : "Your trip") + '</h4><div class="hb-row"><div><small>' + (fr ? "Date de voyage" : "Travel date") + '</small><input type="date" class="hb-date" min="' + minDate + '" value="' + VB.date + '"></div><div><small>' + (fr ? "Voyageurs" : "Travellers") + '</small><div class="hb-step"><button type="button" data-p="-1">−</button><b>' + VB.pax + '</b><button type="button" data-p="1">+</button></div></div></div></div>';
+      h += '<div class="hb-q"><h4>5. ' + (fr ? "Billet d’avion confirmé ?" : "Confirmed flight ticket?") + "</h4>" + yn("ticket") + "<h4 style=\"margin-top:12px\">" + (fr ? "Réservation d’hôtel confirmée ?" : "Confirmed hotel booking?") + "</h4>" + yn("hotel");
+      if (VB.ticket === "yes" || VB.hotel === "yes") h += '<p class="note vb-up">📎 ' + (fr ? "Après l’envoi, appuyez sur « Continuer sur WhatsApp » pour joindre votre billet / réservation." : "After you apply, tap “Continue on WhatsApp” to attach your ticket / booking.") + "</p>";
+      h += "</div>";
+      box.innerHTML = h; sum.value = text();
+    }
+    box.addEventListener("click", function (ev) {
+      var c = ev.target.closest(".hb-chip"), p = ev.target.closest("[data-p]");
+      if (c) VB[c.dataset.k] = c.dataset.v;
+      else if (p) VB.pax = Math.min(50, Math.max(1, VB.pax + (+p.dataset.p)));
+      else if (ev.target.closest(".vb-check")) VB.checked = true;
+      else return;
+      render();
+    });
+    box.addEventListener("change", function (ev) {
+      if (ev.target.classList.contains("vb-nat")) { VB.nat = ev.target.value; render(); var cc = form.querySelector(".cc"), d = DIAL.filter(function (x) { return x[0] === VB.nat; })[0]; var ph = form.querySelector('input[type="tel"]'); if (cc && d && ph && !ph.value.trim()) cc.value = d[3]; }
+      if (ev.target.classList.contains("hb-date")) { VB.date = ev.target.value; sum.value = text(); }
+    });
+    promoEls.push(function () {
+      render();
+      if (CFG.formEndpoint) { var b = form.querySelector('button[type="submit"] span'); if (b) { b.textContent = lang === "fr" ? "Déposer ma demande" : "Apply now"; b.setAttribute("data-fr", "Déposer ma demande"); } }
+    });
+    render();
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     var waSym = document.getElementById("i-wa"); if (waSym) waSym.innerHTML = '<path d="' + WA_PATH + '"/>';
     initIcons(); initChoices(); initPhones();
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
-    initPromo(); initSoon(); initNavHotels(); initHotels();
+    initPromo(); initSoon(); initNavHotels(); initHotels(); initVisa();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
   }
