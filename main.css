@@ -721,3 +721,9 @@ section:has(.why){display:none!important}
 .hb-hotel small,.hb-hotel .hb-stars{display:none!important}
 .hb-hotel.on{background:var(--green-800);border-color:var(--green-800);color:#fff;box-shadow:none}
 @media (max-width:700px){.hb-hotel{padding:6px 10px!important;font-size:.74rem!important}}
+
+/* Country code + phone number */
+.phone-row{display:flex;gap:6px}
+.phone-row .cc{flex:0 0 132px;width:132px;padding-left:8px;padding-right:4px;text-overflow:ellipsis}
+.phone-row input{flex:1;min-width:0}
+@media (max-width:700px){.phone-row .cc{flex-basis:112px;width:112px;font-size:.85rem}}
