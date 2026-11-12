@@ -578,7 +578,7 @@
     var bar = mk("div", { "class": "promo-bar" });
     bar.innerHTML = '<div class="container"><span class="pb-dot"></span><span class="pb-t"></span><a class="pb-btn" href="' + link + '"></a></div>';
     document.body.insertBefore(bar, document.querySelector(".topbar") || document.body.firstChild);
-    promoEls.push(function (t) { bar.querySelector(".pb-t").innerHTML = "<b>" + t.title + "</b> " + t.now + " · " + t.dates + " · <b>" + t.price + "</b> · " + t.count; bar.querySelector(".pb-btn").textContent = t.book + " →"; });
+    promoEls.push(function (t) { bar.querySelector(".pb-t").innerHTML = "<b>" + t.title + "</b><span class=\"pb-x\"> " + t.now + " · " + t.dates + "</span> · <b>" + t.price + "</b><span class=\"pb-x\"> · " + t.count + "</span>"; bar.querySelector(".pb-btn").textContent = t.book + " →"; });
     // Floating card
     var closed = false; try { closed = sessionStorage.getItem("promoClosed") === P.id; } catch (e) {}
     var fl = mk("aside", { "class": "promo-float", "aria-label": "Offer" });
