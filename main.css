@@ -860,3 +860,6 @@ section:has(.why){display:none!important}
 [data-theme="dark"] .pt-chg{background:transparent;color:#f0dca8}
 .hj-nat{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;font:600 .92rem var(--sans);color:var(--ink);background:#fff}
 [data-theme="dark"] .hj-nat{background:#0e1f15}
+/* live chat: lift quote button above chat bubble */
+body.has-chat .quote-float{bottom:96px}
+@media (max-width:640px){body.has-chat .quote-float{bottom:88px;right:14px}}
