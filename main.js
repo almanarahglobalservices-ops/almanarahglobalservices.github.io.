@@ -732,10 +732,39 @@
     render();
   }
 
+  /* ---------- Country dialling code in front of every phone field ---------- */
+  var DIAL = [["CI","Côte d'Ivoire","Côte d’Ivoire","225"],["NG","Nigeria","Nigéria","234"],["SA","Saudi Arabia","Arabie saoudite","966"],["GH","Ghana","Ghana","233"],["SN","Senegal","Sénégal","221"],["ML","Mali","Mali","223"],["BF","Burkina Faso","Burkina Faso","226"],["GN","Guinea","Guinée","224"],["NE","Niger","Niger","227"],["BJ","Benin","Bénin","229"],["TG","Togo","Togo","228"],["CM","Cameroon","Cameroun","237"],["TD","Chad","Tchad","235"],["LR","Liberia","Libéria","231"],["SL","Sierra Leone","Sierra Leone","232"],["GM","Gambia","Gambie","220"],["GW","Guinea-Bissau","Guinée-Bissau","245"],["MR","Mauritania","Mauritanie","222"],["MA","Morocco","Maroc","212"],["DZ","Algeria","Algérie","213"],["TN","Tunisia","Tunisie","216"],["EG","Egypt","Égypte","20"],["SD","Sudan","Soudan","249"],["ET","Ethiopia","Éthiopie","251"],["KE","Kenya","Kenya","254"],["TZ","Tanzania","Tanzanie","255"],["UG","Uganda","Ouganda","256"],["SO","Somalia","Somalie","252"],["ZA","South Africa","Afrique du Sud","27"],["CD","DR Congo","RD Congo","243"],["CG","Congo","Congo","242"],["GA","Gabon","Gabon","241"],["CF","Central African Republic","Centrafrique","236"],["AE","United Arab Emirates","Émirats arabes unis","971"],["QA","Qatar","Qatar","974"],["KW","Kuwait","Koweït","965"],["OM","Oman","Oman","968"],["BH","Bahrain","Bahreïn","973"],["JO","Jordan","Jordanie","962"],["TR","Turkey","Turquie","90"],["GB","United Kingdom","Royaume-Uni","44"],["FR","France","France","33"],["BE","Belgium","Belgique","32"],["IT","Italy","Italie","39"],["ES","Spain","Espagne","34"],["DE","Germany","Allemagne","49"],["US","United States","États-Unis","1"],["CA","Canada","Canada","1"]];
+  function flag(iso) { return String.fromCodePoint(127397 + iso.charCodeAt(0), 127397 + iso.charCodeAt(1)); }
+  function fullPhone(sel, inp) {
+    var v = inp.value.trim(); if (!v || v.charAt(0) === "+") return;
+    v = v.replace(/^00/, "");
+    if (sel.value !== "225") v = v.replace(/^0/, "");
+    inp.value = "+" + sel.value + " " + v;
+  }
+  function initPhones() {
+    document.querySelectorAll('form input[type="tel"]').forEach(function (inp) {
+      if (inp.parentNode.classList.contains("phone-row")) return;
+      var sel = document.createElement("select");
+      sel.className = "cc"; sel.setAttribute("aria-label", "Country code / Indicatif");
+      DIAL.forEach(function (d) { var o = mk("option", { value: d[3], "data-iso": d[0], "data-fr": flag(d[0]) + " +" + d[3] + " " + d[2] }); o.textContent = flag(d[0]) + " +" + d[3] + " " + d[1]; sel.appendChild(o); });
+      var row = mk("div", { "class": "phone-row" });
+      inp.parentNode.insertBefore(row, inp); row.appendChild(sel); row.appendChild(inp);
+      inp.placeholder = "05 06 12 23 37";
+      var form = inp.form;
+      form.querySelectorAll('button[type="submit"]').forEach(function (b) { b.addEventListener("click", function () { fullPhone(sel, inp); }); });
+      form.addEventListener("submit", function () { fullPhone(sel, inp); }, true);
+      var country = form.querySelector('select[name="country"]');
+      if (country) country.addEventListener("change", function () {
+        var m = DIAL.filter(function (d) { return d[1] === country.value; })[0];
+        if (m && !inp.value.trim()) sel.value = m[3];
+      });
+    });
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     var waSym = document.getElementById("i-wa"); if (waSym) waSym.innerHTML = '<path d="' + WA_PATH + '"/>';
-    initIcons(); initChoices();
+    initIcons(); initChoices(); initPhones();
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
     initPromo(); initSoon(); initNavHotels(); initHotels();
     refreshBasket();
