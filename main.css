@@ -525,3 +525,107 @@ html[lang="en"] .l-fr,html[lang="fr"] .l-en{display:none!important}
 .soon-actions{display:flex;flex-direction:column;gap:8px}
 @media (max-width:820px){.soon-box{grid-template-columns:auto 1fr}.soon-actions{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}}
 [data-theme="dark"] .soon-box{background:#122519}
+
+/* ===== Compact layout (owner request: smaller, tighter, neater) ===== */
+.section{padding:clamp(40px,6vw,76px) 0}
+.head{margin-bottom:30px}
+h1{font-size:clamp(1.8rem,3.8vw,3rem)}
+h2{font-size:clamp(1.4rem,2.6vw,2.1rem)}
+.lead{font-size:1.02rem}
+.card{padding:22px}
+.pkg{padding:24px 22px}
+.step{padding:22px 20px}
+.why div{padding:18px}
+.pagehero{padding:48px 0 40px}
+.hero{padding:clamp(26px,4vw,56px) 0 clamp(36px,5vw,70px)}
+@media (max-width:700px){
+  body{font-size:15px}
+  .container{width:calc(100% - 28px)}
+  .section{padding:36px 0}
+  .head{margin-bottom:20px}
+  h1{font-size:1.75rem}
+  h2{font-size:1.4rem}
+  h3{font-size:1.02rem}
+  .lead{font-size:.93rem}
+  p{margin:0 0 .7em}
+  .kicker{font-size:.62rem;margin-bottom:8px;letter-spacing:.16em}
+  .btn{padding:11px 16px;font-size:.85rem}
+  .btn-sm{padding:8px 12px;font-size:.78rem}
+  .hero{padding:20px 0 30px}
+  .hero .lead{margin:10px 0 16px}
+  .pagehero{padding:30px 0 26px}
+  .pagehero p{font-size:.92rem}
+  .grid-3,.grid-4{grid-template-columns:1fr 1fr;gap:10px}
+  .grid-2{gap:10px}
+  .card{padding:14px;border-radius:14px}
+  .card h3{font-size:.95rem;margin-bottom:4px}
+  .card p{font-size:.8rem;line-height:1.45}
+  .icon{width:36px;height:36px;border-radius:10px;margin-bottom:8px}
+  .icon svg{width:19px;height:19px}
+  .tag{font-size:.58rem;padding:4px 7px;margin-bottom:6px}
+  .who{font-size:.74rem;padding-top:8px}
+  .card-actions{margin-top:10px;gap:6px}
+  .card-actions .btn{width:100%}
+  .steps{grid-template-columns:1fr 1fr;gap:10px}
+  .step{padding:14px 12px;border-radius:14px}
+  .step::before{font-size:1.4rem;margin-bottom:6px}
+  .step h3{font-size:.9rem}
+  .step p{font-size:.78rem;line-height:1.45}
+  .why{grid-template-columns:1fr 1fr;gap:10px}
+  .why div{padding:12px}
+  .why b{font-size:.86rem}
+  .why span{font-size:.76rem;line-height:1.4;display:block}
+  .strip div{padding:12px 10px;font-size:.78rem}
+  .strip b{font-size:.86rem}
+  .values{gap:8px}.values div{padding:12px}
+  .pkg{padding:18px 16px}
+  .pkg h3{font-size:1.2rem}
+  .pkg .sub{font-size:.84rem;margin-bottom:10px}
+  .pkg .price{font-size:.8rem;padding:8px 10px;margin-bottom:12px}
+  .pkg ul{gap:7px;margin-bottom:14px}
+  .pkg li{font-size:.82rem}
+  .disclaimer{padding:12px 14px;font-size:.82rem}
+  .panel{padding:18px}
+  .faq summary{padding:13px 26px 13px 0;font-size:.9rem}
+  .faq details p{font-size:.85rem}
+  .band{padding:22px 18px}
+  .band h2{font-size:1.3rem}
+  .gallery{grid-auto-rows:130px;gap:8px}
+  .contact-card{padding:18px}
+  .cline{padding:10px 0}
+  .form{padding:16px}
+  .fgrid,fieldset.svc.show{gap:12px}
+  .field label{font-size:.8rem}
+  .field input,.field select,.field textarea{padding:10px 12px;font-size:.92rem}
+  .footer{padding:36px 0 18px;font-size:.85rem}
+  .fgrid-foot{grid-template-columns:1fr 1fr;gap:20px}
+  .fgrid-foot>div:first-child{grid-column:1/-1}
+  .footbottom{margin-top:24px}
+  .promo-bar{font-size:.72rem}
+  .promo-bar .container{padding:6px 0;gap:8px;flex-wrap:nowrap}
+  .pb-dot,.pb-x{display:none}
+  .pb-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .pb-btn{padding:4px 10px;font-size:.7rem}
+  .promo-float{padding:12px 12px 10px;bottom:76px;border-radius:14px}
+  .promo-float h4{font-size:1rem;margin-bottom:2px}
+  .pf-badge{font-size:.56rem;padding:4px 7px;margin-bottom:6px}
+  .pf-dates{font-size:.72rem;margin-bottom:4px}
+  .pf-price{font-size:1.05rem}
+  .pf-count{font-size:.7rem;margin-bottom:8px}
+  .pf-actions .btn{padding:8px 11px;font-size:.75rem}
+  .promo-sec{padding-top:18px}
+  .promo-box{padding:18px 16px;gap:12px;border-radius:16px}
+  .promo-box h2{font-size:1.25rem}
+  .ps-sub{font-size:.84rem;margin-bottom:10px}
+  .ps-facts{gap:6px}.ps-facts span{font-size:.74rem;padding:5px 10px}
+  .ps-right{padding:12px}
+  .ps-price{font-size:1.4rem}
+  .ps-count{font-size:.8rem;margin-bottom:10px}
+  .soon-sec{padding-top:18px}
+  .soon-box{padding:22px 14px 14px;gap:10px;border-radius:16px}
+  .soon-icon{width:42px;height:42px;font-size:1.3rem}
+  .soon-text h3{font-size:1.1rem}
+  .soon-text p{font-size:.82rem}
+  .soon-ribbon{font-size:.6rem;padding:5px 10px;top:-11px}
+  .wa-float{padding:12px 15px}
+}
