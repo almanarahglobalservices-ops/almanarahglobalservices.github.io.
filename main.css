@@ -858,3 +858,5 @@ section:has(.why){display:none!important}
 .pt-none{font-size:.8rem;color:var(--muted);text-align:center;padding:6px}
 [data-theme="dark"] .pt-q,[data-theme="dark"] .pt-res button{background:#122519;color:#eaf4ee;border-color:#2b4a39}
 [data-theme="dark"] .pt-chg{background:transparent;color:#f0dca8}
+.hj-nat{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;font:600 .92rem var(--sans);color:var(--ink);background:#fff}
+[data-theme="dark"] .hj-nat{background:#0e1f15}
