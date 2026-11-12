@@ -711,3 +711,6 @@ section:has(.why){display:none!important}
 .hb-hotel:first-child{grid-column:auto}
 .hb-other{border-style:dashed}
 .hb-hotel.on small{color:var(--green-700)}
+
+/* Hotel list: two per row on phones */
+@media (max-width:700px){.hb-hotels{grid-template-columns:1fr 1fr!important;gap:6px}.hb-hotel{padding:8px 9px;font-size:.76rem}.hb-hotel small{font-size:.66rem}.hb-stars{font-size:.66rem}}
