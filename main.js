@@ -79,6 +79,7 @@
     store.set("lang", lang);
     updateWaLinks();
     refreshBasket();
+    renderPromo();
   }
   // data-fr="" on attribute-based swaps must not wipe text: dataset keys are frPlaceholder etc.
   // (data-fr-placeholder -> dataset.frPlaceholder; data-fr -> dataset.fr)
@@ -545,10 +546,78 @@
     }
   }
 
+  /* ---------- Promotion (settings in config.js → promo) ---------- */
+  function fmtPrice(n) { return lang === "fr" ? String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  function promoDays(P) { return Math.ceil((new Date(P.departure + "T00:00:00") - new Date()) / 86400000); }
+  function promoActive(P) { return P && P.on && new Date() < new Date((P.endsOn || P.departure) + "T00:00:00"); }
+  function promoText(P) {
+    var d = promoDays(P), fr = lang === "fr";
+    return {
+      title: fr ? P.titleFr : P.title,
+      dates: fr ? P.datesFr : P.dates,
+      from: fr ? P.fromFr : P.from,
+      price: fmtPrice(P.price) + " " + P.currency,
+      count: d > 1 ? (fr ? "Départ dans " + d + " jours" : "Departure in " + d + " days") : (fr ? "Départ imminent" : "Departing soon"),
+      badge: fr ? "Offre spéciale" : "Special offer",
+      book: fr ? "Réserver maintenant" : "Book now",
+      now: fr ? "est disponible !" : "is now available!",
+      add: fr ? "Ajouter au panier" : "Add to basket"
+    };
+  }
+  function promoItem(P) { return { id: "umrah|promo-" + P.id, svc: "umrah", pkg: "", en: P.title + " (" + P.dates + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " " + P.currency, fr: P.titleFr + " (" + P.datesFr + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " " + P.currency }; }
+  function promoAddToBasket(P) { var v = bGet(), it = promoItem(P); if (!v.some(function (x) { return x.id === it.id; })) { v.push(it); bSet(v); } }
+  var promoEls = [];
+  function renderPromo() {
+    var P = CFG.promo; if (!promoActive(P)) return;
+    var t = promoText(P);
+    promoEls.forEach(function (fn) { fn(t); });
+  }
+  function initPromo() {
+    var P = CFG.promo; if (!promoActive(P)) return;
+    var link = "contact.html?service=umrah&promo=" + P.id;
+    // Top announcement bar
+    var bar = mk("div", { "class": "promo-bar" });
+    bar.innerHTML = '<div class="container"><span class="pb-dot"></span><span class="pb-t"></span><a class="pb-btn" href="' + link + '"></a></div>';
+    document.body.insertBefore(bar, document.querySelector(".topbar") || document.body.firstChild);
+    promoEls.push(function (t) { bar.querySelector(".pb-t").innerHTML = "<b>" + t.title + "</b> " + t.now + " · " + t.dates + " · <b>" + t.price + "</b> · " + t.count; bar.querySelector(".pb-btn").textContent = t.book + " →"; });
+    // Floating card
+    var closed = false; try { closed = sessionStorage.getItem("promoClosed") === P.id; } catch (e) {}
+    var fl = mk("aside", { "class": "promo-float", "aria-label": "Offer" });
+    fl.innerHTML = '<button type="button" class="pf-x" aria-label="Close">✕</button><span class="pf-badge"></span><h4 class="pf-title"></h4><p class="pf-dates"></p><p class="pf-price"></p><p class="pf-count"></p><div class="pf-actions"><a class="btn btn-gold btn-sm pf-book" href="' + link + '"></a><button type="button" class="btn btn-outline btn-sm pf-add"></button></div>';
+    document.body.appendChild(fl);
+    if (!closed) setTimeout(function () { fl.classList.add("show"); }, 2500);
+    fl.querySelector(".pf-x").addEventListener("click", function () { fl.classList.remove("show"); try { sessionStorage.setItem("promoClosed", P.id); } catch (e) {} });
+    fl.querySelector(".pf-add").addEventListener("click", function () { promoAddToBasket(P); var b = document.querySelector(".bk-btn"); if (b) { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); } });
+    fl.querySelector(".pf-book").addEventListener("click", function () { promoAddToBasket(P); });
+    promoEls.push(function (t) {
+      fl.querySelector(".pf-badge").textContent = "★ " + t.badge; fl.querySelector(".pf-title").textContent = t.title;
+      fl.querySelector(".pf-dates").textContent = t.dates + " · " + t.from; fl.querySelector(".pf-price").textContent = t.price;
+      fl.querySelector(".pf-count").textContent = t.count; fl.querySelector(".pf-book").textContent = t.book; fl.querySelector(".pf-add").textContent = t.add;
+    });
+    // Big offer block on Home and Umrah pages
+    var page = document.body.dataset.page;
+    if (page === "index" || page === "umrah") {
+      var first = document.querySelector("#main > section");
+      var sec = mk("section", { "class": "promo-sec" });
+      sec.innerHTML = '<div class="container"><div class="promo-box"><div><span class="pf-badge"></span><h2 class="ps-title"></h2><p class="ps-sub"></p><div class="ps-facts"><span class="ps-dates"></span><span class="ps-from"></span></div></div><div class="ps-right"><p class="ps-price"></p><p class="ps-count"></p><a class="btn btn-gold ps-book" href="' + link + '"></a></div></div></div>';
+      if (first && first.parentNode) first.parentNode.insertBefore(sec, first.nextSibling);
+      sec.querySelector(".ps-book").addEventListener("click", function () { promoAddToBasket(P); });
+      promoEls.push(function (t) {
+        sec.querySelector(".pf-badge").textContent = "★ " + t.badge; sec.querySelector(".ps-title").textContent = t.title + " " + t.now;
+        sec.querySelector(".ps-sub").textContent = lang === "fr" ? "Places limitées. Visa, vols, hôtels et transferts pris en charge — réservez tôt." : "Limited places. Visa, flights, hotels and transfers handled for you — book early.";
+        sec.querySelector(".ps-dates").textContent = "🗓 " + t.dates; sec.querySelector(".ps-from").textContent = "✈ " + t.from;
+        sec.querySelector(".ps-price").textContent = t.price; sec.querySelector(".ps-count").textContent = t.count; sec.querySelector(".ps-book").textContent = t.book;
+      });
+    }
+    // Arriving from an offer link: put the offer in the basket
+    if (new URLSearchParams(location.search).get("promo") === P.id) promoAddToBasket(P);
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     initIcons(); initChoices();
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
+    initPromo();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
   }
