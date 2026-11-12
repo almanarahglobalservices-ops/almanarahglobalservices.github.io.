@@ -927,9 +927,9 @@
     var header = document.querySelector(".header"); if (!header) return;
     var open = false; try { open = localStorage.getItem("ptOpen") === "1"; } catch (e) {}
     var bar = mk("section", { "class": "pt-bar" + (open ? " open" : ""), "aria-label": "Prayer times" });
-    bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-clock" aria-live="off"><b></b><small></small></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-in"><div class="pt-loc"><span class="pt-where"></span><button type="button" class="pt-gps"></button></div><div class="pt-grid"></div><p class="pt-note"></p></div></div></div>';
+    bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-clock" aria-live="off"><b></b><small></small></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-in"><div class="pt-loc"><span class="pt-where"></span><span class="pt-btns"><button type="button" class="pt-gps"></button><button type="button" class="pt-chg"></button></span></div><div class="pt-search" hidden><input type="search" class="pt-q" autocomplete="off"><ul class="pt-res"></ul></div><div class="pt-grid"></div><p class="pt-note"></p></div></div></div>';
     header.parentNode.insertBefore(bar, header.nextSibling);
-    var head = bar.querySelector(".pt-head"), gpsBtn = bar.querySelector(".pt-gps"), gpsMsg = "";
+    var head = bar.querySelector(".pt-head"), gpsBtn = bar.querySelector(".pt-gps"), gpsMsg = "", chgBtn = bar.querySelector(".pt-chg"), box = bar.querySelector(".pt-search"), q = bar.querySelector(".pt-q"), res = bar.querySelector(".pt-res");
     head.addEventListener("click", function () { open = !open; bar.classList.toggle("open", open); head.setAttribute("aria-expanded", String(open)); try { localStorage.setItem("ptOpen", open ? "1" : "0"); } catch (e) {} draw(); });
     var KEYS = ["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"];
     var devTz = ""; try { devTz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
@@ -956,9 +956,10 @@
       bar.querySelector(".pt-tog").textContent = open ? "−" : "+";
       if (!open) return;
       bar.querySelector(".pt-grid").innerHTML = '<div class="pt-city"><ul>' + KEYS.map(function (k) { return '<li class="' + (k === next && t[k] > now ? "now" : "") + (k === "sunrise" ? " sun" : "") + '"><span>' + N[k] + "</span><b>" + hm(t[k]) + "</b></li>"; }).join("") + "</ul></div>";
-      var how = LOC.src === "gps" ? (fr ? "votre position exacte" : "your exact position") : LOC.src === "ip" ? (fr ? "votre connexion internet" : "your internet connection") : (fr ? "le fuseau horaire de votre appareil" : "your device’s time zone");
+      var how = LOC.src === "city" ? (fr ? "votre choix" : "your choice") : LOC.src === "gps" ? (fr ? "votre position exacte" : "your exact position") : LOC.src === "ip" ? (fr ? "votre connexion internet" : "your internet connection") : (fr ? "le fuseau horaire de votre appareil" : "your device’s time zone");
       bar.querySelector(".pt-where").innerHTML = "📍 <b>" + place.replace(/</g, "") + (LOC.name && LOC.cc ? ", " + country(LOC.cc, fr) : "") + "</b> <small>(" + (fr ? "d’après " : "based on ") + how + ")</small>";
       gpsBtn.textContent = gpsMsg || (LOC.src === "gps" ? (fr ? "Actualiser ma position" : "Update my location") : (fr ? "Utiliser ma position exacte" : "Use my exact location"));
+      chgBtn.textContent = fr ? "Changer de ville" : "Change city"; q.placeholder = fr ? "Tapez votre ville (ex. Abha, Kano, Bouaké)" : "Type your city (e.g. Abha, Kano, Bouaké)";
       var dateTxt = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(now);
       bar.querySelector(".pt-note").textContent = dateTxt + (hijri(now, fr) ? " · " + hijri(now, fr) : "") + " · " + (fr ? "Heure locale, méthode " : "Local time, ") + ptMethod(LOC.cc).n + (fr ? "" : " method") + ". " + (fr ? "Peut différer de quelques minutes de votre mosquée." : "May differ by a few minutes from your local mosque.");
     }
@@ -971,11 +972,33 @@
         var la = +p.coords.latitude.toFixed(3), lo = +p.coords.longitude.toFixed(3), near = ip && Math.abs(ip.lat - la) < 0.5 && Math.abs(ip.lng - lo) < 0.5;
         var l = { name: near ? ip.name : "", cc: cc, lat: la, lng: lo, src: "gps" };
         save("ptGps", l); setLoc(l);
-      }, function () { gpsMsg = silent ? "" : (lang === "fr" ? "Position refusée — heures selon votre ville" : "Location not allowed — using your city"); draw(); setTimeout(function () { gpsMsg = ""; draw(); }, 5000); }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 });
+      }, function () { if (silent) return; gpsMsg = lang === "fr" ? "Localisation bloquée par ce navigateur" : "Location is blocked by this browser"; draw(); openSearch(); setTimeout(function () { gpsMsg = ""; draw(); }, 6000); }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 });
     }
+    function openSearch() { box.hidden = false; q.value = ""; res.innerHTML = ""; setTimeout(function () { q.focus(); }, 30); }
+    var st = null, seq = 0;
+    q.addEventListener("input", function () {
+      clearTimeout(st); var v = q.value.trim(); if (v.length < 2) { res.innerHTML = ""; return; }
+      st = setTimeout(function () {
+        var my = ++seq;
+        fetch("https://geocoding-api.open-meteo.com/v1/search?count=6&format=json&language=" + (lang === "fr" ? "fr" : "en") + "&name=" + encodeURIComponent(v)).then(function (r) { return r.json(); }).then(function (j) {
+          if (my !== seq) return; res.innerHTML = "";
+          (j.results || []).forEach(function (c) {
+            var li = document.createElement("li"), b = document.createElement("button"); b.type = "button";
+            b.textContent = c.name + (c.admin1 ? ", " + c.admin1 : "") + (c.country ? ", " + c.country : "");
+            b.addEventListener("click", function () {
+              var l = { name: c.name, cc: c.country_code || "", lat: +(+c.latitude).toFixed(3), lng: +(+c.longitude).toFixed(3), src: "city" };
+              save("ptGps", l); box.hidden = true; setLoc(l);
+            });
+            li.appendChild(b); res.appendChild(li);
+          });
+          if (!res.children.length) res.innerHTML = "<li class=\"pt-none\">" + (lang === "fr" ? "Aucune ville trouvée" : "No city found") + "</li>";
+        }).catch(function () { res.innerHTML = "<li class=\"pt-none\">" + (lang === "fr" ? "Recherche indisponible" : "Search unavailable") + "</li>"; });
+      }, 300);
+    });
+    chgBtn.addEventListener("click", function () { if (box.hidden) openSearch(); else box.hidden = true; });
     gpsBtn.addEventListener("click", function () { gps(false); });
     var saved = load("ptGps");
-    if (saved && saved.src === "gps") LOC = saved;
+    if (saved && (saved.src === "gps" || saved.src === "city")) LOC = saved;
     else {
       var ipc = load("ptIp");
       if (ipc && ipc.t > Date.now() - 86400000) LOC = ipc;
