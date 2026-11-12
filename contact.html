@@ -114,7 +114,7 @@
             <select id="f_service" name="service" required>
               <option value="" data-fr="Sélectionner un service">Select a service</option>
               <option value="umrah" data-fr="Forfait Omra">Umrah package</option>
-              <option value="hajj" data-fr="Accompagnement Hajj">Hajj guidance</option>
+              <option value="hajj" data-fr="Forfaits Hajj">Hajj packages</option>
               <option value="visa" data-fr="Visa saoudien">Saudi visa</option>
               <option value="flights" data-fr="Vols">Flights</option>
               <option value="hotels" data-fr="Hôtels La Mecque / Médine">Hotels in Makkah / Madinah</option>
@@ -145,11 +145,14 @@
 
           <fieldset class="svc" data-for="hajj">
             <legend data-fr="Détails Hajj">Hajj details</legend>
+            <div class="field"><label for="h_city" data-fr="Ville de départ">Departure city</label><input id="h_city" name="departure_city" data-fr-placeholder="ex. Abidjan, Lagos, Kano" placeholder="e.g. Abidjan, Lagos, Kano"></div>
+            <div class="field"><label for="h_pkg" data-fr="Forfait préféré">Preferred package</label>
+              <select id="h_pkg" name="package"><option value="" data-fr="Pas encore décidé">Not decided yet</option><option value="essential" data-fr="Essentiel">Essential</option><option value="comfort" data-fr="Confort">Comfort</option><option value="premium" data-fr="Premium">Premium</option></select></div>
             <div class="field"><label for="h_nat" data-fr="Nationalité">Nationality</label><input id="h_nat" name="nationality"></div>
-            <div class="field"><label for="h_year" data-fr="Année du Hajj visée">Target Hajj year</label><input id="h_year" name="hajj_year" inputmode="numeric" placeholder="2027"></div>
-            <div class="field"><label for="h_pax" data-fr="Nombre de personnes">Number of people</label><input id="h_pax" name="travellers" type="number" min="1"></div>
-            <div class="field"><label for="h_status" data-fr="Déjà inscrit auprès de l’autorité nationale ?">Already registered with your national authority?</label>
-              <select id="h_status" name="registered"><option value="" data-fr="Sélectionner">Select</option><option value="Yes" data-fr="Oui">Yes</option><option value="No" data-fr="Non">No</option><option value="Not sure" data-fr="Je ne sais pas">Not sure</option></select></div>
+            <div class="field"><label for="h_year" data-fr="Année du Hajj">Hajj year</label><input id="h_year" name="hajj_year" inputmode="numeric" placeholder="2027"></div>
+            <div class="field"><label for="h_pax" data-fr="Nombre de pèlerins (adultes / enfants)">Pilgrims (adults / children)</label><input id="h_pax" name="travellers" data-fr-placeholder="ex. 2 adultes" placeholder="e.g. 2 adults"></div>
+            <div class="field"><label for="h_room" data-fr="Type de chambre">Room type</label>
+              <select id="h_room" name="room"><option value="" data-fr="Sélectionner">Select</option><option value="Double" data-fr="Double">Double</option><option value="Triple" data-fr="Triple">Triple</option><option value="Quad" data-fr="Quadruple">Quad</option><option value="Family" data-fr="Familiale">Family</option></select></div>
           </fieldset>
 
           <fieldset class="svc" data-for="visa">
@@ -199,11 +202,10 @@
             <div class="field"><label for="tr_budget" data-fr="Budget indicatif">Indicative budget</label><input id="tr_budget" name="budget"></div>
           </fieldset>
 
-          <div class="field full"><label for="f_msg"><span data-fr="Votre message">Your message</span> <span class="req">*</span></label><textarea id="f_msg" name="message" required data-fr-placeholder="Décrivez brièvement votre besoin. N’indiquez pas de numéro de passeport." placeholder="Briefly describe what you need. Please do not include passport numbers."></textarea><span class="err" data-fr="Veuillez écrire un court message (au moins 10 caractères).">Please write a short message (at least 10 characters).</span></div>
+          <div class="field full"><label for="f_msg"><span data-fr="Votre message">Your message</span> <span class="req">*</span></label><textarea id="f_msg" name="message" required data-fr-placeholder="Décrivez brièvement votre besoin." placeholder="Briefly describe what you need."></textarea><span class="err" data-fr="Veuillez écrire un court message (au moins 10 caractères).">Please write a short message (at least 10 characters).</span></div>
           <div class="field full"><label for="f_lang" data-fr="Langue de réponse préférée">Preferred reply language</label>
             <select id="f_lang" name="reply_language"><option value="English" data-fr="Anglais">English</option><option value="French" data-fr="Français">French</option></select></div>
           <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
-          <p class="secure-note full" data-fr="🔒 Ce formulaire ne reçoit pas de fichiers. N’envoyez pas de passeport, pièce d’identité ou coordonnées bancaires ici ; nous vous indiquerons un canal sécurisé si des documents sont nécessaires.">🔒 This form does not accept files. Do not send passports, ID documents or bank details here; we will give you a secure channel if documents are needed.</p>
           <div class="field full"><label class="consent"><input type="checkbox" name="consent" required> <span data-fr-html="J’accepte que mes informations soient utilisées pour répondre à cette demande, conformément à la <a href='privacy.html'>politique de confidentialité</a>.">I agree that my details will be used to respond to this enquiry, as described in the <a href="privacy.html">privacy policy</a>.</span></label><span class="err" data-fr="Veuillez accepter pour continuer.">Please tick to continue.</span></div>
           <div class="cf-turnstile-slot full"></div>
           <div class="form-actions full">
@@ -229,7 +231,6 @@
       <details><summary data-fr="Pouvez-vous garantir l’obtention d’un visa ?">Can you guarantee visa approval?</summary><p data-fr="Non. Les décisions de visa relèvent uniquement des autorités compétentes. Nous pouvons vous aider à préparer une demande complète, mais nous ne garantissons ni l’approbation, ni l’entrée, ni le délai.">No. Visa decisions are made only by the relevant authorities. We can help you prepare a complete application, but we cannot guarantee approval, entry or processing time.</p></details>
       <details><summary data-fr="Délivrez-vous directement des permis ou visas Hajj ?">Do you issue Hajj permits or visas directly?</summary><p data-fr="Non. L’inscription et les visas Hajj passent par les autorités saoudiennes, les autorités nationales du Hajj et les opérateurs agréés. Nous accompagnons et indiquons par écrit qui est responsable de chaque étape.">No. Hajj registration and visas go through the Saudi authorities, national Hajj authorities and approved operators. We assist and confirm in writing who is responsible for each step.</p></details>
       <details><summary data-fr="Quand dois-je payer ?">When should I pay?</summary><p data-fr="Uniquement après avoir reçu un devis écrit (services inclus, exclusions, calendrier de paiement, conditions d’annulation et de remboursement) et des instructions de paiement officielles. Demandez toujours un reçu.">Only after you have received a written quotation (included services, exclusions, payment schedule, cancellation and refund terms) and official payment instructions. Always ask for a receipt.</p></details>
-      <details><summary data-fr="Puis-je envoyer mon passeport via ce site ?">Can I send my passport through this website?</summary><p data-fr="Non. Ce site ne reçoit pas de documents. Lorsque des documents sont nécessaires, nous vous indiquerons un canal sécurisé approuvé.">No. This website does not accept documents. When documents are needed we will give you an approved secure channel.</p></details>
     </div>
   </div>
 </section>
@@ -246,7 +247,7 @@
       <div>
         <h4 data-fr="Services">Services</h4>
         <a href="umrah.html" data-fr="Forfaits Omra">Umrah packages</a>
-        <a href="hajj.html" data-fr="Accompagnement Hajj">Hajj guidance</a>
+        <a href="hajj.html" data-fr="Forfaits Hajj">Hajj packages</a>
         <a href="visas.html" data-fr="Visas saoudiens">Saudi visas</a>
         <a href="services.html" data-fr="Vols et hôtels">Flights &amp; hotels</a>
         <a href="partners.html" data-fr="Partenariats">Partnerships</a>
