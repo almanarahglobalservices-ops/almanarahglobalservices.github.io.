@@ -31,7 +31,7 @@
       t_status: "Current status", t_payment: "Payment", t_updated: "Last updated", t_note: "Message from our team", t_progress: "Booking progress",
       subject: "Website enquiry",
       partner: "Travel partnership",
-      services: { umrah: "Umrah package", hajj: "Hajj guidance", visa: "Saudi visa", flights: "Flights", hotels: "Hotels in Makkah / Madinah", transfer: "Transfers / ground transport", train: "Haramain train", ziyarah: "Ziyarah", partner: "Travel partnership", trade: "Import / export", general: "General enquiry" }
+      services: { umrah: "Umrah package", hajj: "Hajj packages", visa: "Saudi visa", flights: "Flights", hotels: "Hotels in Makkah / Madinah", transfer: "Transfers / ground transport", train: "Haramain train", ziyarah: "Ziyarah", partner: "Travel partnership", trade: "Import / export", general: "General enquiry" }
     },
     fr: {
       wa_hello: "Bonjour AL MANARAH GLOBAL SERVICES, je souhaite des informations sur : ",
@@ -53,7 +53,7 @@
       t_status: "Statut actuel", t_payment: "Paiement", t_updated: "Dernière mise à jour", t_note: "Message de notre équipe", t_progress: "Avancement de la réservation",
       subject: "Demande depuis le site",
       partner: "Partenariat voyage",
-      services: { umrah: "Forfait Omra", hajj: "Accompagnement Hajj", visa: "Visa saoudien", flights: "Vols", hotels: "Hôtels La Mecque / Médine", transfer: "Transferts / transport", train: "Train Haramain", ziyarah: "Ziyarah", partner: "Partenariat agence", trade: "Import / export", general: "Demande générale" }
+      services: { umrah: "Forfait Omra", hajj: "Forfaits Hajj", visa: "Visa saoudien", flights: "Vols", hotels: "Hôtels La Mecque / Médine", transfer: "Transferts / transport", train: "Train Haramain", ziyarah: "Ziyarah", partner: "Partenariat agence", trade: "Import / export", general: "Demande générale" }
     }
   };
 
@@ -155,7 +155,7 @@
     if (!svcSelect) return;
     svcSelect.value = svc || "general";
     showFieldsets();
-    if (pkg) { var ps = document.getElementById("u_pkg"); if (ps) ps.value = pkg; }
+    if (pkg) { var ps = document.querySelector("#enquiryForm fieldset.svc.show select[name=package]"); if (ps) ps.value = pkg; }
   }
   function initRouting() {
     svcSelect = document.getElementById("f_service");
@@ -278,7 +278,7 @@
     var floats = document.querySelectorAll("[data-quick]");
     if (page === "contact") { floats.forEach(function (a) { a.hidden = true; }); return; }
     if (!floats.length || !CFG.formEndpoint) return;
-    var SV = [["umrah","Umrah package","Forfait Omra"],["hajj","Hajj guidance","Accompagnement Hajj"],["visa","Saudi visa","Visa saoudien"],["flights","Flights","Vols"],["hotels","Hotels in Makkah / Madinah","Hôtels La Mecque / Médine"],["transfer","Transfers / transport","Transferts / transport"],["partner","Travel partnership","Partenariat agence"],["general","General enquiry","Demande générale"]];
+    var SV = [["umrah","Umrah package","Forfait Omra"],["hajj","Hajj packages","Forfaits Hajj"],["visa","Saudi visa","Visa saoudien"],["flights","Flights","Vols"],["hotels","Hotels in Makkah / Madinah","Hôtels La Mecque / Médine"],["transfer","Transfers / transport","Transferts / transport"],["partner","Travel partnership","Partenariat agence"],["general","General enquiry","Demande générale"]];
     var opts = '<option value="" data-fr="Choisir un service">Choose a service</option>' + SV.map(function (o) { return '<option value="' + o[0] + '" data-fr="' + o[2] + '">' + o[1] + '</option>'; }).join("");
     var dlg = document.createElement("div");
     dlg.className = "qm"; dlg.hidden = true; dlg.setAttribute("role", "dialog"); dlg.setAttribute("aria-modal", "true"); dlg.setAttribute("aria-labelledby", "qmTitle");
@@ -319,7 +319,7 @@
   }
 
   /* ---------- Tracking page ---------- */
-  var REF_RE = /^AMG-\d{6}-[A-Z0-9]{6}$/;
+  var REF_RE = /^AMG-\d{6}-(\d{4}|[A-Z0-9]{6})$/;
   var STEP_LABELS = {
     en: { documents: "Documents", visa: "Visa", flight: "Flight", hotel: "Hotel", transport: "Transport" },
     fr: { documents: "Documents", visa: "Visa", flight: "Vol", hotel: "Hôtel", transport: "Transport" } };
@@ -474,7 +474,7 @@
   var PAGES = [
     ["index.html", "Home", "Accueil", "home accueil al manarah global services umrah hajj travel voyage"],
     ["umrah.html", "Umrah packages", "Forfaits Omra", "umrah omra package forfait essential essentiel comfort confort premium makkah madinah price prix"],
-    ["hajj.html", "Hajj guidance", "Accompagnement Hajj", "hajj guidance accompagnement registration inscription"],
+    ["hajj.html", "Hajj packages", "Forfaits Hajj", "hajj package forfait essential essentiel comfort confort premium mina arafat"],
     ["visas.html", "Saudi visas", "Visas saoudiens", "visa saudi saoudien umrah tourist touristique family business evisa documents passport passeport"],
     ["services.html", "All services", "Tous les services", "services flights vols hotels hôtels transfer transfert transport train haramain ziyarah import export trade commerce"],
     ["services.html#travel", "Flight reservations", "Réservation de vols", "flight flights vol vols plane avion ticket billet jeddah médine"],
@@ -927,7 +927,7 @@
     var header = document.querySelector(".header"); if (!header) return;
     var open = false; try { open = localStorage.getItem("ptOpen") === "1"; } catch (e) {}
     var bar = mk("section", { "class": "pt-bar" + (open ? " open" : ""), "aria-label": "Prayer times" });
-    bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-loc"><span class="pt-where"></span><button type="button" class="pt-gps"></button></div><div class="pt-grid"></div><p class="pt-note"></p></div></div>';
+    bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-clock" aria-live="off"><b></b><small></small></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-in"><div class="pt-loc"><span class="pt-where"></span><button type="button" class="pt-gps"></button></div><div class="pt-grid"></div><p class="pt-note"></p></div></div></div>';
     header.parentNode.insertBefore(bar, header.nextSibling);
     var head = bar.querySelector(".pt-head"), gpsBtn = bar.querySelector(".pt-gps"), gpsMsg = "";
     head.addEventListener("click", function () { open = !open; bar.classList.toggle("open", open); head.setAttribute("aria-expanded", String(open)); try { localStorage.setItem("ptOpen", open ? "1" : "0"); } catch (e) {} draw(); });
@@ -950,6 +950,9 @@
       var mins = Math.max(0, Math.round((nextAt - now) / 60000)), left = (mins >= 60 ? Math.floor(mins / 60) + " h " : "") + (mins % 60) + " min";
       var place = LOC.name || (fr ? "Ma position" : "My location");
       bar.querySelector(".pt-sum").innerHTML = "<b>" + (fr ? "Heures de prière" : "Prayer times") + " · " + place.replace(/</g, "") + "</b><span class=\"pt-next\">" + (fr ? "Prochaine : " : "Next: ") + "<b>" + N[next] + " " + hm(nextAt) + "</b> · " + (fr ? "dans " : "in ") + left + "</span>";
+      var ck = bar.querySelector(".pt-clock");
+      ck.querySelector("b").textContent = hm(now);
+      ck.querySelector("small").textContent = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(now);
       bar.querySelector(".pt-tog").textContent = open ? "−" : "+";
       if (!open) return;
       bar.querySelector(".pt-grid").innerHTML = '<div class="pt-city"><ul>' + KEYS.map(function (k) { return '<li class="' + (k === next && t[k] > now ? "now" : "") + (k === "sunrise" ? " sun" : "") + '"><span>' + N[k] + "</span><b>" + hm(t[k]) + "</b></li>"; }).join("") + "</ul></div>";
@@ -987,7 +990,7 @@
       try { navigator.permissions.query({ name: "geolocation" }).then(function (s) { if (s.state === "granted") gps(true); }); } catch (e) {}
     }
     promoEls.push(draw);
-    draw(); setInterval(draw, 30000);
+    draw(); setTimeout(function () { draw(); setInterval(draw, 60000); }, 60000 - Date.now() % 60000 + 50);
   }
 
   function initExtras() {
