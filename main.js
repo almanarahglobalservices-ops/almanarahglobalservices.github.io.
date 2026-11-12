@@ -568,8 +568,7 @@
   function promoAddToBasket(P) { var v = bGet(), it = promoItem(P); if (!v.some(function (x) { return x.id === it.id; })) { v.push(it); bSet(v); } }
   var promoEls = [];
   function renderPromo() {
-    var P = CFG.promo; if (!promoActive(P)) return;
-    var t = promoText(P);
+    var P = CFG.promo, t = promoActive(P) ? promoText(P) : null;
     promoEls.forEach(function (fn) { fn(t); });
   }
   function initPromo() {
@@ -613,11 +612,32 @@
     if (new URLSearchParams(location.search).get("promo") === P.id) promoAddToBasket(P);
   }
 
+  /* ---------- Coming soon announcement (Home + Umrah pages) ---------- */
+  function initSoon() {
+    var page = document.body.dataset.page;
+    if (page !== "index" && page !== "umrah") return;
+    var item = { id: "umrah|ramadan2027", svc: "umrah", pkg: "", en: "Ramadan Umrah 2027 — please keep me updated", fr: "Omra du Ramadan 2027 — tenez-moi informé(e)" };
+    var sec = mk("section", { "class": "soon-sec" });
+    sec.innerHTML = '<div class="container"><div class="soon-box"><span class="soon-ribbon"></span><div class="soon-icon">☾</div><div class="soon-text"><h3></h3><p></p></div><div class="soon-actions"><a class="btn btn-wa btn-sm soon-wa" target="_blank" rel="noopener">' + SVG_WA + '<span></span></a><a class="btn btn-outline btn-sm soon-reg" href="contact.html?service=umrah&basket=1"></a></div></div></div>';
+    var after = document.querySelector(".promo-sec") || document.querySelector("#main > section");
+    if (after && after.parentNode) after.parentNode.insertBefore(sec, after.nextSibling);
+    sec.querySelector(".soon-reg").addEventListener("click", function () { var v = bGet(); if (!v.some(function (x) { return x.id === item.id; })) { v.push(item); bSet(v); } });
+    promoEls.push(function () {
+      var fr = lang === "fr";
+      sec.querySelector(".soon-ribbon").textContent = fr ? "Bientôt disponible" : "Coming soon";
+      sec.querySelector("h3").textContent = fr ? "Omra du Ramadan 2027" : "Ramadan Umrah 2027";
+      sec.querySelector("p").textContent = fr ? "Les dates, le programme et les prix seront publiés très bientôt. Inscrivez-vous pour être informé(e) en premier." : "Dates, programme and prices will be published very soon. Register now to be the first to know.";
+      sec.querySelector(".soon-wa span").textContent = fr ? "M’informer sur WhatsApp" : "Keep me updated on WhatsApp";
+      sec.querySelector(".soon-wa").href = waUrl(MAIN, fr ? "Bonjour AL MANARAH GLOBAL SERVICES, merci de me tenir informé(e) de l’Omra du Ramadan 2027." : "Hello AL MANARAH GLOBAL SERVICES, please keep me updated about the Ramadan Umrah 2027.");
+      sec.querySelector(".soon-reg").textContent = fr ? "Enregistrer mon intérêt" : "Register my interest";
+    });
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     initIcons(); initChoices();
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
-    initPromo();
+    initPromo(); initSoon();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
   }
