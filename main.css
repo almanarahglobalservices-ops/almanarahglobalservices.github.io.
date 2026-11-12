@@ -846,3 +846,15 @@ section:has(.why){display:none!important}
 .pt-clock small{font-size:.68rem;color:var(--muted);margin-top:3px;white-space:nowrap}
 [data-theme="dark"] .pt-clock b{color:#eaf4ee}
 @media (max-width:520px){.pt-clock{padding-left:8px}.pt-clock b{font-size:.92rem}.pt-clock small{font-size:.6rem}}
+/* Prayer bar: change city search */
+.pt-btns{display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pt-chg{border:1.5px solid var(--gold,#c3a052);background:#fffaf0;color:var(--green-900);font:700 .78rem/1 var(--sans);padding:7px 12px;border-radius:999px;cursor:pointer}
+.pt-chg:hover{background:var(--gold,#c3a052)}
+.pt-search{max-width:520px;margin:0 auto 10px}
+.pt-q{width:100%;padding:10px 14px;border:1.5px solid var(--green-800);border-radius:12px;font:500 .9rem var(--sans);background:#fff;color:var(--ink)}
+.pt-res{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
+.pt-res button{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font:600 .84rem var(--sans);color:var(--green-900);cursor:pointer}
+.pt-res button:hover{background:#eef6f1;border-color:var(--green-800)}
+.pt-none{font-size:.8rem;color:var(--muted);text-align:center;padding:6px}
+[data-theme="dark"] .pt-q,[data-theme="dark"] .pt-res button{background:#122519;color:#eaf4ee;border-color:#2b4a39}
+[data-theme="dark"] .pt-chg{background:transparent;color:#f0dca8}
