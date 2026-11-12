@@ -556,7 +556,7 @@
       title: fr ? P.titleFr : P.title,
       dates: fr ? P.datesFr : P.dates,
       from: fr ? P.fromFr : P.from,
-      price: fmtPrice(P.price) + " " + P.currency,
+      price: fmtPrice(P.price) + " " + P.currency + (fr ? " / personne" : " per person"),
       count: d > 1 ? (fr ? "Départ dans " + d + " jours" : "Departure in " + d + " days") : (fr ? "Départ imminent" : "Departing soon"),
       badge: fr ? "Offre spéciale" : "Special offer",
       book: fr ? "Réserver maintenant" : "Book now",
@@ -564,7 +564,7 @@
       add: fr ? "Ajouter au panier" : "Add to basket"
     };
   }
-  function promoItem(P) { return { id: "umrah|promo-" + P.id, svc: "umrah", pkg: "", en: P.title + " (" + P.dates + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " " + P.currency, fr: P.titleFr + " (" + P.datesFr + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " " + P.currency }; }
+  function promoItem(P) { return { id: "umrah|promo-" + P.id, svc: "umrah", pkg: "", en: P.title + " (" + P.dates + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " " + P.currency + " per person", fr: P.titleFr + " (" + P.datesFr + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " " + P.currency + " / personne" }; }
   function promoAddToBasket(P) { var v = bGet(), it = promoItem(P); if (!v.some(function (x) { return x.id === it.id; })) { v.push(it); bSet(v); } }
   var promoEls = [];
   function renderPromo() {
