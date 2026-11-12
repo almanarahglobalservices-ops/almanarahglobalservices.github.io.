@@ -714,3 +714,10 @@ section:has(.why){display:none!important}
 
 /* Hotel list: two per row on phones */
 @media (max-width:700px){.hb-hotels{grid-template-columns:1fr 1fr!important;gap:6px}.hb-hotel{padding:8px 9px;font-size:.76rem}.hb-hotel small{font-size:.66rem}.hb-stars{font-size:.66rem}}
+
+/* Hotel list: compact name-only buttons */
+.hb-hotels{display:flex!important;flex-wrap:wrap;gap:6px!important}
+.hb-hotel{display:inline-block;width:auto;padding:7px 12px!important;border-radius:999px;font-size:.8rem!important;line-height:1.2}
+.hb-hotel small,.hb-hotel .hb-stars{display:none!important}
+.hb-hotel.on{background:var(--green-800);border-color:var(--green-800);color:#fff;box-shadow:none}
+@media (max-width:700px){.hb-hotel{padding:6px 10px!important;font-size:.74rem!important}}
