@@ -636,8 +636,18 @@
 
   /* ---------- Hotel booking builder (hotels.html) ---------- */
   var HOTELS = {
-    makkah: ["Fairmont Makkah Clock Royal Tower", "Raffles Makkah Palace", "Swissôtel Makkah", "Swissôtel Al Maqam Makkah", "Pullman ZamZam Makkah", "Mövenpick Hotel & Residences Hajar Tower", "Hilton Suites Makkah", "Conrad Makkah", "Jabal Omar Hyatt Regency Makkah", "Jabal Omar Marriott Hotel Makkah"],
-    madinah: ["The Oberoi Madina", "Anwar Al Madinah Mövenpick", "Pullman ZamZam Madinah", "Dar Al Taqwa Hotel", "Madinah Hilton", "Dar Al Iman InterContinental", "Crowne Plaza Madinah"]
+    makkah: {
+      5: [["Fairmont Makkah Clock Royal Tower", "Abraj Al Bait · facing the Haram", "Abraj Al Bait · face au Haram"], ["Raffles Makkah Palace", "Abraj Al Bait · next to the Haram", "Abraj Al Bait · à côté du Haram"], ["Swissôtel Makkah", "Abraj Al Bait · next to the Haram", "Abraj Al Bait · à côté du Haram"], ["Swissôtel Al Maqam Makkah", "Abraj Al Bait · next to the Haram", "Abraj Al Bait · à côté du Haram"], ["Pullman ZamZam Makkah", "Abraj Al Bait · next to the Haram", "Abraj Al Bait · à côté du Haram"], ["Mövenpick Hajar Tower Makkah", "Abraj Al Bait · next to the Haram", "Abraj Al Bait · à côté du Haram"], ["Hilton Suites Makkah", "Facing the Haram", "Face au Haram"], ["Conrad Makkah", "Jabal Omar · opposite King Fahd Gate", "Jabal Omar · face à la porte du Roi Fahd"], ["Jabal Omar Hyatt Regency Makkah", "Jabal Omar · walking distance", "Jabal Omar · à pied"], ["Jabal Omar Marriott Hotel Makkah", "Jabal Omar · walking distance", "Jabal Omar · à pied"], ["Jumeirah Jabal Omar Makkah", "Jabal Omar · walking distance", "Jabal Omar · à pied"]],
+      4: [["DoubleTree by Hilton Makkah Jabal Omar", "Jabal Omar · near the Haram", "Jabal Omar · près du Haram"], ["Elaf Kinda Hotel", "Central Makkah", "Centre de La Mecque"], ["Le Méridien Towers Makkah", "Kudai · shuttle to the Haram", "Kudai · navette vers le Haram"], ["voco Makkah", "1.3 km · free shuttle", "1,3 km · navette gratuite"], ["Courtyard by Marriott Makkah", "3.3 km from the Haram", "3,3 km du Haram"], ["Ramada by Wyndham Makkah Zad Al Rawda", "5 km · shuttle", "5 km · navette"], ["Novotel Makkah Thakher City", "Thakher City · shuttle", "Thakher City · navette"], ["Mercure Makkah Hotel", "Quiet district · shuttle", "Quartier calme · navette"], ["Wirgan Hotel Al Azizyah", "Aziziyah · shuttle", "Aziziyah · navette"], ["Park Inn by Radisson Makkah Thakher Alsharqi", "Thakher · shuttle", "Thakher · navette"]],
+      3: [["Al Kiswah Towers Hotel", "Kudai · shuttle", "Kudai · navette"], ["Saja Hotels Makkah", "Misfalah · 4 min by car", "Misfalah · 4 min en voiture"], ["Worth Elite Hotel", "Misfalah · near the Haram", "Misfalah · près du Haram"], ["ibis Styles Makkah", "Aziziyah · 24h free shuttle", "Aziziyah · navette 24h/24"], ["Al Joud Hotel Makkah", "Third Ring Road", "Troisième périphérique"], ["Emaar Al Khalil", "About 3 km · shuttle", "Environ 3 km · navette"], ["Elaf Qinwan Hotel", "Makkah", "La Mecque"], ["Al Rayyan Makiya Towers Hotel", "Aziziyah", "Aziziyah"], ["Nada Al Deafah Hotel", "Al Hajlah", "Al Hajlah"], ["Qasr Al Sahab Hotel Makkah", "Makkah", "La Mecque"], ["Hibatullah Hotel Makkah", "Makkah", "La Mecque"], ["Mira Al Rawda", "Ar Rawdah · 5 km", "Ar Rawdah · 5 km"]],
+      2: [["Elaf Ajyad Hotel", "Ajyad · central", "Ajyad · centre"], ["Al Shahba Hotel Makkah", "Umm Al Qura Road · near the Haram", "Route Umm Al Qura · près du Haram"], ["Emaar Andalusia", "Al Hajlah", "Al Hajlah"], ["Osturat Emaar Hotel", "Makkah", "La Mecque"], ["Snood Al Houda Hotel", "Makkah", "La Mecque"]]
+    },
+    madinah: {
+      5: [["The Oberoi Madina", "Next to the Prophet's Mosque", "À côté de la Mosquée du Prophète"], ["Dar Al Eiman Al Haram", "Steps from the main gate", "À quelques pas de la porte principale"], ["Anwar Al Madinah Mövenpick", "Next to the mosque", "À côté de la mosquée"], ["Pullman ZamZam Madinah", "Near the mosque", "Près de la mosquée"], ["Dar Al Taqwa Hotel", "Next to the mosque", "À côté de la mosquée"], ["Madinah Hilton", "Near the mosque", "Près de la mosquée"], ["InterContinental Dar Al Iman", "Near the mosque", "Près de la mosquée"], ["Sofitel Shahd Al Madinah", "Metres from the mosque", "À quelques mètres de la mosquée"], ["Shaza Regency Plaza", "Walking distance", "À pied"], ["Maden Hotel", "About 160 m", "Environ 160 m"], ["Crowne Plaza Madinah", "Near the mosque", "Près de la mosquée"]],
+      4: [["Al Manakha Rotana Madinah", "In front of the mosque", "Face à la mosquée"], ["Emaar Elite Madinah", "Facing the Haram courtyards", "Face aux esplanades du Haram"], ["Novotel Madinah", "About 120 m", "Environ 120 m"], ["Saja Al Madinah", "About 300 m", "Environ 300 m"], ["Millennium Taiba Hotel", "10 min walk", "10 min à pied"], ["Elaf Al Taqwa Hotel", "Quba Street · near the mosque", "Rue Quba · près de la mosquée"], ["Nusk Al Hijrah Hotel", "A few hundred metres", "À quelques centaines de mètres"], ["Waqf Outhman Bin Affan Hotel", "City centre", "Centre-ville"], ["Marriott Executive Apartments Madinah", "King Abdullah Road · 4.4 km", "Route du Roi Abdallah · 4,4 km"]],
+      3: [["Durrat Al Eiman Hotel", "About 150 m", "Environ 150 m"], ["Rua Al Hijrah Hotel", "4 min walk", "4 min à pied"], ["Taiba Front Hotel", "Few minutes' walk", "Quelques minutes à pied"], ["New Madinah Hotel", "10 min walk", "10 min à pied"], ["Zaha Al Munawara Hotel", "About 800 m", "Environ 800 m"], ["Emaar Royal Hotel Al Madina", "15 min walk", "15 min à pied"], ["Hotel Taba Al Salam", "15 min walk", "15 min à pied"], ["Season Star Hotel Madinah", "City centre", "Centre-ville"], ["Mysk Al Balad", "Central Madinah", "Centre de Médine"], ["Al Mukhtara International Hotel", "4 min by car", "4 min en voiture"]],
+      2: [["Jayden Hotel", "Under 1 km", "Moins de 1 km"], ["coov hotel", "Madinah", "Médine"], ["Zaha Taiba Hotel", "Madinah", "Médine"], ["Jiwar Al Madina Hotel", "Madinah", "Médine"], ["Wardh Rahiq Hotel", "Madinah", "Médine"], ["Madinah Deluxe Hotel", "Madinah", "Médine"], ["Almaghreby Hotel 2", "Qurban · 5 min by car", "Qurban · 5 min en voiture"], ["Al Eairy Apartments Madinah 9", "Furnished apartments", "Appartements meublés"]]
+    }
   };
   var HB = { city: "both", nMak: 5, nMed: 4, date: "", stars: 4, hMak: "", hMed: "", dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
   function initNavHotels() {
@@ -653,12 +663,13 @@
   function hbText() {
     var fr = lang === "fr", L = [];
     var cityName = { makkah: fr ? "La Mecque" : "Makkah", madinah: fr ? "Médine" : "Madinah" };
-    var rec = fr ? "recommandé par AL MANARAH" : "recommended by AL MANARAH";
+    var rec = fr ? "hôtel à choisir" : "hotel not chosen yet", oth = fr ? "autre hôtel (à préciser par téléphone)" : "another hotel (to discuss by phone)";
+    function hn(v) { return v === "Other" ? oth : (v || rec); }
     var distT = { closest: fr ? "Le plus proche du Haram" : "Closest to the Haram", walk: fr ? "À distance de marche" : "Walking distance", shuttle: fr ? "Avec navette (économique)" : "With shuttle (economy)" };
     var mealT = { ro: fr ? "Chambre seule" : "Room only", bb: fr ? "Petit-déjeuner" : "Breakfast", hb: fr ? "Demi-pension" : "Half board", fb: fr ? "Pension complète" : "Full board" };
     L.push((fr ? "Demande d’hôtel" : "Hotel request") + " — " + HB.stars + "★");
-    if (HB.city !== "madinah") L.push(cityName.makkah + ": " + HB.nMak + (fr ? " nuits — " : " nights — ") + (HB.hMak || rec));
-    if (HB.city !== "makkah") L.push(cityName.madinah + ": " + HB.nMed + (fr ? " nuits — " : " nights — ") + (HB.hMed || rec));
+    if (HB.city !== "madinah") L.push(cityName.makkah + ": " + HB.nMak + (fr ? " nuits — " : " nights — ") + hn(HB.hMak));
+    if (HB.city !== "makkah") L.push(cityName.madinah + ": " + HB.nMed + (fr ? " nuits — " : " nights — ") + hn(HB.hMed));
     L.push((fr ? "Arrivée" : "Check-in") + ": " + (HB.date || (fr ? "à confirmer" : "to be confirmed")));
     L.push((fr ? "Chambres" : "Rooms") + ": " + HB.rooms + " × " + HB.room + " · " + HB.adults + (fr ? " adulte(s)" : " adult(s)") + (HB.kids ? ", " + HB.kids + (fr ? " enfant(s)" : " child(ren)") : ""));
     L.push((fr ? "Distance" : "Distance") + ": " + distT[HB.dist] + " · " + (fr ? "Repas" : "Meals") + ": " + mealT[HB.meals]);
@@ -677,10 +688,10 @@
     function hotelList(city) {
       var fr = lang === "fr", key = city === "makkah" ? "hMak" : "hMed";
       var title = city === "makkah" ? (fr ? "Hôtel à La Mecque" : "Hotel in Makkah") : (fr ? "Hôtel à Médine" : "Hotel in Madinah");
-      var recLabel = fr ? "Le meilleur hôtel " + HB.stars + "★ disponible — recommandé par AL MANARAH" : "Best available " + HB.stars + "★ hotel — recommended by AL MANARAH";
-      var html = '<div class="hb-q"><h4>' + title + '</h4><div class="hb-hotels">';
-      html += '<button type="button" class="hb-hotel' + (!HB[key] ? " on" : "") + '" data-h="' + key + '" data-v=""><span class="hb-stars">' + "★".repeat(HB.stars) + "</span>" + recLabel + "</button>";
-      if (HB.stars === 5) HOTELS[city].forEach(function (n) { html += '<button type="button" class="hb-hotel' + (HB[key] === n ? " on" : "") + '" data-h="' + key + '" data-v="' + n + '"><span class="hb-stars">★★★★★</span>' + n + "</button>"; });
+      var stars = "★".repeat(HB.stars), other = fr ? "Un autre hôtel (non listé)" : "Another hotel (not listed)";
+      var html = '<div class="hb-q"><h4>' + title + " · " + stars + '</h4><div class="hb-hotels">';
+      HOTELS[city][HB.stars].forEach(function (h) { html += '<button type="button" class="hb-hotel' + (HB[key] === h[0] ? " on" : "") + '" data-h="' + key + '" data-v="' + h[0] + '"><span class="hb-stars">' + stars + "</span>" + h[0] + "<small>" + (fr ? h[2] : h[1]) + "</small></button>"; });
+      html += '<button type="button" class="hb-hotel hb-other' + (HB[key] === "Other" ? " on" : "") + '" data-h="' + key + '" data-v="Other">' + other + "<small>" + (fr ? "Nous vous appelons pour le nom" : "We will call you for the name") + "</small></button>";
       html += "</div></div>";
       return html;
     }
@@ -696,7 +707,7 @@
       html += '<div class="hb-q hb-num"><h4>4. ' + (fr ? "Choisissez l’hôtel" : "Choose the hotel") + "</h4>";
       if (HB.city !== "madinah") html += hotelList("makkah");
       if (HB.city !== "makkah") html += hotelList("madinah");
-      if (HB.stars < 5) html += '<p class="note">' + (fr ? "Pour les catégories 2★ à 4★, nous vous proposons les meilleurs hôtels disponibles près du Haram dans votre devis." : "For 2★ to 4★ we propose the best available hotels near the Haram in your quotation.") + "</p>";
+      html += '<p class="note">' + (fr ? "Catégories selon les principaux sites de réservation. Disponibilité et prix confirmés dans votre devis." : "Star categories as listed on major booking sites. Availability and price are confirmed in your quotation.") + "</p>";
       html += "</div>";
       html += '<div class="hb-q"><h4>5. ' + (fr ? "Chambres et voyageurs" : "Rooms & guests") + "</h4>" + chips("room", [["Double", "Double"], ["Triple", "Triple"], ["Quad", fr ? "Quadruple" : "Quad"], ["Suite", fr ? "Suite familiale" : "Family suite"]]);
       html += '<div class="hb-row"><div><small>' + (fr ? "Chambres" : "Rooms") + "</small>" + stepper("rooms", 1, 20) + "</div><div><small>" + (fr ? "Adultes" : "Adults") + "</small>" + stepper("adults", 1, 60) + "</div><div><small>" + (fr ? "Enfants" : "Children") + "</small>" + stepper("kids", 0, 20) + "</div></div></div>";
@@ -708,7 +719,7 @@
     }
     box.addEventListener("click", function (e) {
       var c = e.target.closest(".hb-chip"), s = e.target.closest("[data-s]"), h = e.target.closest(".hb-hotel");
-      if (c) { var k = c.dataset.k, v = c.dataset.v; HB[k] = (k === "stars") ? +v : v; if (k === "stars" && +v < 5) { HB.hMak = ""; HB.hMed = ""; } }
+      if (c) { var k = c.dataset.k, v = c.dataset.v; HB[k] = (k === "stars") ? +v : v; if (k === "stars") { HB.hMak = ""; HB.hMed = ""; } }
       else if (s) { var key = s.dataset.s; HB[key] = Math.min(+s.dataset.max, Math.max(+s.dataset.min, HB[key] + (+s.dataset.d))); }
       else if (h) { HB[h.dataset.h] = h.dataset.v; }
       else return;
