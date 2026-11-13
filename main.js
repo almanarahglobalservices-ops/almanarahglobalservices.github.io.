@@ -1122,11 +1122,103 @@
     draw(); setTimeout(function () { draw(); setInterval(draw, 60000); }, 60000 - Date.now() % 60000 + 50);
   }
 
+
+  // 6. Share the website (native share sheet on phones, links on computers)
+  var SVG_SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></svg>';
+  var SHARE_ICONS = {
+    wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + WA_PATH + '"/></svg>',
+    fb: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14 8.5h2.5V5H14c-2.6 0-4 1.6-4 4.2V11H8v3.4h2V21h3.4v-6.6h2.5l.5-3.4h-3V9.6c0-.7.3-1.1.6-1.1z"/></svg>',
+    x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M5 4l14 16M19 4L5 20"/></svg>',
+    tg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.5 3.6L2.8 10.8c-1 .4-1 1.5 0 1.8l4.6 1.5 1.8 5.6c.2.7 1.1.9 1.6.4l2.6-2.4 4.7 3.5c.6.4 1.4.1 1.6-.6l3.1-15.6c.2-1-.6-1.7-1.4-1.4zM9.6 14.2l8.3-7.4-6.4 8.3-.3 3-1.6-3.9z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 6h18v12H3zM3 7l9 6.5L21 7"/></svg>',
+    copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>'
+  };
+  function shareData() {
+    var url = location.origin + location.pathname.replace(/index\.html$/, "");
+    var text = tx("AL MANARAH GLOBAL SERVICES — Umrah, Hajj, Saudi visas & travel. Have a look:", "AL MANARAH GLOBAL SERVICES — Omra, Hajj, visas saoudiens et voyages. Découvrez :");
+    return { url: url, text: text, title: document.title };
+  }
+  function shareLinks(d) {
+    var u = encodeURIComponent(d.url), t = encodeURIComponent(d.text);
+    return [
+      ["wa", "WhatsApp", "https://wa.me/?text=" + t + "%20" + u],
+      ["fb", "Facebook", "https://www.facebook.com/sharer/sharer.php?u=" + u],
+      ["x", "X", "https://twitter.com/intent/tweet?text=" + t + "&url=" + u],
+      ["tg", "Telegram", "https://t.me/share/url?url=" + u + "&text=" + t],
+      ["mail", "Email", "mailto:?subject=" + encodeURIComponent("AL MANARAH GLOBAL SERVICES") + "&body=" + t + "%0A" + u]
+    ];
+  }
+  function copyLink(btn) {
+    var d = shareData(), done = function () { var o = btn.getAttribute("aria-label"); btn.classList.add("copied"); btn.setAttribute("title", tx("Link copied", "Lien copié")); showToast(tx("Link copied ✓", "Lien copié ✓")); setTimeout(function () { btn.classList.remove("copied"); btn.setAttribute("title", o); }, 1800); };
+    try { navigator.clipboard.writeText(d.url).then(done, function () { prompt(tx("Copy this link:", "Copiez ce lien :"), d.url); }); } catch (e) { prompt("", d.url); }
+  }
+  var toastEl;
+  function showToast(m) {
+    if (!toastEl) { toastEl = mk("div", { "class": "share-toast", role: "status" }); document.body.appendChild(toastEl); }
+    toastEl.textContent = m; toastEl.classList.add("on"); clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove("on"); }, 1800);
+  }
+  function shareRow(cls) {
+    var row = mk("div", { "class": cls });
+    shareLinks(shareData()).forEach(function (l) {
+      var a = mk("a", { "class": "sh-" + l[0], href: l[2], target: "_blank", rel: "noopener", "aria-label": l[1], title: l[1] }, SHARE_ICONS[l[0]]);
+      a.addEventListener("click", function () { a.href = shareLinks(shareData()).filter(function (x) { return x[0] === l[0]; })[0][2]; });
+      row.appendChild(a);
+    });
+    var c = mk("button", { type: "button", "class": "sh-copy", "aria-label": "Copy link / Copier le lien", title: "Copy link / Copier le lien" }, SHARE_ICONS.copy);
+    c.addEventListener("click", function () { copyLink(c); });
+    row.appendChild(c);
+    return row;
+  }
+  function openShare(anchor) {
+    var d = shareData();
+    if (navigator.share && matchMedia("(pointer:coarse)").matches) { navigator.share({ title: d.title, text: d.text, url: d.url }).catch(function () {}); return; }
+    var pop = document.querySelector(".share-pop");
+    if (pop) { pop.remove(); return; }
+    pop = mk("div", { "class": "share-pop", role: "dialog", "aria-label": "Share" });
+    pop.appendChild(mk("b")).textContent = tx("Share this website", "Partager ce site");
+    pop.appendChild(shareRow("share-row"));
+    document.body.appendChild(pop);
+    var r = anchor.getBoundingClientRect();
+    pop.style.top = (r.bottom + 10) + "px";
+    pop.style.left = Math.max(10, Math.min(r.right - pop.offsetWidth, innerWidth - pop.offsetWidth - 10)) + "px";
+    setTimeout(function () {
+      function off(e) { if (!pop.contains(e.target) && e.target !== anchor && !anchor.contains(e.target)) { pop.remove(); document.removeEventListener("click", off); } }
+      document.addEventListener("click", off);
+      document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { pop.remove(); document.removeEventListener("keydown", esc); } });
+    }, 0);
+  }
+  function initShare(actions) {
+    if (actions) {
+      var btn = mk("button", { type: "button", "class": "icon-btn share-btn", "aria-label": "Share / Partager", title: "Share / Partager" }, SVG_SHARE);
+      btn.addEventListener("click", function () { openShare(btn); });
+      actions.insertBefore(btn, actions.querySelector(".lang"));
+    }
+    var menu = document.getElementById("menu");
+    if (menu) {
+      var mi = mk("button", { type: "button", "class": "menu-share" }, SVG_SHARE + '<span data-fr="Partager ce site">Share this website</span>');
+      mi.addEventListener("click", function () { openShare(mi); });
+      menu.appendChild(mi);
+    }
+    var col = document.querySelector(".footer .fgrid-foot > div");
+    if (col) {
+      var box = mk("div", { "class": "footer-share" });
+      box.appendChild(mk("span", { "data-fr": "Partager ce site" })).textContent = "Share this website";
+      box.appendChild(shareRow("share-row"));
+      if (navigator.share) {
+        var more = mk("button", { type: "button", "class": "sh-more", "aria-label": "More / Plus" }, SVG_SHARE);
+        more.addEventListener("click", function () { var d = shareData(); navigator.share({ title: d.title, text: d.text, url: d.url }).catch(function () {}); });
+        box.querySelector(".share-row").appendChild(more);
+      }
+      col.appendChild(box);
+    }
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     var waSym = document.getElementById("i-wa"); if (waSym) waSym.innerHTML = '<path d="' + WA_PATH + '"/>';
     initIcons(); initChoices(); initPhones();
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
+    initShare(actions);
     initPromo(); initSoon(); initPrayer(); initNavHotels(); initHotels(); initVisa(); initHajj();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
