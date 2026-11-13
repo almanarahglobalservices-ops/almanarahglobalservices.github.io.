@@ -881,15 +881,16 @@
 
   /* ---------- Hajj request builder (year, nationality, pilgrims) ---------- */
 
-  // Live chat (tawk.to)
+  // Live chat (Crisp)
   function initChat() {
-    if (window.Tawk_API && window.Tawk_API.__amg) return;
-    window.Tawk_API = window.Tawk_API || {}; window.Tawk_API.__amg = true;
-    window.Tawk_LoadStart = new Date();
+    if (window.$crisp) return;
+    window.$crisp = [];
+    window.CRISP_WEBSITE_ID = "a1476e54-d54c-4a67-a647-eab01890d6a3";
+    var lang = (document.documentElement.lang || "en").slice(0, 2);
+    window.CRISP_RUNTIME_CONFIG = { locale: lang === "fr" ? "fr" : "en" };
     var s = document.createElement("script");
-    s.async = true; s.src = "https://embed.tawk.to/6af61ade35380b3c3eb7e441/default";
-    s.charset = "UTF-8"; s.setAttribute("crossorigin", "*");
-    document.body.appendChild(s);
+    s.src = "https://client.crisp.chat/l.js"; s.async = true;
+    document.head.appendChild(s);
     document.body.classList.add("has-chat");
   }
 
