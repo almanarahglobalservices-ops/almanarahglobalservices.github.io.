@@ -12,6 +12,7 @@
   function t(en, f) { return fr() ? f : en; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function el(id) { return document.getElementById(id); }
+  function arTxt(s) { return esc(s).replace(/,/g, "،").replace(/;/g, "؛").replace(/\?/g, "؟"); }
   function load(box) { box.innerHTML = '<div class="lib-load">' + t("Loading…", "Chargement…") + "</div>"; }
   function fail(box, retry) {
     box.innerHTML = '<div class="lib-load">' + t("Could not load. Please check your connection.", "Chargement impossible. Vérifiez votre connexion.") + ' <button type="button" class="lib-btn">' + t("Try again", "Réessayer") + "</button></div>";
@@ -31,7 +32,9 @@
   function show(name) {
     current = name;
     tabs.forEach(function (b) { b.setAttribute("aria-selected", b.dataset.lib === name ? "true" : "false"); });
-    ["quran", "adhkar", "hadith", "books"].forEach(function (n) { el("lib-" + n).hidden = n !== name; });
+    ["quran", "adhkar", "hadith", "live", "books"].forEach(function (n) { el("lib-" + n).hidden = n !== name; });
+    if (name !== "live" && LV.video) LV.video.pause();
+    if (name !== "quran" && Q.playing >= 0) stopAudio();
     if (!started[name]) { started[name] = true; RENDER[name](); }
     if (history.replaceState) history.replaceState(null, "", "#" + name);
   }
@@ -138,7 +141,7 @@
       var h = '<div class="lib-bar"><button type="button" class="lib-btn" id="aBack">‹ ' + t("All occasions", "Toutes les occasions") + '</button></div><div class="lib-head"><h2>' + esc(c.t) + "</h2></div>";
       h += items.map(function (x, i) {
         var n = +x.REPEAT || 1;
-        return '<div class="lib-card"><div class="lib-meta"><span class="lib-num">' + (i + 1) + '</span><span style="display:flex;gap:8px">' + (x.AUDIO ? '<button type="button" class="lib-play" data-a="' + esc(String(x.AUDIO).replace(/^http:/, "https:")) + '" aria-label="' + t("Listen", "Écouter") + '">▶</button>' : "") + '<button type="button" class="lib-count" data-n="' + n + '">' + n + " ×</button></span></div><div class=\"lib-ar\">" + esc(x.ARABIC_TEXT) + '</div><div class="lib-tr">' + esc(x.LANGUAGE_ARABIC_TRANSLATED_TEXT) + '</div><div class="lib-tx">' + esc(x.TRANSLATED_TEXT) + "</div></div>";
+        return '<div class="lib-card"><div class="lib-meta"><span class="lib-num">' + (i + 1) + '</span><span style="display:flex;gap:8px">' + (x.AUDIO ? '<button type="button" class="lib-play" data-a="' + esc(String(x.AUDIO).replace(/^http:/, "https:")) + '" aria-label="' + t("Listen", "Écouter") + '">▶</button>' : "") + '<button type="button" class="lib-count" data-n="' + n + '">' + n + " ×</button></span></div><div class=\"lib-ar\">" + arTxt(x.ARABIC_TEXT) + '</div><div class="lib-tr">' + esc(x.LANGUAGE_ARABIC_TRANSLATED_TEXT) + '</div><div class="lib-tx">' + esc(x.TRANSLATED_TEXT) + "</div></div>";
       }).join("");
       h += '<p class="lib-note">' + t("Source: Hisn al-Muslim by Sa'id ibn Wahf al-Qahtani (hisnmuslim.com).", "Source : Hisn al-Muslim de Sa'id ibn Wahf al-Qahtani (hisnmuslim.com).") + "</p>";
       box.innerHTML = h;
@@ -204,7 +207,7 @@
     var g = x.g && x.g.length ? '<div class="lib-src">' + t("Grade", "Authenticité") + ": " + esc(x.g.map(function (y) { return y.grade + (y.name ? " (" + y.name + ")" : ""); }).join(" · ")) + "</div>" : "";
     var tx = esc(x.tx);
     if (q) { var re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"); tx = tx.replace(re, "<mark>$1</mark>"); }
-    var ar = x.ar != null ? '<div class="lib-ar" style="font-size:1.25rem;line-height:2">' + esc(x.ar) + "</div>" : '<button type="button" class="lib-btn" data-ar="' + x.n + '">' + t("Show Arabic", "Afficher l’arabe") + "</button>";
+    var ar = x.ar != null ? '<div class="lib-ar" style="font-size:1.25rem;line-height:2">' + arTxt(x.ar) + "</div>" : '<button type="button" class="lib-btn" data-ar="' + x.n + '">' + t("Show Arabic", "Afficher l’arabe") + "</button>";
     return '<div class="lib-card"><div class="lib-meta"><span>' + esc(b.name) + " · " + x.n + "</span></div>" + ar + '<div class="lib-tx">' + tx + "</div>" + g + "</div>";
   }
   function more() {
@@ -216,7 +219,7 @@
       btn.onclick = function () {
         btn.disabled = true; btn.textContent = t("Loading…", "Chargement…");
         getJSON(HAPI + "ara-" + b.id + "/" + btn.dataset.ar + ".min.json").then(function (d) {
-          var h = d.hadiths && d.hadiths[0]; btn.outerHTML = '<div class="lib-ar" style="font-size:1.25rem;line-height:2">' + esc(h ? h.text : "") + "</div>";
+          var h = d.hadiths && d.hadiths[0]; btn.outerHTML = '<div class="lib-ar" style="font-size:1.25rem;line-height:2">' + arTxt(h ? h.text : "") + "</div>";
         }).catch(function () { btn.disabled = false; btn.textContent = t("Try again", "Réessayer"); });
       };
     });
@@ -245,6 +248,39 @@
     }).catch(function () { fail(body, function () { search(q); }); });
   }
 
+  /* ---------- Live from Makkah & Madinah ---------- */
+  var LV = { video: null, hls: null, city: "makkah" };
+  var STREAMS = {
+    makkah: { url: "https://cdn-globecast.akamaized.net/live/eds/saudi_quran/hls_roku/index.m3u8", en: "Makkah — Masjid al-Haram (Saudi Quran TV)", fr: "La Mecque — Masjid al-Haram (Saudi Quran TV)" },
+    madinah: { url: "https://cdn-globecast.akamaized.net/live/eds/saudi_sunnah/hls_roku/index.m3u8", en: "Madinah — Masjid an-Nabawi (Saudi Sunnah TV)", fr: "Médine — Masjid an-Nabawi (Saudi Sunnah TV)" }
+  };
+  function live() {
+    var box = el("lib-live");
+    box.innerHTML = '<div class="lib-bar" style="justify-content:center"><button type="button" class="lib-btn" data-city="makkah">🕋 ' + t("Makkah live", "La Mecque en direct") + '</button><button type="button" class="lib-btn" data-city="madinah">🕌 ' + t("Madinah live", "Médine en direct") + '</button></div>' +
+      '<div class="lib-card lib-live"><div class="lib-meta"><span id="lvTitle"></span><span class="lib-dot">● LIVE</span></div><video id="lvVideo" controls playsinline muted autoplay preload="none"></video><div class="lib-src" id="lvMsg">' + t("The video starts muted — tap the speaker icon for sound.", "La vidéo démarre sans son — touchez l’icône du haut-parleur.") + "</div></div>" +
+      '<p class="lib-note">' + t("Official 24/7 broadcasts of the Saudi Broadcasting Authority.", "Diffusions officielles 24h/24 de l’Autorité saoudienne de radiodiffusion.") + "</p>";
+    LV.video = el("lvVideo");
+    box.querySelectorAll("[data-city]").forEach(function (b) { b.onclick = function () { play(b.dataset.city); }; });
+    play(LV.city);
+  }
+  function play(city) {
+    LV.city = city; var s = STREAMS[city], v = LV.video;
+    document.querySelectorAll("#lib-live [data-city]").forEach(function (b) { b.classList.toggle("on", b.dataset.city === city); });
+    el("lvTitle").textContent = fr() ? s.fr : s.en;
+    if (LV.hls) { LV.hls.destroy(); LV.hls = null; }
+    function err() { el("lvMsg").textContent = t("The live stream could not start. Please try again in a moment.", "Le direct n’a pas pu démarrer. Réessayez dans un instant."); }
+    if (v.canPlayType("application/vnd.apple.mpegurl")) { v.src = s.url; v.play().catch(function () {}); return; }
+    function start() {
+      if (!window.Hls || !window.Hls.isSupported()) return err();
+      LV.hls = new window.Hls({ enableWorker: false, lowLatencyMode: false });
+      LV.hls.on(window.Hls.Events.ERROR, function (e, d) { if (d && d.fatal) err(); });
+      LV.hls.loadSource(s.url); LV.hls.attachMedia(v);
+      LV.hls.on(window.Hls.Events.MANIFEST_PARSED, function () { v.play().catch(function () {}); });
+    }
+    if (window.Hls) return start();
+    var sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"; sc.onload = start; sc.onerror = err; document.head.appendChild(sc);
+  }
+
   /* ---------- Books ---------- */
   var BOOKS = [
     ["https://quran.com", "Quran.com", "Quran with many translations, tafsir and recitations.", "Le Coran avec de nombreuses traductions, tafsir et récitations."],
@@ -260,7 +296,7 @@
     }).join("") + '</div><p class="lib-note">' + t("These trusted libraries open in a new tab.", "Ces bibliothèques de confiance s’ouvrent dans un nouvel onglet.") + "</p>";
   }
 
-  var RENDER = { quran: quran, adhkar: adhkar, hadith: hadith, books: books };
+  var RENDER = { quran: quran, adhkar: adhkar, hadith: hadith, live: live, books: books };
 
   /* re-render the open panel when the visitor switches EN/FR */
   var lastLang = fr();
