@@ -41,7 +41,8 @@
   tabs.forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.lib); }); });
 
   /* ---------- Quran ---------- */
-  var Q = { list: null, surah: +(read("surah") || 1), audio: null, playing: -1, ayahs: [], tr: read("qtr") !== "0", tl: read("qtl") === "1" };
+  var Q = { list: null, surah: +(read("surah") || 1), audio: null, playing: -1, ayahs: [], tr: read("qtr") !== "0", tl: read("qtl") === "1", mus: read("qmus") !== "0", page: +(read("qpage") || 1) };
+  var MUSHAF = "https://cdn.jsdelivr.net/gh/GovarJabbar/Quran-PNG@master/";
   function arNum(n) { return String(n).replace(/\d/g, function (d) { return "٠١٢٣٤٥٦٧٨٩"[d]; }); }
   function quran() {
     var box = el("lib-quran"); load(box);
@@ -51,26 +52,69 @@
     var box = el("lib-quran");
     var opts = Q.list.map(function (s) { return '<option value="' + s.number + '"' + (s.number === Q.surah ? " selected" : "") + ">" + s.number + ". " + esc(s.englishName) + " — " + esc(s.englishNameTranslation) + " (" + s.numberOfAyahs + ")</option>"; }).join("");
     box.innerHTML = '<div class="lib-bar"><button type="button" class="lib-btn" id="qPrev" aria-label="' + t("Previous surah", "Sourate précédente") + '">‹</button><select id="qSel" aria-label="' + t("Choose a surah", "Choisir une sourate") + '">' + opts + '</select><button type="button" class="lib-btn" id="qNext" aria-label="' + t("Next surah", "Sourate suivante") + '">›</button><button type="button" class="lib-btn" id="qPlay">▶ ' + t("Listen", "Écouter") + '</button></div>' +
-      '<div class="lib-bar lib-modes" role="group" aria-label="' + t("Reading mode", "Mode de lecture") + '"><button type="button" class="lib-btn" data-m="ar">' + t("Quran only", "Coran seul") + '</button><button type="button" class="lib-btn" data-m="tr">' + t("Translation", "Traduction") + '</button><button type="button" class="lib-btn" data-m="tl">' + t("Transliteration", "Translittération") + '</button></div><div id="qBody"></div>';
-    el("qSel").onchange = function () { openSurah(+this.value); };
-    el("qPrev").onclick = function () { if (Q.surah > 1) openSurah(Q.surah - 1); };
-    el("qNext").onclick = function () { if (Q.surah < 114) openSurah(Q.surah + 1); };
+      '<div class="lib-bar lib-modes" role="group" aria-label="' + t("Reading mode", "Mode de lecture") + '"><button type="button" class="lib-btn" data-m="mus">📖 ' + t("Mushaf (pages)", "Mushaf (pages)") + '</button><button type="button" class="lib-btn" data-m="ar">' + t("Quran only", "Coran seul") + '</button><button type="button" class="lib-btn" data-m="tr">' + t("Translation", "Traduction") + '</button><button type="button" class="lib-btn" data-m="tl">' + t("Transliteration", "Translittération") + '</button></div><div id="qBody"></div>';
+    el("qSel").onchange = function () { go(+this.value); };
+    el("qPrev").onclick = function () { if (Q.surah > 1) go(Q.surah - 1); };
+    el("qNext").onclick = function () { if (Q.surah < 114) go(Q.surah + 1); };
     el("qPlay").onclick = function () { if (Q.playing >= 0) stopAudio(); else playAyah(0); };
     box.querySelectorAll("[data-m]").forEach(function (b) {
       b.onclick = function () {
         var m = b.dataset.m;
-        if (m === "ar") { Q.tr = false; Q.tl = false; } else { Q[m] = !Q[m]; }
-        save("qtr", Q.tr ? "1" : "0"); save("qtl", Q.tl ? "1" : "0"); modes(); openSurah(Q.surah);
+        if (m === "mus") { Q.mus = true; }
+        else { Q.mus = false; if (m === "ar") { Q.tr = false; Q.tl = false; } else { Q[m] = !Q[m]; } }
+        save("qmus", Q.mus ? "1" : "0"); save("qtr", Q.tr ? "1" : "0"); save("qtl", Q.tl ? "1" : "0"); modes();
+        if (Q.mus) surahPage(Q.surah); else openSurah(Q.surah);
       };
     });
-    modes(); openSurah(Q.surah);
+    modes(); if (Q.mus) showPage(Q.page); else openSurah(Q.surah);
   }
+  function go(n) { if (Q.mus) surahPage(n); else openSurah(n); }
   function modes() {
     document.querySelectorAll(".lib-modes [data-m]").forEach(function (b) {
-      var on = b.dataset.m === "ar" ? (!Q.tr && !Q.tl) : Q[b.dataset.m];
+      var m = b.dataset.m, on = m === "mus" ? Q.mus : (!Q.mus && (m === "ar" ? (!Q.tr && !Q.tl) : Q[m]));
       b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    var p = el("qPlay"); if (p) p.hidden = Q.mus;
   }
+  /* Mushaf: page images of the Madinah Mushaf (Hafs), 604 pages, swipe like a real mushaf */
+  function surahPage(n) {
+    Q.surah = n; save("surah", n); var sel = el("qSel"); if (sel) sel.value = n;
+    var body = el("qBody"); load(body);
+    getJSON(QAPI + "surah/" + n).then(function (d) { showPage(d.data.ayahs[0].page || 1); }).catch(function () { fail(body, function () { surahPage(n); }); });
+  }
+  function showPage(p) {
+    stopAudio();
+    p = Math.max(1, Math.min(604, p)); Q.page = p; save("qpage", p);
+    var body = el("qBody");
+    if (!el("mPage")) {
+      body.innerHTML = '<div class="lib-mus"><div class="lib-mus-bar"><button type="button" class="lib-btn" id="mNext">‹ ' + t("Next page", "Page suivante") + '</button><label class="lib-mus-num">' + t("Page", "Page") + ' <input type="number" id="mNum" min="1" max="604" inputmode="numeric"> / 604</label><button type="button" class="lib-btn" id="mPrev">' + t("Previous page", "Page précédente") + ' ›</button></div>' +
+        '<div class="lib-mus-frame" id="mFrame"><img id="mPage" alt="" decoding="async"></div><p class="lib-note">' + t("Madinah Mushaf (Hafs). Swipe to turn the page, like a real mushaf.", "Mushaf de Médine (Hafs). Glissez pour tourner la page, comme un vrai mushaf.") + "</p></div>";
+      el("mNext").onclick = function () { showPage(Q.page + 1); };
+      el("mPrev").onclick = function () { showPage(Q.page - 1); };
+      el("mNum").onchange = function () { showPage(+this.value || 1); };
+      var f = el("mFrame"), x0 = null, y0 = null;
+      f.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+      f.addEventListener("touchend", function (e) {
+        if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) showPage(Q.page + (dx > 0 ? 1 : -1));
+      });
+      if (!Q.keys) Q.keys = true, document.addEventListener("keydown", function (e) { if (!Q.mus || current !== "quran" || /input|select|textarea/i.test(e.target.tagName)) return; if (e.key === "ArrowLeft") showPage(Q.page + 1); if (e.key === "ArrowRight") showPage(Q.page - 1); });
+    }
+    var img = el("mPage"); img.classList.add("lib-fade");
+    img.onload = function () { img.classList.remove("lib-fade"); };
+    img.src = MUSHAF + String(p).padStart(3, "0") + ".png";
+    img.alt = t("Quran page ", "Coran page ") + p;
+    el("mNum").value = p;
+    el("mNext").disabled = p >= 604; el("mPrev").disabled = p <= 1;
+    [p + 1, p - 1].forEach(function (n) { if (n >= 1 && n <= 604) { var im = new Image(); im.src = MUSHAF + String(n).padStart(3, "0") + ".png"; } });
+    if (Q.list) { var s = surahOfPage(p); if (s) { Q.surah = s; save("surah", s); var sel = el("qSel"); if (sel) sel.value = s; } }
+  }
+  var PAGES = null;
+  function surahOfPage(p) {
+    if (!PAGES) { getJSON(QAPI + "meta").then(function (d) { PAGES = d.data.pages.references; showSel(); }).catch(function () {}); return 0; }
+    var r = PAGES[p - 1]; return r ? r.surah : 0;
+  }
+  function showSel() { var s = surahOfPage(Q.page); var sel = el("qSel"); if (s && sel) { Q.surah = s; sel.value = s; } }
   function openSurah(n) {
     stopAudio(); Q.surah = n; save("surah", n);
     var sel = el("qSel"); if (sel) sel.value = n;
