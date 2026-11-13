@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dFqnkix/KyuQ/tR3B/FYwRtcbWXrtRW7VdscV/VFsmc=' https://challenges.cloudflare.com https://*.crisp.chat; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.crisp.chat; font-src 'self' https://fonts.gstatic.com https://*.crisp.chat; img-src 'self' data: blob: https://*.crisp.chat; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://get.geojs.io https://geocoding-api.open-meteo.com https://*.crisp.chat wss://*.crisp.chat https://api.alquran.cloud https://cdn.jsdelivr.net https://www.hisnmuslim.com; frame-src https://challenges.cloudflare.com https://*.crisp.chat; media-src 'self' https://*.crisp.chat https://cdn.islamic.network https://www.hisnmuslim.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dFqnkix/KyuQ/tR3B/FYwRtcbWXrtRW7VdscV/VFsmc=' https://challenges.cloudflare.com https://*.crisp.chat https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.crisp.chat; font-src 'self' https://fonts.gstatic.com https://*.crisp.chat; img-src 'self' data: blob: https://*.crisp.chat; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://get.geojs.io https://geocoding-api.open-meteo.com https://*.crisp.chat wss://*.crisp.chat https://api.alquran.cloud https://cdn.jsdelivr.net https://www.hisnmuslim.com https://cdn-globecast.akamaized.net; frame-src https://challenges.cloudflare.com https://*.crisp.chat; media-src 'self' blob: https://*.crisp.chat https://cdn.islamic.network https://www.hisnmuslim.com https://cdn-globecast.akamaized.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"><meta name="referrer" content="strict-origin-when-cross-origin">
 <title data-fr="Bibliothèque islamique : Coran, adhkar, hadiths et livres | AL MANARAH">Islamic Library: Quran, Adhkar, Hadith &amp; Books | AL MANARAH</title>
 <meta name="description" content="Read the Holy Quran with English and French translation, morning and evening adhkar, authentic hadith collections and Islamic books — free on AL MANARAH GLOBAL SERVICES." data-fr="Lisez le Saint Coran avec traduction anglaise et française, les adhkar du matin et du soir, les recueils de hadiths authentiques et des livres islamiques — gratuitement sur AL MANARAH GLOBAL SERVICES.">
 <link rel="canonical" href="https://almanarahglobalservices.com/library.html">
@@ -70,6 +70,8 @@
 .lib-quick .lib-btn{font-size:.8rem;padding:8px 12px}
 .lib-tx mark{background:#f6e7b8;color:inherit;border-radius:3px;padding:0 2px}
 [data-theme="dark"] .lib-mushaf{color:#d9ecdf}[data-theme="dark"] .lib-ch,[data-theme="dark"] .lib-search{background:#122519;color:#e8f0ea}[data-theme="dark"] .lib-aya.on{background:#1d3a28}
+.lib-live video{width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;display:block}
+.lib-dot{color:#d33;font-weight:800;letter-spacing:.05em}
 </style>
 </head>
 <body data-page="library">
@@ -128,18 +130,20 @@
 <main id="main">
 <section class="pagehero pattern"><div class="container">
 <div class="crumb"><a href="index.html" data-fr="Accueil">Home</a> / <span data-fr="Bibliothèque">Library</span></div>
-<h1 data-fr="Bibliothèque islamique">Islamic library</h1><p data-fr="Lisez le Saint Coran, les adhkar quotidiens, les hadiths authentiques et des livres islamiques — gratuitement, en français et en anglais.">Read the Holy Quran, daily adhkar, authentic hadith and Islamic books — free, in English and French.</p></div></section>
+<h1 data-fr="Bibliothèque islamique">Islamic library</h1><p data-fr="Lisez le Saint Coran, les adhkar quotidiens, les hadiths authentiques et des livres islamiques, et suivez La Mecque et Médine en direct — gratuitement, en français et en anglais.">Read the Holy Quran, daily adhkar, authentic hadith and Islamic books, and watch Makkah and Madinah live — free, in English and French.</p></div></section>
 <section class="section tint" id="library">
   <div class="container" style="max-width:900px">
     <div class="lib-tabs"><div class="tabs" role="tablist">
       <button type="button" role="tab" data-lib="quran" aria-selected="true" data-fr="Coran">Quran</button>
       <button type="button" role="tab" data-lib="adhkar" aria-selected="false" data-fr="Adhkar">Adhkar</button>
       <button type="button" role="tab" data-lib="hadith" aria-selected="false" data-fr="Hadith">Hadith</button>
+      <button type="button" role="tab" data-lib="live" aria-selected="false" data-fr="🔴 Direct">🔴 Live</button>
       <button type="button" role="tab" data-lib="books" aria-selected="false" data-fr="Livres">Books</button>
     </div></div>
     <div class="lib-panel" id="lib-quran"><div class="lib-load" data-fr="Chargement…">Loading…</div></div>
     <div class="lib-panel" id="lib-adhkar" hidden></div>
     <div class="lib-panel" id="lib-hadith" hidden></div>
+    <div class="lib-panel" id="lib-live" hidden></div>
     <div class="lib-panel" id="lib-books" hidden></div>
   </div>
 </section>
