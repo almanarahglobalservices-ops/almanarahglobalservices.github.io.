@@ -80,9 +80,9 @@
   function surahPage(n) {
     Q.surah = n; save("surah", n); var sel = el("qSel"); if (sel) sel.value = n;
     var body = el("qBody"); load(body);
-    getJSON(QAPI + "surah/" + n).then(function (d) { showPage(d.data.ayahs[0].page || 1); }).catch(function () { fail(body, function () { surahPage(n); }); });
+    getJSON(QAPI + "surah/" + n).then(function (d) { showPage(d.data.ayahs[0].page || 1, true); }).catch(function () { fail(body, function () { surahPage(n); }); });
   }
-  function showPage(p) {
+  function showPage(p, keep) {
     stopAudio();
     p = Math.max(1, Math.min(604, p)); Q.page = p; save("qpage", p);
     var body = el("qBody");
@@ -107,7 +107,7 @@
     el("mNum").value = p;
     el("mNext").disabled = p >= 604; el("mPrev").disabled = p <= 1;
     [p + 1, p - 1].forEach(function (n) { if (n >= 1 && n <= 604) { var im = new Image(); im.src = MUSHAF + String(n).padStart(3, "0") + ".png"; } });
-    if (Q.list) { var s = surahOfPage(p); if (s) { Q.surah = s; save("surah", s); var sel = el("qSel"); if (sel) sel.value = s; } }
+    if (Q.list && !keep) { var s = surahOfPage(p); if (s) { Q.surah = s; save("surah", s); var sel = el("qSel"); if (sel) sel.value = s; } }
   }
   var PAGES = null;
   function surahOfPage(p) {
