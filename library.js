@@ -293,33 +293,46 @@
   }
 
   /* ---------- Live from Makkah & Madinah ---------- */
-  var LV = { video: null, hls: null, city: "makkah" };
+  var LV = { video: null, hls: null, city: "makkah", q: read("lvq") || "hd" };
+  var GC = "https://cdn-globecast.akamaized.net/live/eds/";
   var STREAMS = {
-    makkah: { url: "https://win.holol.com/live/quran/playlist.m3u8", alt: "https://cdn-globecast.akamaized.net/live/eds/saudi_quran/hls_roku/index.m3u8", en: "Makkah — Masjid al-Haram · HD", fr: "La Mecque — Masjid al-Haram · HD" },
-    madinah: { url: "https://win.holol.com/live/sunnah/playlist.m3u8", alt: "https://cdn-globecast.akamaized.net/live/eds/saudi_sunnah/hls_roku/index.m3u8", en: "Madinah — Masjid an-Nabawi · HD", fr: "Médine — Masjid an-Nabawi · HD" }
+    makkah: { hd: "https://win.holol.com/live/quran/playlist.m3u8", sd: GC + "saudi_quran/hls_roku/saudi_quran-avc1_600000=2-mp4a_145600_ara=3.m3u8", low: GC + "saudi_quran/hls_roku/saudi_quran-avc1_249984=1-mp4a_145600_ara=3.m3u8", en: "Makkah — Masjid al-Haram", fr: "La Mecque — Masjid al-Haram" },
+    madinah: { hd: "https://win.holol.com/live/sunnah/playlist.m3u8", sd: GC + "saudi_sunnah/hls_roku/saudi_sunnah-avc1_600000=2-mp4a_145600_ara=3.m3u8", low: GC + "saudi_sunnah/hls_roku/saudi_sunnah-avc1_249984=1-mp4a_145600_ara=3.m3u8", en: "Madinah — Masjid an-Nabawi", fr: "Médine — Masjid an-Nabawi" }
   };
+  var QL = { hd: ["HD 720p", "HD 720p"], sd: ["SD 480p", "SD 480p"], low: ["Low 256p", "Faible 256p"] };
+  var NEXTQ = { hd: "sd", sd: "low", low: null };
   function live() {
     var box = el("lib-live");
     box.innerHTML = '<div class="lib-bar" style="justify-content:center"><button type="button" class="lib-btn" data-city="makkah">🕋 ' + t("Makkah live", "La Mecque en direct") + '</button><button type="button" class="lib-btn" data-city="madinah">🕌 ' + t("Madinah live", "Médine en direct") + '</button></div>' +
-      '<div class="lib-card lib-live"><div class="lib-meta"><span id="lvTitle"></span><span class="lib-dot">● LIVE</span></div><video id="lvVideo" controls playsinline muted autoplay preload="none"></video><div class="lib-src" id="lvMsg">' + t("The video starts muted — tap the speaker icon for sound.", "La vidéo démarre sans son — touchez l’icône du haut-parleur.") + "</div></div>" +
+      '<div class="lib-card lib-live"><div class="lib-meta"><span id="lvTitle"></span><span class="lib-dot">● LIVE</span></div><video id="lvVideo" controls playsinline muted autoplay preload="none"></video>' +
+      '<div class="lib-bar lib-quality" role="group" aria-label="' + t("Video quality", "Qualité vidéo") + '"><span class="lib-qlabel">' + t("Quality:", "Qualité :") + '</span>' + ["hd", "sd", "low"].map(function (q) { return '<button type="button" class="lib-btn" data-q="' + q + '">' + QL[q][fr() ? 1 : 0] + "</button>"; }).join("") + "</div>" +
+      '<div class="lib-src" id="lvMsg">' + t("The video starts muted — tap the speaker icon for sound. If the video stops or loads slowly, choose a lower quality.", "La vidéo démarre sans son — touchez l’icône du haut-parleur. Si la vidéo s’arrête ou charge lentement, choisissez une qualité plus basse.") + "</div></div>" +
       '<p class="lib-note">' + t("Official 24/7 broadcasts of the Saudi Broadcasting Authority.", "Diffusions officielles 24h/24 de l’Autorité saoudienne de radiodiffusion.") + "</p>";
     LV.video = el("lvVideo");
-    box.querySelectorAll("[data-city]").forEach(function (b) { b.onclick = function () { play(b.dataset.city); }; });
-    play(LV.city);
+    box.querySelectorAll("[data-city]").forEach(function (b) { b.onclick = function () { play(b.dataset.city, LV.q); }; });
+    box.querySelectorAll("[data-q]").forEach(function (b) { b.onclick = function () { LV.q = b.dataset.q; save("lvq", LV.q); play(LV.city, LV.q); }; });
+    play(LV.city, LV.q);
   }
-  function play(city, backup) {
-    LV.city = city; var s = STREAMS[city], v = LV.video, url = backup ? s.alt : s.url;
+  function play(city, q) {
+    LV.city = city; var s = STREAMS[city], v = LV.video, url = s[q];
     document.querySelectorAll("#lib-live [data-city]").forEach(function (b) { b.classList.toggle("on", b.dataset.city === city); });
-    el("lvTitle").textContent = fr() ? s.fr : s.en;
+    document.querySelectorAll("#lib-live [data-q]").forEach(function (b) { b.classList.toggle("on", b.dataset.q === q); });
+    el("lvTitle").textContent = (fr() ? s.fr : s.en) + " · " + QL[q][fr() ? 1 : 0];
     if (LV.hls) { LV.hls.destroy(); LV.hls = null; }
-    function err() { if (!backup) return play(city, true); el("lvMsg").textContent = t("The live stream could not start. Please try again in a moment.", "Le direct n’a pas pu démarrer. Réessayez dans un instant."); }
+    var failed = false;
+    function err() {
+      if (failed) return; failed = true;
+      if (NEXTQ[q]) return play(city, NEXTQ[q]);
+      el("lvMsg").textContent = t("The live stream could not start. Please try again in a moment.", "Le direct n’a pas pu démarrer. Réessayez dans un instant.");
+    }
     if (v.canPlayType("application/vnd.apple.mpegurl")) { v.onerror = err; v.src = url; v.play().catch(function () {}); return; }
+    v.onerror = null;
     function start() {
       if (!window.Hls || !window.Hls.isSupported()) return err();
-      LV.hls = new window.Hls({ enableWorker: false, lowLatencyMode: false, capLevelToPlayerSize: false, startLevel: -1, abrEwmaDefaultEstimate: 2000000 });
+      LV.hls = new window.Hls({ enableWorker: false, lowLatencyMode: false, capLevelToPlayerSize: false });
       LV.hls.on(window.Hls.Events.ERROR, function (e, d) { if (d && d.fatal) err(); });
       LV.hls.loadSource(url); LV.hls.attachMedia(v);
-      LV.hls.on(window.Hls.Events.MANIFEST_PARSED, function (e, d) { if (d && d.levels && d.levels.length) LV.hls.nextLevel = d.levels.length - 1; v.play().catch(function () {}); });
+      LV.hls.on(window.Hls.Events.MANIFEST_PARSED, function () { v.play().catch(function () {}); });
     }
     if (window.Hls) return start();
     var sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"; sc.onload = start; sc.onerror = err; document.head.appendChild(sc);
