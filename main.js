@@ -726,17 +726,14 @@
   function initNavGroup(menu) {
     if (!menu || menu.querySelector(".nav-drop")) return;
     var svc = menu.querySelector('[data-nav="services"]'); if (!svc) return;
-    var kids = ["umrah", "hotels", "hajj", "visas"].map(function (k) { return menu.querySelector('[data-nav="' + k + '"]'); }).filter(Boolean);
+    var kids = ["umrah", "hajj", "hotels", "visas"].map(function (k) { return menu.querySelector('[data-nav="' + k + '"]'); }).filter(Boolean);
     var wrap = mk("div", { "class": "nav-drop" });
     var btn = mk("button", { type: "button", "class": "nav-drop-btn", "aria-expanded": "false", "aria-controls": "navSub" });
     var label = mk("span", { "data-fr": "Services" }); label.textContent = "Services";
     var sign = mk("span", { "class": "nav-drop-sign", "aria-hidden": "true" }); sign.textContent = "+";
     btn.appendChild(label); btn.appendChild(sign);
     var sub = mk("div", { "class": "nav-sub", id: "navSub" });
-    var all = mk("a", { href: "services.html", "data-nav": "services-all", "data-fr": "Tous les services" }); all.textContent = "All services";
-    sub.appendChild(all);
     var active = svc.classList.contains("active");
-    if (active) all.className = "active";
     kids.forEach(function (a) { if (a.classList.contains("active")) active = true; sub.appendChild(a); });
     if (active) btn.classList.add("active");
     wrap.appendChild(btn); wrap.appendChild(sub);
