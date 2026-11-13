@@ -888,9 +888,18 @@
     window.CRISP_WEBSITE_ID = "a1476e54-d54c-4a67-a647-eab01890d6a3";
     var lang = (document.documentElement.lang || "en").slice(0, 2);
     window.CRISP_RUNTIME_CONFIG = { locale: lang === "fr" ? "fr" : "en" };
-    var s = document.createElement("script");
-    s.src = "https://client.crisp.chat/l.js"; s.async = true;
-    document.head.appendChild(s);
+    // load the chat only after the page is ready (keeps the site fast)
+    var done = false, ev = ["scroll", "pointerdown", "keydown", "touchstart", "mousemove"];
+    function go() {
+      if (done) return; done = true;
+      ev.forEach(function (e) { window.removeEventListener(e, go, true); });
+      var s = document.createElement("script");
+      s.src = "https://client.crisp.chat/l.js"; s.async = true;
+      document.head.appendChild(s);
+    }
+    ev.forEach(function (e) { window.addEventListener(e, go, { capture: true, passive: true, once: true }); });
+    if (document.readyState === "complete") setTimeout(go, 3500);
+    else window.addEventListener("load", function () { setTimeout(go, 3500); });
     document.body.classList.add("has-chat");
   }
 
