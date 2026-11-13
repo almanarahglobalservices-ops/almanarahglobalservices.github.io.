@@ -295,8 +295,8 @@
   /* ---------- Live from Makkah & Madinah ---------- */
   var LV = { video: null, hls: null, city: "makkah" };
   var STREAMS = {
-    makkah: { url: "https://cdn-globecast.akamaized.net/live/eds/saudi_quran/hls_roku/index.m3u8", en: "Makkah — Masjid al-Haram (Saudi Quran TV)", fr: "La Mecque — Masjid al-Haram (Saudi Quran TV)" },
-    madinah: { url: "https://cdn-globecast.akamaized.net/live/eds/saudi_sunnah/hls_roku/index.m3u8", en: "Madinah — Masjid an-Nabawi (Saudi Sunnah TV)", fr: "Médine — Masjid an-Nabawi (Saudi Sunnah TV)" }
+    makkah: { url: "https://win.holol.com/live/quran/playlist.m3u8", alt: "https://cdn-globecast.akamaized.net/live/eds/saudi_quran/hls_roku/index.m3u8", en: "Makkah — Masjid al-Haram · HD", fr: "La Mecque — Masjid al-Haram · HD" },
+    madinah: { url: "https://win.holol.com/live/sunnah/playlist.m3u8", alt: "https://cdn-globecast.akamaized.net/live/eds/saudi_sunnah/hls_roku/index.m3u8", en: "Madinah — Masjid an-Nabawi · HD", fr: "Médine — Masjid an-Nabawi · HD" }
   };
   function live() {
     var box = el("lib-live");
@@ -307,19 +307,19 @@
     box.querySelectorAll("[data-city]").forEach(function (b) { b.onclick = function () { play(b.dataset.city); }; });
     play(LV.city);
   }
-  function play(city) {
-    LV.city = city; var s = STREAMS[city], v = LV.video;
+  function play(city, backup) {
+    LV.city = city; var s = STREAMS[city], v = LV.video, url = backup ? s.alt : s.url;
     document.querySelectorAll("#lib-live [data-city]").forEach(function (b) { b.classList.toggle("on", b.dataset.city === city); });
     el("lvTitle").textContent = fr() ? s.fr : s.en;
     if (LV.hls) { LV.hls.destroy(); LV.hls = null; }
-    function err() { el("lvMsg").textContent = t("The live stream could not start. Please try again in a moment.", "Le direct n’a pas pu démarrer. Réessayez dans un instant."); }
-    if (v.canPlayType("application/vnd.apple.mpegurl")) { v.src = s.url; v.play().catch(function () {}); return; }
+    function err() { if (!backup) return play(city, true); el("lvMsg").textContent = t("The live stream could not start. Please try again in a moment.", "Le direct n’a pas pu démarrer. Réessayez dans un instant."); }
+    if (v.canPlayType("application/vnd.apple.mpegurl")) { v.onerror = err; v.src = url; v.play().catch(function () {}); return; }
     function start() {
       if (!window.Hls || !window.Hls.isSupported()) return err();
-      LV.hls = new window.Hls({ enableWorker: false, lowLatencyMode: false });
+      LV.hls = new window.Hls({ enableWorker: false, lowLatencyMode: false, capLevelToPlayerSize: false, startLevel: -1, abrEwmaDefaultEstimate: 2000000 });
       LV.hls.on(window.Hls.Events.ERROR, function (e, d) { if (d && d.fatal) err(); });
-      LV.hls.loadSource(s.url); LV.hls.attachMedia(v);
-      LV.hls.on(window.Hls.Events.MANIFEST_PARSED, function () { v.play().catch(function () {}); });
+      LV.hls.loadSource(url); LV.hls.attachMedia(v);
+      LV.hls.on(window.Hls.Events.MANIFEST_PARSED, function (e, d) { if (d && d.levels && d.levels.length) LV.hls.nextLevel = d.levels.length - 1; v.play().catch(function () {}); });
     }
     if (window.Hls) return start();
     var sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"; sc.onload = start; sc.onerror = err; document.head.appendChild(sc);
