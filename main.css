@@ -863,3 +863,5 @@ section:has(.why){display:none!important}
 /* live chat: lift quote button above chat bubble */
 body.has-chat .quote-float{bottom:96px}
 @media (max-width:640px){body.has-chat .quote-float{bottom:88px;right:14px}}
+/* header: keep one line on laptops after Library link */
+@media (min-width:1281px) and (max-width:1540px){.menu a{padding:9px 8px;font-size:.88rem}.nav-actions>.btn-primary.btn-sm{display:none}}
