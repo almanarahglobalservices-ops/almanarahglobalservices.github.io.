@@ -475,6 +475,7 @@
     ["index.html", "Home", "Accueil", "home accueil al manarah global services umrah hajj travel voyage"],
     ["umrah.html", "Umrah packages", "Forfaits Omra", "umrah omra package forfait essential essentiel comfort confort premium makkah madinah price prix"],
     ["hajj.html", "Hajj packages", "Forfaits Hajj", "hajj package forfait quotation devis year année"],
+    ["library.html", "Islamic library: Quran, Adhkar, Hadith", "Bibliothèque islamique : Coran, adhkar, hadiths", "library bibliothèque quran coran adhkar azkar dua hadith books livres"],
     ["visas.html", "Saudi visas", "Visas saoudiens", "visa saudi saoudien umrah tourist touristique family business evisa documents passport passeport"],
     ["services.html", "All services", "Tous les services", "services flights vols hotels hôtels transfer transfert transport train haramain ziyarah import export trade commerce"],
     ["services.html#travel", "Flight reservations", "Réservation de vols", "flight flights vol vols plane avion ticket billet jeddah médine"],
@@ -709,6 +710,16 @@
       if (u) u.parentNode.insertBefore(a, u.nextSibling); else menu.appendChild(a);
     }
     document.querySelectorAll('a[href="contact.html?service=hotels"]').forEach(function (l) { l.href = "hotels.html"; });
+    if (menu && !menu.querySelector('[data-nav="library"]')) {
+      var p = menu.querySelector('[data-nav="partners"]');
+      var lb = mk("a", { href: "library.html", "data-nav": "library", "data-fr": "Bibliothèque" }); lb.textContent = "Library";
+      if (p) p.parentNode.insertBefore(lb, p); else menu.appendChild(lb);
+    }
+    var fx = document.querySelector('.footer a[href="experiences.html"]');
+    if (fx && !document.querySelector('.footer a[href="library.html"]')) {
+      var fl = mk("a", { href: "library.html", "data-fr": "Bibliothèque islamique" }); fl.textContent = "Islamic library";
+      fx.parentNode.insertBefore(fl, fx.nextSibling);
+    }
   }
   function hbText() {
     var fr = lang === "fr", L = [];
