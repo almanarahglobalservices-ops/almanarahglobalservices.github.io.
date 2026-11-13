@@ -916,3 +916,14 @@ body.has-chat .quote-float{bottom:96px}
 [data-theme="dark"] .share-pop{background:#0f1322;border-color:#181e35}
 [data-theme="dark"] .share-pop b{color:#eaecf4}
 [data-theme="dark"] .menu-share{background:#131728;color:#eaecf4;border-color:#181e35}
+
+/* Dark mode: readable text after the navy/gold re-theme */
+[data-theme="dark"] .btn-gold,[data-theme="dark"] a.btn-gold{color:#101b45}
+[data-theme="dark"] .band.band-light .btn-gold{color:#fff}
+[data-theme="dark"] .pt-sum b{color:#eaecf4}
+[data-theme="dark"] .pt-next b,[data-theme="dark"] .kicker,[data-theme="dark"] .linkcard .arrow,[data-theme="dark"] .hero h1 em,[data-theme="dark"] .pf-price{color:#e2c27a}
+[data-theme="dark"] .hb-step b,[data-theme="dark"] .hb-step button,[data-theme="dark"] .hb-q h4,[data-theme="dark"] p.who b,[data-theme="dark"] .tag.direct,[data-theme="dark"] .pkg .price{color:#eaecf4}
+[data-theme="dark"] .cline small{color:#a7abbd}
+[data-theme="dark"] .prose p,[data-theme="dark"] .prose li,[data-theme="dark"] .prose strong,[data-theme="dark"] .l-en p,[data-theme="dark"] .l-fr p{color:var(--ink)}
+[data-theme="dark"] .filters button{background:#131728;color:#d5d9e7}
+[data-theme="dark"] .filters button[aria-pressed="true"]{background:#b78a32;border-color:#b78a32;color:#101b45}
