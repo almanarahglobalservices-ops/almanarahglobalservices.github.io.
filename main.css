@@ -878,3 +878,4 @@ body.has-chat .quote-float{bottom:96px}
 }
 [data-theme="dark"] .nav-sub{background:#0f2218}
 [data-theme="dark"] .nav-drop-btn{color:var(--ink)}
+.nav-drop-sign{display:none}
