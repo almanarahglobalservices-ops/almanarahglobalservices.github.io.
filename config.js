@@ -16,7 +16,10 @@ window.SITE_CONFIG = {
     dates: "26 Dec 2026 – 4 Jan 2027", datesFr: "26 déc. 2026 – 4 janv. 2027",
     from: "Departing from Côte d'Ivoire", fromFr: "Départ de Côte d’Ivoire",
     price: 1650000, currency: "FCFA",
-    departure: "2026-12-26"          // the offer disappears automatically on this date
+    departure: "2026-12-26",
+    lastPlaces: true,                // shows "Last places" wording
+    endsOn: "2026-12-13",            // booking closes: the offer is removed from this date
+    fullUntil: "2027-01-05"          // until this date a small "group full — next Umrah" bar is shown
   },
 
   turnstileSiteKey: ""
