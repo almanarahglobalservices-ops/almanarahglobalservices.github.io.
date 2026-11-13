@@ -611,13 +611,15 @@
       dates: fr ? P.datesFr : P.dates,
       from: fr ? P.fromFr : P.from,
       price: fmtPrice(P.price) + " " + P.currency + (fr ? " / personne" : " per person"),
-      count: d > 1 ? (fr ? "Départ dans " + d + " jours" : "Departure in " + d + " days") : (fr ? "Départ imminent" : "Departing soon"),
-      badge: fr ? "Offre spéciale" : "Special offer",
+      count: P.endsOn ? null : (d > 1 ? (fr ? "Départ dans " + d + " jours" : "Departure in " + d + " days") : (fr ? "Départ imminent" : "Departing soon")),
+      badge: P.lastPlaces ? (fr ? "Dernières places" : "Last places") : (fr ? "Offre spéciale" : "Special offer"),
       book: fr ? "Réserver maintenant" : "Book now",
-      now: fr ? "est disponible !" : "is now available!",
+      now: P.lastPlaces ? (fr ? "— dernières places !" : "— last places!") : (fr ? "est disponible !" : "is now available!"),
+      closes: P.endsOn ? (fr ? "Réservations jusqu’au " : "Booking closes ") + new Date(P.endsOn + "T00:00:00").toLocaleDateString(fr ? "fr-FR" : "en-GB", { day: "numeric", month: "long" }) : "",
       add: fr ? "Ajouter au panier" : "Add to basket"
     };
   }
+  var _pt = promoText; promoText = function (P) { var t = _pt(P); if (t.count === null) t.count = t.closes; return t; };
   function promoItem(P) { return { id: "umrah|promo-" + P.id, svc: "umrah", pkg: "", en: P.title + " (" + P.dates + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " " + P.currency + " per person", fr: P.titleFr + " (" + P.datesFr + ") — " + String(P.price).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " " + P.currency + " / personne" }; }
   function promoAddToBasket(P) { var v = bGet(), it = promoItem(P); if (!v.some(function (x) { return x.id === it.id; })) { v.push(it); bSet(v); } }
   var promoEls = [];
@@ -626,7 +628,16 @@
     promoEls.forEach(function (fn) { fn(t); });
   }
   function initPromo() {
-    var P = CFG.promo; if (!promoActive(P)) return;
+    var P = CFG.promo;
+    if (!promoActive(P)) {
+      if (P && P.on && P.fullUntil && new Date() < new Date(P.fullUntil + "T00:00:00")) {
+        var fb = mk("div", { "class": "promo-bar" });
+        fb.innerHTML = '<div class="container"><span class="pb-dot"></span><span class="pb-t"></span><a class="pb-btn" href="contact.html?service=umrah"></a></div>';
+        document.body.insertBefore(fb, document.querySelector(".topbar") || document.body.firstChild);
+        promoEls.push(function () { var fr = lang === "fr"; fb.querySelector(".pb-t").innerHTML = "<b>" + (fr ? P.titleFr : P.title) + "</b> " + (fr ? "— groupe complet. Demandez notre prochaine Omra." : "— group full. Ask about our next Umrah."); fb.querySelector(".pb-btn").textContent = (fr ? "Demander un devis" : "Get a quote") + " →"; });
+      }
+      return;
+    }
     var link = "contact.html?service=umrah&promo=" + P.id;
     // Top announcement bar
     var bar = mk("div", { "class": "promo-bar" });
@@ -657,7 +668,7 @@
       sec.querySelector(".ps-book").addEventListener("click", function () { promoAddToBasket(P); });
       promoEls.push(function (t) {
         sec.querySelector(".pf-badge").textContent = "★ " + t.badge; sec.querySelector(".ps-title").textContent = t.title + " " + t.now;
-        sec.querySelector(".ps-sub").textContent = lang === "fr" ? "Places limitées. Visa, vols, hôtels et transferts pris en charge — réservez tôt." : "Limited places. Visa, flights, hotels and transfers handled for you — book early.";
+        sec.querySelector(".ps-sub").textContent = P.lastPlaces ? (lang === "fr" ? "Le groupe est presque complet. Visa, vols, hôtels et transferts pris en charge — réservez vite." : "The group is almost full. Visa, flights, hotels and transfers handled for you — book quickly.") : (lang === "fr" ? "Places limitées. Visa, vols, hôtels et transferts pris en charge — réservez tôt." : "Limited places. Visa, flights, hotels and transfers handled for you — book early.");
         sec.querySelector(".ps-dates").textContent = "🗓 " + t.dates; sec.querySelector(".ps-from").textContent = "✈ " + t.from;
         var pp = t.price.split(/ (?=per person|\/ personne)/), pe = sec.querySelector(".ps-price"); pe.textContent = pp[0]; if (pp[1]) { var sm = document.createElement("small"); sm.textContent = pp[1].replace(/^\/ /, ""); pe.appendChild(sm); } sec.querySelector(".ps-count").textContent = t.count; sec.querySelector(".ps-book").textContent = t.book;
       });
