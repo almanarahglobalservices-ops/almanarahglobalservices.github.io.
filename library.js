@@ -20,7 +20,7 @@
   var cache = {};
   function getJSON(url) {
     if (cache[url]) return Promise.resolve(cache[url]);
-    return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) { cache[url] = d; return d; });
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (s) { return JSON.parse(s.replace(/^\uFEFF/, "")); }).then(function (d) { cache[url] = d; return d; });
   }
   function save(k, v) { try { localStorage.setItem("lib_" + k, v); } catch (e) {} }
   function read(k) { try { return localStorage.getItem("lib_" + k); } catch (e) { return null; } }
@@ -38,7 +38,8 @@
   tabs.forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.lib); }); });
 
   /* ---------- Quran ---------- */
-  var Q = { list: null, surah: +(read("surah") || 1), audio: null, playing: -1, ayahs: [] };
+  var Q = { list: null, surah: +(read("surah") || 1), audio: null, playing: -1, ayahs: [], tr: read("qtr") !== "0", tl: read("qtl") === "1" };
+  function arNum(n) { return String(n).replace(/\d/g, function (d) { return "٠١٢٣٤٥٦٧٨٩"[d]; }); }
   function quran() {
     var box = el("lib-quran"); load(box);
     getJSON(QAPI + "surah").then(function (d) { Q.list = d.data; quranUI(); }).catch(function () { fail(box, quran); });
@@ -46,59 +47,116 @@
   function quranUI() {
     var box = el("lib-quran");
     var opts = Q.list.map(function (s) { return '<option value="' + s.number + '"' + (s.number === Q.surah ? " selected" : "") + ">" + s.number + ". " + esc(s.englishName) + " — " + esc(s.englishNameTranslation) + " (" + s.numberOfAyahs + ")</option>"; }).join("");
-    box.innerHTML = '<div class="lib-bar"><button type="button" class="lib-btn" id="qPrev" aria-label="' + t("Previous surah", "Sourate précédente") + '">‹</button><select id="qSel" aria-label="' + t("Choose a surah", "Choisir une sourate") + '">' + opts + '</select><button type="button" class="lib-btn" id="qNext" aria-label="' + t("Next surah", "Sourate suivante") + '">›</button><button type="button" class="lib-btn" id="qPlay">▶ ' + t("Listen", "Écouter") + '</button></div><div id="qBody"></div>';
+    box.innerHTML = '<div class="lib-bar"><button type="button" class="lib-btn" id="qPrev" aria-label="' + t("Previous surah", "Sourate précédente") + '">‹</button><select id="qSel" aria-label="' + t("Choose a surah", "Choisir une sourate") + '">' + opts + '</select><button type="button" class="lib-btn" id="qNext" aria-label="' + t("Next surah", "Sourate suivante") + '">›</button><button type="button" class="lib-btn" id="qPlay">▶ ' + t("Listen", "Écouter") + '</button></div>' +
+      '<div class="lib-bar lib-modes" role="group" aria-label="' + t("Reading mode", "Mode de lecture") + '"><button type="button" class="lib-btn" data-m="ar">' + t("Quran only", "Coran seul") + '</button><button type="button" class="lib-btn" data-m="tr">' + t("Translation", "Traduction") + '</button><button type="button" class="lib-btn" data-m="tl">' + t("Transliteration", "Translittération") + '</button></div><div id="qBody"></div>';
     el("qSel").onchange = function () { openSurah(+this.value); };
     el("qPrev").onclick = function () { if (Q.surah > 1) openSurah(Q.surah - 1); };
     el("qNext").onclick = function () { if (Q.surah < 114) openSurah(Q.surah + 1); };
     el("qPlay").onclick = function () { if (Q.playing >= 0) stopAudio(); else playAyah(0); };
-    openSurah(Q.surah);
+    box.querySelectorAll("[data-m]").forEach(function (b) {
+      b.onclick = function () {
+        var m = b.dataset.m;
+        if (m === "ar") { Q.tr = false; Q.tl = false; } else { Q[m] = !Q[m]; }
+        save("qtr", Q.tr ? "1" : "0"); save("qtl", Q.tl ? "1" : "0"); modes(); openSurah(Q.surah);
+      };
+    });
+    modes(); openSurah(Q.surah);
+  }
+  function modes() {
+    document.querySelectorAll(".lib-modes [data-m]").forEach(function (b) {
+      var on = b.dataset.m === "ar" ? (!Q.tr && !Q.tl) : Q[b.dataset.m];
+      b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
   }
   function openSurah(n) {
     stopAudio(); Q.surah = n; save("surah", n);
     var sel = el("qSel"); if (sel) sel.value = n;
     var body = el("qBody"); load(body);
-    var ed = "quran-uthmani," + t("en.sahih", "fr.hamidullah");
-    getJSON(QAPI + "surah/" + n + "/editions/" + ed).then(function (d) {
-      var ar = d.data[0], tr = d.data[1], meta = Q.list[n - 1];
+    var eds = ["quran-uthmani"]; if (Q.tr) eds.push(t("en.sahih", "fr.hamidullah")); if (Q.tl) eds.push("en.transliteration");
+    getJSON(QAPI + "surah/" + n + "/editions/" + eds.join(",")).then(function (d) {
+      var ar = d.data[0], k = 1, tr = Q.tr ? d.data[k++] : null, tl = Q.tl ? d.data[k++] : null, meta = Q.list[n - 1];
       Q.ayahs = ar.ayahs.map(function (a) { return a.number; });
       var h = '<div class="lib-head"><div class="lib-ar">' + esc(meta.name) + "</div><h2>" + esc(meta.englishName) + " · " + esc(meta.englishNameTranslation) + '</h2><div class="lib-src">' + meta.numberOfAyahs + " " + t("verses", "versets") + " · " + (meta.revelationType === "Meccan" ? t("Makkah", "La Mecque") : t("Madinah", "Médine")) + "</div></div>";
-      h += ar.ayahs.map(function (a, i) {
-        return '<div class="lib-card" id="ay' + i + '"><div class="lib-meta"><span class="lib-num">' + a.numberInSurah + '</span><button type="button" class="lib-play" data-i="' + i + '" aria-label="' + t("Play verse", "Écouter le verset") + '">▶</button></div><div class="lib-ar">' + esc(a.text) + '</div><div class="lib-tx">' + esc(tr.ayahs[i] ? tr.ayahs[i].text : "") + "</div></div>";
-      }).join("");
-      h += '<p class="lib-note">' + t("Translation: Saheeh International. Recitation: Mishary Alafasy.", "Traduction : Muhammad Hamidullah. Récitation : Mishary Alafasy.") + "</p>";
+      if (!tr && !tl) {
+        h += '<div class="lib-card lib-mushaf" dir="rtl">' + ar.ayahs.map(function (a, i) { return '<span class="lib-aya" id="ay' + i + '" data-i="' + i + '">' + esc(a.text) + ' <span class="lib-ayn">﴿' + arNum(a.numberInSurah) + "﴾</span></span> "; }).join("") + "</div>";
+        h += '<p class="lib-note">' + t("Tap a verse to hear it.", "Touchez un verset pour l’écouter.") + "</p>";
+      } else {
+        h += ar.ayahs.map(function (a, i) {
+          return '<div class="lib-card" id="ay' + i + '"><div class="lib-meta"><span class="lib-num">' + a.numberInSurah + '</span><button type="button" class="lib-play" data-i="' + i + '" aria-label="' + t("Play verse", "Écouter le verset") + '">▶</button></div><div class="lib-ar">' + esc(a.text) + "</div>" +
+            (tl ? '<div class="lib-tr">' + esc(tl.ayahs[i] ? tl.ayahs[i].text : "") + "</div>" : "") +
+            (tr ? '<div class="lib-tx">' + esc(tr.ayahs[i] ? tr.ayahs[i].text : "") + "</div>" : "") + "</div>";
+        }).join("");
+        if (tr) h += '<p class="lib-note">' + t("Translation: Saheeh International.", "Traduction : Muhammad Hamidullah.") + "</p>";
+      }
+      h += '<p class="lib-note">' + t("Recitation: Mishary Alafasy.", "Récitation : Mishary Alafasy.") + "</p>";
       body.innerHTML = h;
-      body.querySelectorAll(".lib-play").forEach(function (b) { b.onclick = function () { var i = +b.dataset.i; if (Q.playing === i) stopAudio(); else playAyah(i); }; });
+      body.querySelectorAll(".lib-play, .lib-aya").forEach(function (b) { b.onclick = function () { var i = +b.dataset.i; if (Q.playing === i) stopAudio(); else playAyah(i); }; });
     }).catch(function () { fail(body, function () { openSurah(n); }); });
   }
   function mark() {
     document.querySelectorAll("#qBody .lib-play").forEach(function (b) { var on = +b.dataset.i === Q.playing; b.classList.toggle("on", on); b.textContent = on ? "❚❚" : "▶"; });
+    document.querySelectorAll("#qBody .lib-aya").forEach(function (b) { b.classList.toggle("on", +b.dataset.i === Q.playing); });
     var p = el("qPlay"); if (p) p.textContent = Q.playing >= 0 ? "■ " + t("Stop", "Arrêter") : "▶ " + t("Listen", "Écouter");
   }
   function playAyah(i) {
     if (i >= Q.ayahs.length) { stopAudio(); return; }
-    if (!Q.audio) { Q.audio = new Audio(); Q.audio.addEventListener("ended", function () { playAyah(Q.playing + 1); }); }
+    if (!Q.audio) { Q.audio = new Audio(); Q.audio.addEventListener("ended", function () { if (Q.playing >= 0) playAyah(Q.playing + 1); }); }
     Q.playing = i; Q.audio.src = AUDIO + Q.ayahs[i] + ".mp3";
     Q.audio.play().catch(function () {}); mark();
     var c = el("ay" + i); if (c && c.scrollIntoView) c.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   function stopAudio() { if (Q.audio) Q.audio.pause(); Q.playing = -1; mark(); }
 
-  /* ---------- Adhkar ---------- */
-  var A = { data: null, type: (new Date().getHours() >= 12 ? 2 : 1) };
+  /* ---------- Adhkar (Hisn al-Muslim, all chapters) ---------- */
+  var HISN = "https://www.hisnmuslim.com/api/en/";
+  var A = { list: null, ch: 0, q: "" };
+  var QUICK = [27, 28, 1, 2, 20, 21, 25, 26, 6, 7];
   function adhkar() {
     var box = el("lib-adhkar"); load(box);
-    getJSON("https://cdn.jsdelivr.net/gh/Seen-Arabic/Morning-And-Evening-Adhkar-DB@main/en.json").then(function (d) { A.data = d.map(function (x) { return { t: x.type, ar: x.content, en: x.translation, tr: x.transliteration, n: x.count || 1, src: x.source || "" }; }); adhkarUI(); }).catch(function () { fail(box, adhkar); });
+    getJSON(HISN + "husn_en.json").then(function (d) { A.list = (d.English || []).map(function (c) { return { id: +c.ID, t: c.TITLE }; }).sort(function (x, y) { return x.id - y.id; }); adhkarList(); }).catch(function () { fail(box, adhkar); });
   }
-  function adhkarUI() {
+  function adhkarList() {
     var box = el("lib-adhkar");
-    var h = '<div class="lib-bar" style="justify-content:center"><button type="button" class="lib-btn' + (A.type === 1 ? " on" : "") + '" data-t="1">☀ ' + t("Morning adhkar", "Adhkar du matin") + '</button><button type="button" class="lib-btn' + (A.type === 2 ? " on" : "") + '" data-t="2">☾ ' + t("Evening adhkar", "Adhkar du soir") + "</button></div>";
-    if (fr()) h += '<p class="lib-note">Traduction des adhkar disponible en anglais.</p>';
-    h += A.data.filter(function (x) { return x.t === 0 || x.t === A.type; }).map(function (x, i) {
-      return '<div class="lib-card"><div class="lib-meta"><span class="lib-num">' + (i + 1) + '</span><button type="button" class="lib-count" data-n="' + x.n + '">' + x.n + " × " + '</button></div><div class="lib-ar">' + esc(x.ar) + '</div><div class="lib-tr">' + esc(x.tr) + '</div><div class="lib-tx">' + esc(x.en) + '</div><div class="lib-src">' + esc(x.src) + "</div></div>";
-    }).join("");
-    h += '<p class="lib-note">' + t("Tap the counter each time you recite.", "Touchez le compteur à chaque récitation.") + " " + t("Source: Hisn al-Muslim and authentic Sunnah.", "Source : Hisn al-Muslim et la Sunna authentique.") + "</p>";
-    box.innerHTML = h;
-    box.querySelectorAll("[data-t]").forEach(function (b) { b.onclick = function () { A.type = +b.dataset.t; adhkarUI(); }; });
+    var quick = QUICK.map(function (id) { var c = A.list.filter(function (x) { return x.id === id; })[0]; return c ? '<button type="button" class="lib-btn" data-c="' + c.id + '">' + esc(c.t) + "</button>" : ""; }).join("");
+    box.innerHTML = '<p class="lib-note">' + t("Hisn al-Muslim (Fortress of the Muslim) — choose the occasion.", "Hisn al-Muslim (La citadelle du musulman) — choisissez l’occasion. Traductions en anglais.") + '</p><div class="lib-bar lib-quick">' + quick + '</div><input type="search" class="lib-search" id="aQ" placeholder="' + t("Search: mosque, sleep, travel, rain…", "Rechercher (en anglais) : mosque, sleep, travel…") + '" value="' + esc(A.q) + '"><div class="lib-chlist" id="aList"></div>';
+    var input = el("aQ");
+    function draw() {
+      var q = A.q.toLowerCase().trim();
+      var items = A.list.filter(function (c) { return !q || c.t.toLowerCase().indexOf(q) >= 0 || String(c.id) === q; });
+      el("aList").innerHTML = items.length ? items.map(function (c) { return '<button type="button" class="lib-ch" data-c="' + c.id + '"><span class="lib-num">' + c.id + "</span>" + esc(c.t) + "</button>"; }).join("") : '<div class="lib-load">' + t("No chapter found.", "Aucun chapitre trouvé.") + "</div>";
+      el("aList").querySelectorAll("[data-c]").forEach(function (b) { b.onclick = function () { openChapter(+b.dataset.c); }; });
+    }
+    input.oninput = function () { A.q = input.value; draw(); };
+    box.querySelectorAll(".lib-quick [data-c]").forEach(function (b) { b.onclick = function () { openChapter(+b.dataset.c); }; });
+    draw();
+  }
+  function openChapter(id) {
+    A.ch = id; var box = el("lib-adhkar"); load(box);
+    var c = A.list.filter(function (x) { return x.id === id; })[0] || { t: "" };
+    getJSON(HISN + id + ".json").then(function (d) {
+      var items = d[Object.keys(d)[0]] || [];
+      var h = '<div class="lib-bar"><button type="button" class="lib-btn" id="aBack">‹ ' + t("All occasions", "Toutes les occasions") + '</button></div><div class="lib-head"><h2>' + esc(c.t) + "</h2></div>";
+      h += items.map(function (x, i) {
+        var n = +x.REPEAT || 1;
+        return '<div class="lib-card"><div class="lib-meta"><span class="lib-num">' + (i + 1) + '</span><span style="display:flex;gap:8px">' + (x.AUDIO ? '<button type="button" class="lib-play" data-a="' + esc(String(x.AUDIO).replace(/^http:/, "https:")) + '" aria-label="' + t("Listen", "Écouter") + '">▶</button>' : "") + '<button type="button" class="lib-count" data-n="' + n + '">' + n + " ×</button></span></div><div class=\"lib-ar\">" + esc(x.ARABIC_TEXT) + '</div><div class="lib-tr">' + esc(x.LANGUAGE_ARABIC_TRANSLATED_TEXT) + '</div><div class="lib-tx">' + esc(x.TRANSLATED_TEXT) + "</div></div>";
+      }).join("");
+      h += '<p class="lib-note">' + t("Source: Hisn al-Muslim by Sa'id ibn Wahf al-Qahtani (hisnmuslim.com).", "Source : Hisn al-Muslim de Sa'id ibn Wahf al-Qahtani (hisnmuslim.com).") + "</p>";
+      box.innerHTML = h;
+      el("aBack").onclick = adhkarList;
+      counters(box);
+      var au = null, cur = null;
+      box.querySelectorAll("[data-a]").forEach(function (b) {
+        b.onclick = function () {
+          if (!au) { au = new Audio(); au.addEventListener("ended", function () { if (cur) { cur.textContent = "▶"; cur.classList.remove("on"); cur = null; } }); }
+          if (cur === b) { au.pause(); b.textContent = "▶"; b.classList.remove("on"); cur = null; return; }
+          if (cur) { cur.textContent = "▶"; cur.classList.remove("on"); }
+          cur = b; b.textContent = "❚❚"; b.classList.add("on"); au.src = b.dataset.a; au.play().catch(function () {});
+        };
+      });
+      window.scrollTo({ top: el("library").offsetTop - 80, behavior: "smooth" });
+    }).catch(function () { fail(box, function () { openChapter(id); }); });
+  }
+  function counters(box) {
     box.querySelectorAll(".lib-count").forEach(function (b) {
       var left = +b.dataset.n;
       b.onclick = function () {
@@ -116,19 +174,23 @@
     getJSON("hadith-books.json").then(function (d) { H.books = d; hadithUI(); }).catch(function () { fail(box, hadith); });
   }
   function bookOf(id) { return H.books.filter(function (b) { return b.id === id; })[0] || H.books[0]; }
+  function lgOf(b) { return fr() && b.fr ? "fra" : "eng"; }
   function hadithUI() {
     var box = el("lib-hadith"), b = bookOf(H.book);
     if (!b.s.some(function (s) { return s[0] === H.sec; })) H.sec = b.s[0][0];
     var bo = H.books.map(function (x) { return '<option value="' + x.id + '"' + (x.id === b.id ? " selected" : "") + ">" + esc(x.name) + "</option>"; }).join("");
     var so = b.s.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === H.sec ? " selected" : "") + ">" + s[0] + ". " + esc(s[1]) + "</option>"; }).join("");
-    box.innerHTML = '<div class="lib-bar"><select id="hBook" aria-label="' + t("Collection", "Recueil") + '">' + bo + '</select><select id="hSec" aria-label="' + t("Chapter", "Chapitre") + '"' + (b.s.length < 2 ? " hidden" : "") + ">" + so + '</select></div><div id="hBody"></div>';
+    box.innerHTML = '<div class="lib-bar"><select id="hBook" aria-label="' + t("Collection", "Recueil") + '">' + bo + '</select><select id="hSec" aria-label="' + t("Chapter", "Chapitre") + '"' + (b.s.length < 2 ? " hidden" : "") + ">" + so + '</select></div>' +
+      '<form class="lib-bar" id="hForm" role="search"><input type="search" class="lib-search" id="hQ" style="flex:1 1 220px;margin:0" placeholder="' + t("Search this collection: a word or hadith number", "Rechercher dans ce recueil : un mot ou un numéro") + '"><button type="submit" class="lib-btn on">' + t("Search", "Rechercher") + '</button></form><div id="hBody"></div>';
     el("hBook").onchange = function () { H.book = this.value; save("hbook", H.book); H.sec = bookOf(H.book).s[0][0]; save("hsec", H.sec); hadithUI(); };
     el("hSec").onchange = function () { H.sec = +this.value; save("hsec", H.sec); openSection(); };
+    el("hForm").onsubmit = function (e) { e.preventDefault(); var q = el("hQ").value.trim(); if (q) search(q); else openSection(); };
     openSection();
   }
   function openSection() {
+    H.q = "";
     var b = bookOf(H.book), body = el("hBody"); load(body);
-    var lg = fr() && b.fr ? "fra" : "eng";
+    var lg = lgOf(b);
     var url = function (l) { return HAPI + l + "-" + b.id + "/sections/" + H.sec + ".min.json"; };
     Promise.all([getJSON(url("ara")), getJSON(url(lg))]).then(function (r) {
       var tr = {}; r[1].hadiths.forEach(function (x) { tr[x.hadithnumber] = x; });
@@ -138,18 +200,49 @@
       more();
     }).catch(function () { fail(body, openSection); });
   }
+  function card(b, x, q) {
+    var g = x.g && x.g.length ? '<div class="lib-src">' + t("Grade", "Authenticité") + ": " + esc(x.g.map(function (y) { return y.grade + (y.name ? " (" + y.name + ")" : ""); }).join(" · ")) + "</div>" : "";
+    var tx = esc(x.tx);
+    if (q) { var re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"); tx = tx.replace(re, "<mark>$1</mark>"); }
+    var ar = x.ar != null ? '<div class="lib-ar" style="font-size:1.25rem;line-height:2">' + esc(x.ar) + "</div>" : '<button type="button" class="lib-btn" data-ar="' + x.n + '">' + t("Show Arabic", "Afficher l’arabe") + "</button>";
+    return '<div class="lib-card"><div class="lib-meta"><span>' + esc(b.name) + " · " + x.n + "</span></div>" + ar + '<div class="lib-tx">' + tx + "</div>" + g + "</div>";
+  }
   function more() {
     var list = el("hList"), b = bookOf(H.book), next = H.list.slice(H.shown, H.shown + 15);
     var old = document.getElementById("hMore"); if (old) old.remove();
-    list.insertAdjacentHTML("beforeend", next.map(function (x) {
-      var g = x.g.length ? '<div class="lib-src">' + t("Grade", "Authenticité") + ": " + esc(x.g.map(function (y) { return y.grade + (y.name ? " (" + y.name + ")" : ""); }).join(" · ")) + "</div>" : "";
-      return '<div class="lib-card"><div class="lib-meta"><span>' + esc(b.name) + " · " + x.n + '</span></div><div class="lib-ar" style="font-size:1.25rem;line-height:2">' + esc(x.ar) + '</div><div class="lib-tx">' + esc(x.tx) + "</div>" + g + "</div>";
-    }).join(""));
+    list.insertAdjacentHTML("beforeend", next.map(function (x) { return card(b, x, H.q); }).join(""));
     H.shown += next.length;
+    list.querySelectorAll("[data-ar]").forEach(function (btn) {
+      btn.onclick = function () {
+        btn.disabled = true; btn.textContent = t("Loading…", "Chargement…");
+        getJSON(HAPI + "ara-" + b.id + "/" + btn.dataset.ar + ".min.json").then(function (d) {
+          var h = d.hadiths && d.hadiths[0]; btn.outerHTML = '<div class="lib-ar" style="font-size:1.25rem;line-height:2">' + esc(h ? h.text : "") + "</div>";
+        }).catch(function () { btn.disabled = false; btn.textContent = t("Try again", "Réessayer"); });
+      };
+    });
     if (H.shown < H.list.length) {
       list.insertAdjacentHTML("afterend", '<button type="button" class="lib-btn lib-more" id="hMore">' + t("Show more", "Voir plus") + " (" + (H.list.length - H.shown) + ")</button>");
       el("hMore").onclick = more;
     }
+  }
+  function search(q) {
+    var b = bookOf(H.book), body = el("hBody"), lg = lgOf(b);
+    body.innerHTML = '<div class="lib-load">' + t("Searching ", "Recherche dans ") + esc(b.name) + "… " + t("(the first search can take a few seconds)", "(la première recherche peut prendre quelques secondes)") + "</div>";
+    var num = /^\d+$/.test(q);
+    var p = num ? Promise.all([getJSON(HAPI + lg + "-" + b.id + "/" + q + ".min.json"), getJSON(HAPI + "ara-" + b.id + "/" + q + ".min.json")]).then(function (r) {
+      var x = r[0].hadiths[0], a = r[1].hadiths[0];
+      return [{ n: x.hadithnumber, tx: x.text, ar: a ? a.text : "", g: x.grades || [] }];
+    }) : getJSON(HAPI + lg + "-" + b.id + ".min.json").then(function (d) {
+      var words = q.toLowerCase().split(/\s+/).filter(Boolean);
+      return d.hadiths.filter(function (x) { var s = (x.text || "").toLowerCase(); return words.every(function (w) { return s.indexOf(w) >= 0; }); })
+        .map(function (x) { return { n: x.hadithnumber, tx: x.text, ar: null, g: x.grades || [] }; });
+    });
+    p.then(function (res) {
+      H.list = res; H.shown = 0; H.q = num ? "" : q;
+      body.innerHTML = '<p class="lib-note">' + res.length + " " + t("result(s) for", "résultat(s) pour") + " « " + esc(q) + " » — " + esc(b.name) + ' <button type="button" class="lib-btn" id="hClear">' + t("Back to chapters", "Retour aux chapitres") + '</button></p><div id="hList"></div>';
+      el("hClear").onclick = function () { H.q = ""; el("hQ").value = ""; openSection(); };
+      if (res.length) more(); else el("hList").innerHTML = '<div class="lib-load">' + t("No hadith found. Try another word.", "Aucun hadith trouvé. Essayez un autre mot.") + "</div>";
+    }).catch(function () { fail(body, function () { search(q); }); });
   }
 
   /* ---------- Books ---------- */
