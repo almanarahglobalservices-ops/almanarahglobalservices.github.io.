@@ -714,6 +714,7 @@
       2: [["Jayden Hotel", "Under 1 km", "Moins de 1 km"], ["coov hotel", "Madinah", "Médine"], ["Zaha Taiba Hotel", "Madinah", "Médine"], ["Jiwar Al Madina Hotel", "Madinah", "Médine"], ["Wardh Rahiq Hotel", "Madinah", "Médine"], ["Madinah Deluxe Hotel", "Madinah", "Médine"], ["Almaghreby Hotel 2", "Qurban · 5 min by car", "Qurban · 5 min en voiture"], ["Al Eairy Apartments Madinah 9", "Furnished apartments", "Appartements meublés"]]
     }
   };
+  window.AMG_HOTELS = HOTELS;
   var HB = { city: "both", nMak: 5, nMed: 4, date: "", stars: 4, hMak: "", hMed: "", oMak: "", oMed: "", dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
   function initNavHotels() {
     var menu = document.getElementById("menu");
@@ -776,6 +777,8 @@
   }
   function initHotels() {
     var box = document.getElementById("hotelBuilder"); if (!box) return;
+    var PR = {};
+    if (CFG.formEndpoint) api({ action: "prices" }).then(function (r) { if (r && r.ok && r.prices && Object.keys(r.prices).length) { PR = r.prices; render(); } }).catch(function () {});
     var form = document.getElementById("hotelForm"), sum = document.getElementById("h_summary");
     var today = new Date(); today.setDate(today.getDate() + 3);
     var minDate = today.toISOString().slice(0, 10);
@@ -788,7 +791,7 @@
       var title = city === "makkah" ? (fr ? "Hôtel à La Mecque" : "Hotel in Makkah") : (fr ? "Hôtel à Médine" : "Hotel in Madinah");
       var stars = "★".repeat(HB.stars), other = fr ? "Un autre hôtel (non listé)" : "Another hotel (not listed)";
       var html = '<div class="hb-q"><h4>' + title + " · " + stars + '</h4><div class="hb-hotels">';
-      HOTELS[city][HB.stars].forEach(function (h) { html += '<button type="button" class="hb-hotel' + (HB[key] === h[0] ? " on" : "") + '" data-h="' + key + '" data-v="' + h[0] + '"><span class="hb-stars">' + stars + "</span>" + h[0] + "<small>" + (fr ? h[2] : h[1]) + "</small></button>"; });
+      HOTELS[city][HB.stars].forEach(function (h) { html += '<button type="button" class="hb-hotel' + (HB[key] === h[0] ? " on" : "") + '" data-h="' + key + '" data-v="' + h[0] + '"><span class="hb-stars">' + stars + "</span>" + h[0] + "<small>" + (fr ? h[2] : h[1]) + "</small>" + (PR[h[0]] ? '<em class="hb-price">' + (fr ? "Dès " : "From ") + fmtN(PR[h[0]].p, fr) + (fr ? " SAR / nuit" : " SAR / night") + "</em>" : "") + "</button>"; });
       html += '<button type="button" class="hb-hotel hb-other' + (HB[key] === "Other" ? " on" : "") + '" data-h="' + key + '" data-v="Other">' + other + "<small>" + (fr ? "Écrivez le nom ci-dessous" : "Type the name below") + "</small></button>";
       if (HB[key] === "Other") { var ok = city === "makkah" ? "oMak" : "oMed"; html += '<input type="text" class="hb-otherin" data-o="' + ok + '" value="' + String(HB[ok]).replace(/"/g, "&quot;") + '" placeholder="' + (fr ? "Nom de l’hôtel souhaité" : "Name of the hotel you want") + '">'; }
       html += "</div></div>";
@@ -806,7 +809,7 @@
       html += '<div class="hb-q hb-num"><h4>4. ' + (fr ? "Choisissez l’hôtel" : "Choose the hotel") + "</h4>";
       if (HB.city !== "madinah") html += hotelList("makkah");
       if (HB.city !== "makkah") html += hotelList("madinah");
-      html += '<p class="note">' + (fr ? "Catégories selon les principaux sites de réservation. Disponibilité et prix confirmés dans votre devis." : "Star categories as listed on major booking sites. Availability and price are confirmed in your quotation.") + "</p>";
+      html += '<p class="note">' + (fr ? "Catégories selon les principaux sites de réservation. Les prix « dès » sont par chambre et par nuit ; le prix exact dépend de vos dates et figure dans votre devis." : "Star categories as listed on major booking sites. “From” prices are per room per night; the exact price depends on your dates and is confirmed in your quotation.") + "</p>";
       html += "</div>";
       html += '<div class="hb-q"><h4>5. ' + (fr ? "Chambres et voyageurs" : "Rooms & guests") + "</h4>" + chips("room", [["Double", "Double"], ["Triple", "Triple"], ["Quad", fr ? "Quadruple" : "Quad"], ["Suite", fr ? "Suite familiale" : "Family suite"]]);
       html += '<div class="hb-row"><div><small>' + (fr ? "Chambres" : "Rooms") + "</small>" + stepper("rooms", 1, 20) + "</div><div><small>" + (fr ? "Adultes" : "Adults") + "</small>" + stepper("adults", 1, 60) + "</div><div><small>" + (fr ? "Enfants" : "Children") + "</small>" + stepper("kids", 0, 20) + "</div></div></div>";
@@ -1377,6 +1380,7 @@
 
   /* ---------- Boot ---------- */
   document.addEventListener("DOMContentLoaded", function () {
+    if (document.body.dataset.page === "admin") return;
     document.querySelectorAll(".year").forEach(function (y) { y.textContent = new Date().getFullYear(); });
     var q = new URLSearchParams(location.search).get("lang");
     var initial = q || store.get("lang") || ((navigator.language || "").toLowerCase().indexOf("fr") === 0 ? "fr" : "en");
