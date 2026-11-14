@@ -927,3 +927,9 @@ body.has-chat .quote-float{bottom:96px}
 [data-theme="dark"] .prose p,[data-theme="dark"] .prose li,[data-theme="dark"] .prose strong,[data-theme="dark"] .l-en p,[data-theme="dark"] .l-fr p{color:var(--ink)}
 [data-theme="dark"] .filters button{background:#131728;color:#d5d9e7}
 [data-theme="dark"] .filters button[aria-pressed="true"]{background:#b78a32;border-color:#b78a32;color:#101b45}
+
+/* Contact page: the enquiry form comes first, contact details below */
+.contact-grid{grid-template-columns:1.15fr .85fr}
+.contact-grid #enquiryForm{order:-1}
+#enquiryForm{scroll-margin-top:96px}
+@media (max-width:960px){.contact-grid{grid-template-columns:1fr}}
