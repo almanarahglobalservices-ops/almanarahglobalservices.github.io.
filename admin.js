@@ -31,6 +31,32 @@
       setTok(r.token); $("#adPw").value = ""; load();
     }).catch(function () { $("#adLoginMsg").textContent = "Connection problem. Try again."; });
   });
+  document.addEventListener("click", function (ev) {
+    var t = ev.target.closest("[data-eye]"); if (!t) return;
+    var inp = document.getElementById(t.dataset.eye); var show = inp.type === "password";
+    inp.type = show ? "text" : "password"; t.classList.toggle("on", show); t.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+  $("#adForgot").addEventListener("click", function () { $("#adLoginForm").hidden = true; $("#adResetBox").hidden = false; $("#adLoginMsg").textContent = ""; });
+  $("#adBack").addEventListener("click", function () { $("#adLoginForm").hidden = false; $("#adResetBox").hidden = true; $("#adLoginMsg").textContent = ""; });
+  $("#adSendCode").addEventListener("click", function () {
+    var bt = this; bt.disabled = true; $("#adLoginMsg").textContent = "Sending…";
+    call("forgot").then(function (r) {
+      bt.disabled = false;
+      $("#adLoginMsg").textContent = r.ok ? "A 6-digit code was sent to almanarahglobalservices@gmail.com (check spam too). It is valid for 15 minutes." : (r.error === "rate_limited" ? "Too many requests. Try again in 1 hour." : "Could not send the code.");
+      if (r.ok) $("#adCodeStep").hidden = false;
+    }).catch(function () { bt.disabled = false; $("#adLoginMsg").textContent = "Connection problem. Try again."; });
+  });
+  $("#adDoReset").addEventListener("click", function () {
+    var code = $("#adCode").value.trim(), np = $("#adResetPw").value;
+    if (!/^\d{6}$/.test(code)) { $("#adLoginMsg").textContent = "Enter the 6-digit code from the email."; return; }
+    if (np.length < 8) { $("#adLoginMsg").textContent = "The new password needs at least 8 characters."; return; }
+    $("#adLoginMsg").textContent = "Saving…";
+    call("reset", { code: code, newPassword: np }).then(function (r) {
+      if (!r.ok) { $("#adLoginMsg").textContent = r.error === "wrong_code" ? "Wrong code. Check the email and try again." : r.error === "expired" ? "The code has expired. Send a new code." : "Could not change the password."; return; }
+      $("#adCode").value = ""; $("#adResetPw").value = ""; $("#adCodeStep").hidden = true; $("#adResetBox").hidden = true; $("#adLoginForm").hidden = false;
+      $("#adLoginMsg").textContent = "Password changed ✓ Log in with your new password.";
+    }).catch(function () { $("#adLoginMsg").textContent = "Connection problem. Try again."; });
+  });
   $("#adLogout").addEventListener("click", function () { call("logout").catch(function () {}); setTok(""); showLogin("Logged out."); });
 
   /* ---------- data ---------- */
@@ -71,7 +97,7 @@
     } else if (TAB === "hotels") {
       html = hotelsEditor();
     } else if (TAB === "settings") {
-      html = '<div class="ad-card"><h3>Change dashboard password</h3><p class="ad-muted">At least 8 characters. You will use it next time you log in.</p><div class="ad-row"><input type="password" id="adNewPw" placeholder="New password" autocomplete="new-password"><button class="btn btn-primary btn-sm" data-act="pw">Save password</button></div></div>' +
+      html = '<div class="ad-card"><h3>Change dashboard password</h3><p class="ad-muted">At least 8 characters. You will use it next time you log in.</p><div class="ad-row"><span class="pw-wrap"><input type="password" id="adNewPw" placeholder="New password" autocomplete="new-password"><button type="button" class="eye" data-eye="adNewPw" aria-label="Show password"></button></span><button class="btn btn-primary btn-sm" data-act="pw">Save password</button></div></div>' +
         '<div class="ad-card"><h3>Google Sheet</h3><p class="ad-muted">Everything you do here is saved in your CRM Google Sheet, which stays as your full record and backup.</p></div>';
     }
     box.innerHTML = html;
@@ -119,20 +145,43 @@
     return '<a class="btn btn-wa btn-sm" href="' + wa(e.Phone, t) + '" target="_blank" rel="noopener">Send on WhatsApp</a>' +
       (e.Email ? '<a class="btn btn-outline btn-sm" href="mailto:' + esc(e.Email) + "?subject=" + encodeURIComponent("AL MANARAH GLOBAL SERVICES — " + e.Ref) + "&body=" + encodeURIComponent(t) + '">Send by email</a>' : "");
   }
-  function hotelsEditor() {
-    var H = window.AMG_HOTELS || {}, P = {};
+  var STAR = { 5: "★★★★★", 4: "★★★★", 3: "★★★", 2: "★★" };
+  function hotelRows() {
+    var H = window.AMG_HOTELS || {}, P = {}, list = [];
     (D.prices || []).forEach(function (r) { P[r.City + "|" + r.Hotel] = r; });
-    var html = '<div class="ad-card"><h3>Hotel “from” prices</h3><p class="ad-muted">Enter the lowest price per room per night (SAR) for each hotel — for example 5% under Booking.com for the season. You only need to update it when the season changes. Leave empty to show no price.</p></div>';
     ["makkah", "madinah"].forEach(function (city) {
-      html += '<h3 class="ad-sub">' + (city === "makkah" ? "Makkah" : "Madinah") + "</h3>";
       [5, 4, 3, 2].forEach(function (st) {
-        (H[city] && H[city][st] || []).forEach(function (h) {
-          var r = P[city + "|" + h[0]] || {};
-          html += '<div class="ad-price" data-city="' + city + '" data-stars="' + st + '" data-hotel="' + esc(h[0]) + '"><span><b>' + esc(h[0]) + '</b><small>' + "★".repeat(st) + " · " + esc(h[1]) + '</small></span><input inputmode="numeric" class="hp-p" value="' + esc(r["From price (SAR / night)"] || "") + '" placeholder="SAR"></div>';
-        });
+        (H[city] && H[city][st] || []).forEach(function (h) { var r = P[city + "|" + h[0]] || {}; list.push({ hotel: h[0], city: city, stars: st, loc: h[1], locFr: h[2], price: r["From price (SAR / night)"] || "", status: r.Status === "Removed" ? "Removed" : "", builtin: true }); delete P[city + "|" + h[0]]; });
       });
     });
+    Object.keys(P).forEach(function (k) { var r = P[k]; if (r.Status === "Added" || r.Status === "Removed") list.push({ hotel: r.Hotel, city: r.City, stars: Number(r.Stars) || 3, loc: r.Location || "", locFr: r["Location (FR)"] || "", price: r["From price (SAR / night)"] || "", status: r.Status, builtin: false }); });
+    return list;
+  }
+  function hotelsEditor() {
+    var list = hotelRows(), html = '<div class="ad-card"><h3>Hotel “from” prices</h3><p class="ad-muted">Enter the lowest price per room per night (SAR) for each hotel — for example 5% under Booking.com for the season. Update it only when the season changes. Leave empty to show no price.</p></div>';
+    html += '<details class="ad-card"><summary><b>+ Add a new hotel</b></summary><div class="ad-box" style="border:0;padding:0;background:none">' +
+      '<label class="ad-mini">Hotel name<input id="nhName" placeholder="e.g. Swissôtel Al Maqam"></label>' +
+      '<div class="ad-row"><select id="nhCity"><option value="makkah">Makkah</option><option value="madinah">Madinah</option></select><select id="nhStars"><option value="5">★★★★★ (5)</option><option value="4">★★★★ (4)</option><option value="3" selected>★★★ (3)</option><option value="2">★★ (2)</option></select></div>' +
+      '<label class="ad-mini">Location / distance (English)<input id="nhLoc" placeholder="e.g. 300 m from the Haram"></label>' +
+      '<label class="ad-mini">Location / distance (French)<input id="nhLocFr" placeholder="ex. à 300 m du Haram"></label>' +
+      '<div class="ad-row"><input id="nhPrice" inputmode="numeric" placeholder="From price SAR / night (optional)"><button class="btn btn-gold btn-sm" data-act="hotel-add">Add hotel</button></div></div></details>';
+    ["makkah", "madinah"].forEach(function (city) {
+      html += '<h3 class="ad-sub">' + (city === "makkah" ? "Makkah" : "Madinah") + "</h3>";
+      list.filter(function (x) { return x.city === city && x.status !== "Removed"; }).sort(function (a, b) { return b.stars - a.stars; }).forEach(function (x) {
+        html += '<div class="ad-price" data-city="' + x.city + '" data-stars="' + x.stars + '" data-hotel="' + esc(x.hotel) + '" data-loc="' + esc(x.loc) + '" data-locfr="' + esc(x.locFr) + '" data-status="' + (x.builtin ? "" : "Added") + '"><span><b>' + esc(x.hotel) + (x.builtin ? "" : ' <em class="ad-new">added</em>') + '</b><small>' + STAR[x.stars] + " · " + esc(x.loc) + '</small></span><input inputmode="numeric" class="hp-p" value="' + esc(x.price) + '" placeholder="SAR"><button class="ad-x" data-act="hotel-remove" title="Remove this hotel" aria-label="Remove">✕</button></div>';
+      });
+    });
+    var rem = list.filter(function (x) { return x.status === "Removed"; });
+    if (rem.length) {
+      html += '<h3 class="ad-sub">Removed hotels (hidden on the website)</h3>';
+      rem.forEach(function (x) { html += '<div class="ad-price removed" data-city="' + x.city + '" data-stars="' + x.stars + '" data-hotel="' + esc(x.hotel) + '" data-loc="' + esc(x.loc) + '" data-locfr="' + esc(x.locFr) + '" data-status="' + (x.builtin ? "" : "Added") + '"><span><b>' + esc(x.hotel) + "</b><small>" + (x.city === "makkah" ? "Makkah" : "Madinah") + " · " + STAR[x.stars] + '</small></span><input type="hidden" class="hp-p" value="' + esc(x.price) + '"><button class="btn btn-outline btn-sm" data-act="hotel-restore">Restore</button></div>'; });
+    }
     return html + '<div class="ad-sticky"><button class="btn btn-primary" data-act="prices">Save hotel prices</button></div>';
+  }
+  function rowData(x, status) { return { hotel: x.dataset.hotel, city: x.dataset.city, stars: x.dataset.stars, price: x.querySelector(".hp-p").value, loc: x.dataset.loc, locFr: x.dataset.locfr, status: status }; }
+  function saveHotels(rows, msg) {
+    busy(true);
+    return call("prices_set", { rows: rows }).then(function (r) { busy(false); if (!r.ok) return toast("Error: " + r.error, true); toast(msg); return load(); }).catch(function () { busy(false); toast("Connection problem.", true); });
   }
 
   /* ---------- actions ---------- */
@@ -179,8 +228,18 @@
         toast("Receipt created.");
       }).catch(function () { busy(false); b.disabled = false; toast("Connection problem.", true); });
     } else if (act === "prices") {
-      var rows = [].map.call(document.querySelectorAll(".ad-price"), function (x) { return { hotel: x.dataset.hotel, city: x.dataset.city, stars: x.dataset.stars, price: x.querySelector(".hp-p").value }; });
-      busy(true); call("prices_set", { rows: rows }).then(function (r) { busy(false); if (!r.ok) return toast("Error: " + r.error, true); toast("Hotel prices saved — the website shows them within 10 minutes."); load(); }).catch(function () { busy(false); toast("Connection problem.", true); });
+      var rows = [].map.call(document.querySelectorAll(".ad-price:not(.removed)"), function (x) { return rowData(x, x.dataset.status); });
+      saveHotels(rows, "Hotel prices saved — the website shows them within 10 minutes.");
+    } else if (act === "hotel-remove") {
+      var hr = b.closest(".ad-price"); if (!confirm("Remove “" + hr.dataset.hotel + "” from the website? You can restore it later.")) return;
+      saveHotels([rowData(hr, "Removed")], "Hotel removed from the website.");
+    } else if (act === "hotel-restore") {
+      var rr = b.closest(".ad-price"); saveHotels([rowData(rr, rr.dataset.status === "Added" ? "Added" : "")], "Hotel restored.");
+    } else if (act === "hotel-add") {
+      var nm = $("#nhName").value.replace(/[<>"]/g, "").trim(); if (nm.length < 3) return toast("Write the hotel name.", true);
+      var exists = hotelRows().some(function (x) { return x.hotel.toLowerCase() === nm.toLowerCase() && x.city === $("#nhCity").value; });
+      if (exists) return toast("This hotel is already in the list.", true);
+      saveHotels([{ hotel: nm, city: $("#nhCity").value, stars: $("#nhStars").value, price: $("#nhPrice").value, loc: $("#nhLoc").value.trim(), locFr: $("#nhLocFr").value.trim() || $("#nhLoc").value.trim(), status: "Added" }], "Hotel added — it appears on the website within 10 minutes.");
     } else if (act === "pw") {
       var pw = $("#adNewPw").value; if (pw.length < 8) return toast("At least 8 characters.", true);
       busy(true); call("password", { newPassword: pw }).then(function (r) { busy(false); if (!r.ok) return toast("Error: " + r.error, true); $("#adNewPw").value = ""; toast("Password changed."); }).catch(function () { busy(false); toast("Connection problem.", true); });
