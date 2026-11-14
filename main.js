@@ -275,6 +275,9 @@
   /* ---------- Quick quote pop-up (every page) ---------- */
   function initQuick() {
     var page = document.body.dataset.page;
+    if (page === "contact" && /[?&](service|promo|basket)=/.test(location.search) && !location.hash) {
+      setTimeout(function () { var ef = document.getElementById("enquiryForm"); if (ef) ef.scrollIntoView({ block: "start" }); }, 350);
+    }
     var floats = document.querySelectorAll("[data-quick]");
     if (page === "contact") { floats.forEach(function (a) { a.hidden = true; }); return; }
     if (!floats.length || !CFG.formEndpoint) return;
@@ -1044,8 +1047,31 @@
     function load(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
     function country(cc, fr) { try { return new Intl.DisplayNames([fr ? "fr" : "en"], { type: "region" }).of(cc); } catch (e) { return cc; } }
     function names(fr, friday) { return { fajr: "Fajr", sunrise: fr ? "Chourouq" : "Sunrise", dhuhr: friday ? (fr ? "Joumou’a" : "Jumu’ah") : (fr ? "Dhohr" : "Dhuhr"), asr: "Asr", maghrib: "Maghrib", isha: fr ? "Icha" : "Isha" }; }
-    function hijri(dt, fr) { try { return new Intl.DateTimeFormat((fr ? "fr" : "en") + "-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" }).format(dt); } catch (e) { return ""; } }
-    function ramadan(dt) { try { return new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { month: "numeric" }).format(dt) === "9"; } catch (e) { return false; } }
+    // Hijri (Umm al-Qura) date: numbers from the browser, month names from our own list, so no phone can show Gregorian month names
+    var HM = { en: ["Muharram", "Safar", "Rabi’ al-Awwal", "Rabi’ al-Thani", "Jumada al-Ula", "Jumada al-Akhirah", "Rajab", "Sha’ban", "Ramadan", "Shawwal", "Dhu al-Qa’dah", "Dhu al-Hijjah"],
+      fr: ["Mouharram", "Safar", "Rabia al-Awal", "Rabia ath-Thani", "Joumada al-Oula", "Joumada ath-Thania", "Rajab", "Chaabane", "Ramadan", "Chawwal", "Dhou al-Qi’da", "Dhou al-Hijja"],
+      ens: ["Muharram", "Safar", "Rabi I", "Rabi II", "Jumada I", "Jumada II", "Rajab", "Sha’ban", "Ramadan", "Shawwal", "Dhul-Qa’dah", "Dhul-Hijjah"],
+      frs: ["Mouharram", "Safar", "Rabia I", "Rabia II", "Joumada I", "Joumada II", "Rajab", "Chaabane", "Ramadan", "Chawwal", "Dhou al-Qi’da", "Dhou al-Hijja"] };
+    function hTab(dt) {
+      var y = dt.getFullYear(), m = dt.getMonth() + 1, d = dt.getDate(); if (m < 3) { y -= 1; m += 12; }
+      var a = Math.floor(y / 100), b = 2 - a + Math.floor(a / 4), jd = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + b - 1524;
+      var z = jd - 1948084, cyc = Math.floor(z / 10631); z -= 10631 * cyc; var j = Math.floor((z - 8.01 / 60) / (10631 / 30)), iy = 30 * cyc + j;
+      z -= Math.floor(j * (10631 / 30) + 8.01 / 60); var im = Math.floor((z + 28.5001) / 29.5); if (im === 13) im = 12;
+      return { d: z - Math.floor(29.5001 * im - 29), m: im, y: iy };
+    }
+    function hParts(dt) {
+      try {
+        var f = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { day: "numeric", month: "numeric", year: "numeric" });
+        if (/^islamic/.test(f.resolvedOptions().calendar)) {
+          var p = {}; f.formatToParts(dt).forEach(function (x) { p[x.type] = x.value; });
+          var o = { d: parseInt(p.day, 10), m: parseInt(p.month, 10), y: parseInt(p.year, 10) };
+          if (o.d >= 1 && o.d <= 30 && o.m >= 1 && o.m <= 12 && o.y > 1400 && o.y < 1600) return o;
+        }
+      } catch (e) {}
+      return hTab(dt);
+    }
+    function hijri(dt, fr, short) { var h = hParts(dt); return h.d + " " + HM[(fr ? "fr" : "en") + (short ? "s" : "")][h.m - 1] + " " + h.y + (fr ? " H" : " AH"); }
+    function ramadan(dt) { return hParts(dt).m === 9; }
     function at(y, m, d, h) { return new Date(Date.UTC(y, m - 1, d) + Math.round(h * 60) * 60000); }
     function hm(dt) { return String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0"); }
     function day(dt) { var t = ptCalc(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), LOC.lat, LOC.lng, ptMethod(LOC.cc), ramadan(dt)), o = {}; KEYS.forEach(function (k) { o[k] = at(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), t[k]); }); return o; }
@@ -1058,7 +1084,9 @@
       bar.querySelector(".pt-sum").innerHTML = "<b>" + (fr ? "Heures de prière" : "Prayer times") + " · " + place.replace(/</g, "") + "</b><span class=\"pt-next\">" + (fr ? "Prochaine : " : "Next: ") + "<b>" + N[next] + " " + hm(nextAt) + "</b> · " + (fr ? "dans " : "in ") + left + "</span>";
       var ck = bar.querySelector(".pt-clock");
       ck.querySelector("b").textContent = hm(now);
-      ck.querySelector("small").textContent = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(now);
+      var wd = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "short" }).format(now);
+      ck.querySelector("small").textContent = wd + (fr ? " " : ", ") + hijri(now, fr, true);
+      ck.title = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(now);
       bar.querySelector(".pt-tog").textContent = open ? "−" : "+";
       if (!open) return;
       bar.querySelector(".pt-grid").innerHTML = '<div class="pt-city"><ul>' + KEYS.map(function (k) { return '<li class="' + (k === next && t[k] > now ? "now" : "") + (k === "sunrise" ? " sun" : "") + '"><span>' + N[k] + "</span><b>" + hm(t[k]) + "</b></li>"; }).join("") + "</ul></div>";
@@ -1067,7 +1095,7 @@
       gpsBtn.textContent = gpsMsg || (LOC.src === "gps" ? (fr ? "Actualiser ma position" : "Update my location") : (fr ? "Utiliser ma position exacte" : "Use my exact location"));
       chgBtn.textContent = fr ? "Changer de ville" : "Change city"; q.placeholder = fr ? "Tapez votre ville (ex. Abha, Kano, Bouaké)" : "Type your city (e.g. Abha, Kano, Bouaké)";
       var dateTxt = new Intl.DateTimeFormat(fr ? "fr-FR" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(now);
-      bar.querySelector(".pt-note").textContent = dateTxt + (hijri(now, fr) ? " · " + hijri(now, fr) : "") + " · " + (fr ? "Heure locale, méthode " : "Local time, ") + ptMethod(LOC.cc).n + (fr ? "" : " method") + ". " + (fr ? "Peut différer de quelques minutes de votre mosquée." : "May differ by a few minutes from your local mosque.");
+      bar.querySelector(".pt-note").textContent = dateTxt + " · " + hijri(now, fr) + " · " + (fr ? "Heure locale, méthode " : "Local time, ") + ptMethod(LOC.cc).n + (fr ? "" : " method") + ". " + (fr ? "Peut différer de quelques minutes de votre mosquée." : "May differ by a few minutes from your local mosque.");
     }
     function setLoc(l) { LOC = l; draw(); }
     function gps(silent) {
