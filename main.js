@@ -1241,6 +1241,128 @@
     }
   }
 
+
+  /* ---------- Online payment (pay.html): MTN MoMo / Wave + receipt upload ---------- */
+  function fmtN(n, fr) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, fr ? " " : ","); }
+  function payItems() { var P = CFG.payments || {}, today = new Date().toISOString().slice(0, 10); return (P.items || []).filter(function (it) { return !it.until || today < it.until; }); }
+  function shrinkFile(file) {
+    return new Promise(function (res, rej) {
+      if (file.type === "application/pdf") {
+        if (file.size > 4500000) return rej("big");
+        var r = new FileReader(); r.onload = function () { res({ type: file.type, name: file.name, data: String(r.result).split(",")[1] }); }; r.onerror = function () { rej("read"); }; r.readAsDataURL(file); return;
+      }
+      if (!/^image\//.test(file.type)) return rej("type");
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        res({ type: "image/jpeg", name: (file.name || "receipt").replace(/\.\w+$/, "") + ".jpg", data: c.toDataURL("image/jpeg", 0.82).split(",")[1] });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej("type"); };
+      img.src = url;
+    });
+  }
+  function initPay() {
+    var P = CFG.payments || {};
+    document.querySelectorAll("[data-paynum]").forEach(function (el) { el.textContent = P[el.dataset.paynum] || ""; });
+    document.querySelectorAll("[data-payname]").forEach(function (el) { el.textContent = P.name || ""; });
+    document.querySelectorAll("[data-copy]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var v = String(P[b.dataset.copy] || "").replace(/[^\d]/g, "").replace(/^225/, "");
+        try { navigator.clipboard.writeText(v).then(function () { showToast(tx("Number copied ✓", "Numéro copié ✓")); }); } catch (e) { prompt("", v); }
+      });
+    });
+    var form = document.getElementById("payForm"); if (!form) return;
+    var sel = form.querySelector("#p_item"), amt = form.querySelector("#p_amount"), svc = form.querySelector("#p_service"), other = sel.querySelector('option[value="other"]');
+    var items = payItems();
+    items.forEach(function (it) {
+      var o = mk("option", { value: it.id, "data-fr": it.fr + " — " + fmtN(it.price, true) + " FCFA" }); o.textContent = it.en + " — " + fmtN(it.price) + " FCFA";
+      sel.insertBefore(o, other); if (lang === "fr") swap(o, "", "text", true);
+    });
+    function cur() { return items.filter(function (x) { return x.id === sel.value; })[0]; }
+    function sync() {
+      var it = cur(), f = svc.closest(".field");
+      if (it) { amt.value = it.price; amt.readOnly = true; svc.value = it.service; f.hidden = true; svc.required = false; }
+      else { if (amt.readOnly) amt.value = ""; amt.readOnly = false; f.hidden = false; svc.required = sel.value === "other"; }
+    }
+    sel.addEventListener("change", sync);
+    var q = new URLSearchParams(location.search);
+    if (q.get("item") && sel.querySelector('option[value="' + q.get("item").replace(/[^\w-]/g, "") + '"]')) sel.value = q.get("item");
+    if (q.get("ref")) form.querySelector("#p_ref").value = q.get("ref").toUpperCase().replace(/[^A-Z0-9-]/g, "");
+    sync();
+    var fileIn = form.querySelector("#p_file"), fileName = form.querySelector(".file-name");
+    fileIn.addEventListener("change", function () { fileName.textContent = fileIn.files[0] ? fileIn.files[0].name : ""; });
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      if (form.querySelector(".hp input").value) return;
+      if (!validate(form)) { setStatus(form, "error", T[lang].fix); return; }
+      var f = fileIn.files[0];
+      if (!f) { fileIn.closest(".field").classList.add("invalid"); setStatus(form, "error", T[lang].fix); return; }
+      var btn = form.querySelector('button[type="submit"]'); btn.disabled = true;
+      setStatus(form, "info", tx("Sending your payment details…", "Envoi de vos informations de paiement…"));
+      var it = cur();
+      shrinkFile(f).then(function (file) {
+        var d = { action: "payment", item: it ? it.id : "other", paid_for: it ? it.en : (svc.options[svc.selectedIndex] ? svc.options[svc.selectedIndex].textContent : ""),
+          service: svc.value || (it && it.service) || "general", ref: form.ref.value.trim(), name: form.name.value.trim(), phone: form.phone.value.trim(),
+          email: form.email.value.trim(), amount: String(form.amount.value).replace(/[^\d]/g, ""), method: (form.querySelector('input[name="method"]:checked') || {}).value || "",
+          txn: form.txn.value.trim(), message: form.message.value.trim(), file: file, language: lang, page: location.pathname,
+          website: form.querySelector(".hp input").value, turnstile_token: token(form) };
+        return api(d);
+      }).then(function (res) {
+        if (!res || !res.ok) throw new Error((res && res.error) || "failed");
+        var s = form.querySelector(".status"); s.className = "status show ok"; s.textContent = "";
+        var p1 = document.createElement("p"); p1.style.margin = "0"; p1.textContent = tx("Thank you! We have received your payment details. We will check the payment and confirm on WhatsApp.", "Merci ! Nous avons bien reçu vos informations de paiement. Nous vérifions le paiement et vous confirmons sur WhatsApp."); s.appendChild(p1);
+        var box = document.createElement("div"); box.className = "ref-box";
+        var lab = document.createElement("span"); lab.textContent = T[lang].ref_label; var code = document.createElement("code"); code.textContent = res.ref;
+        box.appendChild(lab); box.appendChild(code); s.appendChild(box);
+        var p2 = document.createElement("p"); p2.className = "note"; p2.style.margin = "10px 0 0"; p2.textContent = T[lang].ref_keep; s.appendChild(p2);
+        form.reset(); fileName.textContent = ""; sync();
+        s.scrollIntoView({ block: "center" });
+      }).catch(function (e) {
+        var m = String(e && e.message || e);
+        setStatus(form, "error", m === "big" || m === "file_too_large" ? tx("The file is too large. Please send a screenshot (photo) or a PDF under 4 MB.", "Le fichier est trop lourd. Envoyez une capture d’écran (photo) ou un PDF de moins de 4 Mo.")
+          : m === "type" || m === "invalid_file" ? tx("Please upload a photo / screenshot (JPG, PNG) or a PDF of the receipt.", "Veuillez joindre une photo / capture (JPG, PNG) ou un PDF du reçu.")
+          : m === "invalid_amount" ? tx("Please enter the amount you paid.", "Veuillez indiquer le montant payé.")
+          : m === "rate_limited" ? tx("Too many attempts. Please wait a few minutes or contact us on WhatsApp.", "Trop de tentatives. Patientez quelques minutes ou contactez-nous sur WhatsApp.")
+          : T[lang].failed);
+      }).then(function () { btn.disabled = false; });
+    });
+  }
+  /* Pay buttons on the December offer and the Visas page */
+  function initPayLinks() {
+    var items = payItems(), page = document.body.dataset.page;
+    var menu = document.getElementById("menu");
+    if (menu && !menu.querySelector('[data-nav="pay"]')) {
+      var c = menu.querySelector('[data-nav="contact"]');
+      var a = mk("a", { href: "pay.html", "data-nav": "pay", "data-fr": "Payer" }); a.textContent = "Pay";
+      if (page === "pay") { a.className = "active"; a.setAttribute("aria-current", "page"); }
+      if (c) c.parentNode.insertBefore(a, c.nextSibling); else menu.appendChild(a);
+      if (lang === "fr") swap(a, "", "text", true);
+    }
+    var fl = document.querySelector('.footer a[href="track.html"]');
+    if (fl && !document.querySelector('.footer a[href="pay.html"]')) { var fa = mk("a", { href: "pay.html", "data-fr": "Payer en ligne" }); fa.textContent = "Pay online"; fl.parentNode.insertBefore(fa, fl.nextSibling); if (lang === "fr") swap(fa, "", "text", true); }
+    var promo = CFG.promo || {};
+    if (items.some(function (x) { return x.id === promo.id; })) {
+      document.querySelectorAll(".ps-right, .pf-actions").forEach(function (box) {
+        if (box.querySelector(".pay-btn")) return;
+        var b = mk("a", { "class": "btn btn-outline-light pay-btn" + (box.classList.contains("pf-actions") ? " btn-sm" : ""), href: "pay.html?item=" + promo.id, "data-fr": "Payer en ligne" }); b.textContent = "Pay online";
+        box.appendChild(b); if (lang === "fr") swap(b, "", "text", true);
+      });
+    }
+    if (page === "visas") {
+      var vi = items.filter(function (x) { return x.service === "visa"; }); if (!vi.length) return;
+      var hero = document.querySelector("#main > section"); if (!hero) return;
+      var sec = mk("section", { "class": "section vprice-sec" }), fr = lang === "fr";
+      var html = '<div class="container"><div class="vprice"><div class="vp-head"><span class="kicker" data-fr="Prix fixes">Fixed prices</span><h2 data-fr="Visa Omra">Umrah visa</h2><p data-fr="Payez en ligne par MTN Mobile Money ou Wave, puis envoyez votre reçu.">Pay online with MTN Mobile Money or Wave, then upload your receipt.</p></div><div class="vp-list">';
+      vi.forEach(function (it) { html += '<div class="vp-item"><span class="vp-name" data-fr="' + it.fr.replace(/"/g, "&quot;") + '">' + it.en + '</span><b class="vp-price">' + fmtN(it.price) + ' FCFA</b><a class="btn btn-gold btn-sm" href="pay.html?item=' + it.id + '" data-fr="Payer">Pay now</a></div>'; });
+      sec.innerHTML = html + '</div></div></div>';
+      hero.parentNode.insertBefore(sec, hero.nextSibling);
+      if (fr) { sec.querySelectorAll("[data-fr]").forEach(function (el) { swap(el, "", "text", true); }); sec.querySelectorAll(".vp-price").forEach(function (el) { el.textContent = el.textContent.replace(/,/g, " "); }); }
+    }
+  }
+
   function initExtras() {
     var actions = document.querySelector(".nav-actions");
     var waSym = document.getElementById("i-wa"); if (waSym) waSym.innerHTML = '<path d="' + WA_PATH + '"/>';
@@ -1248,6 +1370,7 @@
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
     initShare(actions);
     initPromo(); initSoon(); initPrayer(); initNavHotels(); initHotels(); initVisa(); initHajj();
+    initPayLinks(); initPay();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
   }
