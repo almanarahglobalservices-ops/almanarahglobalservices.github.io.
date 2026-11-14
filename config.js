@@ -22,5 +22,17 @@ window.SITE_CONFIG = {
     fullUntil: "2027-01-05"          // until this date a small "group full — next Umrah" bar is shown
   },
 
+  // Online payment by mobile money (customers pay, then upload their receipt on pay.html)
+  payments: {
+    name: "MUHAMMAD JAMIU ISMAIL",
+    mtn: "+225 05 06 12 23 37",      // MTN Mobile Money
+    wave: "+225 05 06 12 23 37",     // Wave
+    items: [                          // fixed prices (FCFA). "until": hide from this date (YYYY-MM-DD)
+      { id: "dec2026", service: "umrah", price: 1650000, until: "2026-12-13", en: "December Umrah 2026 (26 Dec – 4 Jan)", fr: "Omra de décembre 2026 (26 déc. – 4 janv.)" },
+      { id: "visa-umrah-ng", service: "visa", price: 300000, en: "Umrah visa only — Nigerian passport", fr: "Visa Omra seul — passeport nigérian" },
+      { id: "visa-umrah-ci", service: "visa", price: 180000, en: "Umrah visa only — Ivorian passport", fr: "Visa Omra seul — passeport ivoirien" }
+    ]
+  },
+
   turnstileSiteKey: ""
 };
