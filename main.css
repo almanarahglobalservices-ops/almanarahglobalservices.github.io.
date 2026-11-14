@@ -980,3 +980,4 @@ input[readonly]{background:#f2f3f8}
 [data-theme="dark"] .field .lbl{color:#eaecf4}
 .paybox b{font-size:1.12rem;white-space:nowrap}
 .method-row label{white-space:nowrap}
+.hb-price{display:block;font-style:normal;font-weight:800;font-size:.78rem;color:#b78a32;margin-top:4px}
