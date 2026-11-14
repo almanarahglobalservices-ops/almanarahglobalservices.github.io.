@@ -778,7 +778,15 @@
   function initHotels() {
     var box = document.getElementById("hotelBuilder"); if (!box) return;
     var PR = {};
-    if (CFG.formEndpoint) api({ action: "prices" }).then(function (r) { if (r && r.ok && r.prices && Object.keys(r.prices).length) { PR = r.prices; render(); } }).catch(function () {});
+    if (CFG.formEndpoint) api({ action: "prices" }).then(function (r) {
+      if (!r || !r.ok) return;
+      (r.removed || []).forEach(function (k) { var i = k.indexOf("|"), c = k.slice(0, i), n = k.slice(i + 1); if (HOTELS[c]) [2, 3, 4, 5].forEach(function (s) { HOTELS[c][s] = HOTELS[c][s].filter(function (h) { return h[0] !== n; }); }); });
+      (r.added || []).forEach(function (a) {
+        var c = a.city === "madinah" ? "madinah" : "makkah", s = Math.min(5, Math.max(2, +a.stars || 3)), n = String(a.hotel || "").replace(/[<>"&]/g, "");
+        if (n && !HOTELS[c][s].some(function (h) { return h[0] === n; })) HOTELS[c][s].push([n, String(a.loc || "").replace(/[<>"&]/g, ""), String(a.locFr || a.loc || "").replace(/[<>"&]/g, "")]);
+      });
+      PR = r.prices || {}; render();
+    }).catch(function () {});
     var form = document.getElementById("hotelForm"), sum = document.getElementById("h_summary");
     var today = new Date(); today.setDate(today.getDate() + 3);
     var minDate = today.toISOString().slice(0, 10);
