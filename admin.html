@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Dashboard | AL MANARAH GLOBAL SERVICES</title>
@@ -69,6 +69,15 @@ body{background:#f4f5fa}
 .ad-x{width:34px;height:34px;border-radius:50%;border:1px solid #e6b0aa;background:#fff;color:#c0392b;font-weight:800;cursor:pointer;flex:none}
 .ad-price.removed{opacity:.7}
 .ad-new{font-style:normal;font-size:.7rem;background:#b78a32;color:#fff;border-radius:6px;padding:1px 6px;margin-left:4px}
+.nh-wrap{position:relative;display:block}
+.nh-sug{position:absolute;left:0;right:0;top:100%;z-index:30;background:#fff;border:1px solid #c9cde0;border-radius:12px;box-shadow:0 14px 30px -12px rgba(16,27,69,.35);max-height:320px;overflow:auto}
+.nh-sug button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #eef0f6;background:#fff;padding:10px 12px;cursor:pointer;font:600 .92rem var(--sans);color:#101b45}
+.nh-sug button:hover{background:#f6f1e6}.nh-sug small{display:block;font-weight:500;color:#5a6178;margin-top:2px}
+#nhPaste{width:100%;font:500 .95rem var(--sans);padding:10px;border:1px solid #c9cde0;border-radius:12px;margin-top:6px}
+#nhInfo{margin:6px 0 4px;font-size:.88rem}
+#nhBox input,#nhBox select,.site-3 input,.site-1{width:100%;padding:11px 12px;border:1px solid #c9cde0;border-radius:12px;font:600 .95rem var(--sans);background:#fff;color:#101b45;margin-top:4px}
+#nhBox .ad-row input,#nhBox .ad-row select{flex:1 1 140px;width:auto}
+.site-3{display:grid;gap:6px;margin-bottom:6px}.site-3 input,.site-1{width:100%}
 </style>
 </head>
 <body data-page="admin">
@@ -97,6 +106,7 @@ body{background:#f4f5fa}
       <button type="button" data-tab="enq">Customers &amp; enquiries <b id="cOpen">0</b></button>
       <button type="button" data-tab="pay">Payments &amp; receipts</button>
       <button type="button" data-tab="hotels">Hotel prices</button>
+      <button type="button" data-tab="site">Website content</button>
       <button type="button" data-tab="settings">Settings</button>
     </nav>
     <input id="adSearch" type="search" placeholder="Search name, phone, reference…">
