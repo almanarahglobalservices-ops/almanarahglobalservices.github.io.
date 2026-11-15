@@ -985,3 +985,53 @@ input[readonly]{background:#f2f3f8}
 /* v9: menu button on the left on phones/tablets, slimmer side margins */
 @media (max-width:1280px){.nav-actions{display:contents}.nav{justify-content:flex-start}.burger{order:-1;flex:none}.brand{margin-right:auto}.nav>.lang,.nav>.icon-btn,.nav>.btn{flex:none}}
 @media (max-width:700px){.container{width:calc(100% - 24px)}.nav{gap:6px}}
+
+/* v9: Arabic (RTL) */
+[dir="rtl"] body,[dir="rtl"] input,[dir="rtl"] select,[dir="rtl"] textarea,[dir="rtl"] button{font-family:"Tajawal","Noto Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif}
+[dir="rtl"] h1,[dir="rtl"] h2,[dir="rtl"] h3,[dir="rtl"] h4,[dir="rtl"] .brand b{font-family:"Tajawal","Noto Sans Arabic",Tahoma,sans-serif;font-weight:800}
+[dir="rtl"] *{letter-spacing:0!important}
+[dir="rtl"] em,[dir="rtl"] i{font-style:normal}
+[dir="rtl"] .brand{margin-right:0}
+@media (max-width:1280px){[dir="rtl"] .brand{margin-left:auto;margin-right:0}}
+[dir="rtl"] a[href^="tel:"],[dir="rtl"] .ltr,[dir="rtl"] code,[dir="rtl"] input[type="tel"],[dir="rtl"] input[type="email"]{direction:ltr;unicode-bidi:isolate}
+[dir="rtl"] .kicker::before{margin-right:0;margin-left:10px}
+.lang button[data-setlang="ar"]{font-family:"Tajawal",Tahoma,sans-serif;font-size:.95rem;line-height:1}
+/* v9: announcement bar (set in the dashboard) */
+.ann-bar{background:#101b45;color:#fff;text-align:center;font-weight:700;font-size:.9rem;padding:8px 14px}
+/* v9: Badal Umrah moving advert */
+.badal-ticker{background:linear-gradient(90deg,#101b45,#1d2a63,#101b45);color:#fff;overflow:hidden;white-space:nowrap;border-block:2px solid #b78a32}
+.badal-ticker .bt-track{display:inline-flex;gap:48px;padding:11px 0;animation:btScroll 38s linear infinite;will-change:transform}
+.badal-ticker:hover .bt-track{animation-play-state:paused}
+.badal-ticker span{display:inline-flex;align-items:center;gap:10px;font-size:.95rem}
+.badal-ticker b{color:#e2c27a}.badal-ticker i{font-style:normal;opacity:.9}
+.badal-ticker em{font-style:normal;font-weight:800;background:#b78a32;color:#101b45;border-radius:999px;padding:3px 10px}
+.badal-ticker a{color:#fff;font-weight:800;text-decoration:underline}
+@keyframes btScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.badal-sec{padding:34px 0 10px}
+.badal-card{position:relative;overflow:hidden;background:radial-gradient(120% 140% at 0% 0%,#1d2a63 0%,#101b45 60%);color:#fff;border-radius:26px;padding:30px 28px;border:2px solid #b78a32;box-shadow:0 26px 60px -30px rgba(16,27,69,.7);animation:badalFloat 6s ease-in-out infinite}
+.badal-card::after{content:"";position:absolute;inset:-40% -10% auto auto;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(183,138,50,.45),transparent 70%);animation:badalGlow 5s ease-in-out infinite alternate}
+.badal-card>*{position:relative;z-index:1}
+.badal-badge{display:inline-block;background:#b78a32;color:#101b45;font-weight:800;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:5px 12px;animation:badalPulse 2s ease-in-out infinite}
+.badal-card h2{color:#fff;margin:12px 0 8px;font-size:clamp(1.5rem,3.4vw,2.2rem)}
+.badal-card h2 small{display:block;font-size:.55em;color:#e2c27a;font-weight:600;margin-top:4px}
+.badal-card p{color:rgba(255,255,255,.88);max-width:720px;margin:0 0 18px}
+.badal-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.badal-price{display:flex;flex-direction:column;background:#fff;color:#101b45;border-radius:16px;padding:8px 16px;margin-inline-end:6px;animation:badalSway 4s ease-in-out infinite}
+.badal-price b{font-size:1.6rem;line-height:1.1}.badal-price small{font-size:.75rem;color:#5a6178;font-weight:600}
+@keyframes badalFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes badalSway{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(4px) rotate(-1deg)}75%{transform:translateX(-4px) rotate(1deg)}}
+@keyframes badalPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes badalGlow{from{transform:translate(0,0)}to{transform:translate(-60px,40px)}}
+@media (prefers-reduced-motion:reduce){.badal-card,.badal-price,.badal-badge,.badal-card::after,.badal-ticker .bt-track{animation:none}}
+/* v9: pay at the hotel */
+.pay-hotel-note{margin:10px 0 0;background:#f6f1e6;border:1px solid #e2c27a;border-radius:12px;padding:10px 12px;font-size:.9rem;color:#101b45}
+#p_cur{margin-top:8px;width:100%}
+[data-theme="dark"] .pay-hotel-note{background:#1d2238;color:#eaecf4}
+[dir="rtl"] .skip{left:auto;right:-999px}[dir="rtl"] .skip:focus{right:8px}
+.badal-ticker{direction:ltr}.badal-ticker span{direction:rtl;unicode-bidi:isolate}
+html[dir="rtl"],html[dir="rtl"] body{overflow-x:hidden}
+[dir="rtl"] .hp{left:auto!important;right:-5000px!important}
+[dir="rtl"] [data-paynum],[dir="rtl"] .ref-box code{direction:ltr;unicode-bidi:isolate;display:inline-block}
+html[lang="ar"] .l-fr{display:none!important}
+html[lang="ar"] .l-en{direction:ltr;text-align:left}
+html[lang="ar"] .l-en::before{content:"هذا النص القانوني متاح بالإنجليزية والفرنسية فقط (النسخة الإنجليزية أدناه).";display:block;direction:rtl;text-align:right;background:#f6f1e6;border:1px solid #e2c27a;border-radius:12px;padding:10px 14px;margin-bottom:18px;font-family:"Tajawal",Tahoma,sans-serif;color:#101b45}
