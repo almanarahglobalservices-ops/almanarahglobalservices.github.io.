@@ -31,7 +31,7 @@
       t_status: "Current status", t_payment: "Payment", t_updated: "Last updated", t_note: "Message from our team", t_progress: "Booking progress",
       subject: "Website enquiry",
       partner: "Travel partnership",
-      services: { umrah: "Umrah package", hajj: "Hajj packages", visa: "Saudi visa", flights: "Flights", hotels: "Hotels in Makkah / Madinah", transfer: "Transfers / ground transport", train: "Haramain train", ziyarah: "Ziyarah", partner: "Travel partnership", trade: "Import / export", general: "General enquiry" }
+      services: { umrah: "Umrah package", hajj: "Hajj packages", visa: "Saudi visa", flights: "Flights", hotels: "Hotels in Makkah / Madinah", transfer: "Transfers / ground transport", train: "Haramain train", ziyarah: "Ziyarah", badal: "Badal Umrah (on behalf of someone)", partner: "Travel partnership", trade: "Import / export", general: "General enquiry" }
     },
     fr: {
       wa_hello: "Bonjour AL MANARAH GLOBAL SERVICES, je souhaite des informations sur : ",
@@ -53,7 +53,7 @@
       t_status: "Statut actuel", t_payment: "Paiement", t_updated: "Dernière mise à jour", t_note: "Message de notre équipe", t_progress: "Avancement de la réservation",
       subject: "Demande depuis le site",
       partner: "Partenariat voyage",
-      services: { umrah: "Forfait Omra", hajj: "Forfaits Hajj", visa: "Visa saoudien", flights: "Vols", hotels: "Hôtels La Mecque / Médine", transfer: "Transferts / transport", train: "Train Haramain", ziyarah: "Ziyarah", partner: "Partenariat agence", trade: "Import / export", general: "Demande générale" }
+      services: { umrah: "Forfait Omra", hajj: "Forfaits Hajj", visa: "Visa saoudien", flights: "Vols", hotels: "Hôtels La Mecque / Médine", transfer: "Transferts / transport", train: "Train Haramain", ziyarah: "Ziyarah", badal: "Omra Badal (au nom d’une personne)", partner: "Partenariat agence", trade: "Import / export", general: "Demande générale" }
     }
   };
 
@@ -64,22 +64,70 @@
     var val = toFr ? el.dataset[frKey] : el.dataset[key];
     if (prop === "html") el.innerHTML = val; else if (prop === "text") el.textContent = val; else el.setAttribute(prop, val);
   }
+  /* ---------- Arabic (third language): dictionary in ar.js, loaded on demand; RTL layout ---------- */
+  var AR = null, arObs = null, arLoading = false;
+  function nT(s) { return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
+  var AR_DAYS = { Mon: "الاثنين", Tue: "الثلاثاء", Wed: "الأربعاء", Thu: "الخميس", Fri: "الجمعة", Sat: "السبت", Sun: "الأحد", Monday: "الاثنين", Tuesday: "الثلاثاء", Wednesday: "الأربعاء", Thursday: "الخميس", Friday: "الجمعة", Saturday: "السبت", Sunday: "الأحد" };
+  var AR_MON = { January: "يناير", February: "فبراير", March: "مارس", April: "أبريل", May: "مايو", June: "يونيو", July: "يوليو", August: "أغسطس", September: "سبتمبر", October: "أكتوبر", November: "نوفمبر", December: "ديسمبر", Jan: "يناير", Feb: "فبراير", Mar: "مارس", Apr: "أبريل", Jun: "يونيو", Jul: "يوليو", Aug: "أغسطس", Sep: "سبتمبر", Oct: "أكتوبر", Nov: "نوفمبر", Dec: "ديسمبر" };
+  var AR_CITY = { Riyadh: "الرياض", Makkah: "مكة المكرمة", Mecca: "مكة المكرمة", Madinah: "المدينة المنورة", Medina: "المدينة المنورة", Jeddah: "جدة", Abha: "أبها", Dammam: "الدمام", Taif: "الطائف", Abidjan: "أبيدجان", Lagos: "لاغوس", Kano: "كانو", Abuja: "أبوجا", Ilorin: "إلورن", "Bouaké": "بواكي", Dakar: "داكار", Cairo: "القاهرة" };
+  function arWords(t) { t = t.replace(/\b(Riyadh|Makkah|Mecca|Madinah|Medina|Jeddah|Abha|Dammam|Taif|Abidjan|Lagos|Kano|Abuja|Ilorin|Bouaké|Dakar|Cairo)\b/g, function (m) { return AR_CITY[m]; }); return t.replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, function (m) { return AR_DAYS[m]; }).replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, function (m) { return AR_MON[m]; }); }
+  function arText(s) {
+    if (!AR) return null; var k = nT(s); if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (AR.d[k]) return AR.d[k];
+    var rx = AR.rx || [];
+    for (var i = 0; i < rx.length; i++) { var m = k.match(rx[i][0]); if (m) return arWords(k.replace(rx[i][0], rx[i][1])); }
+    var mm = k.match(/^(\d+\.|[★✓✈🗓→←•·]+)\s+(.+)$/); if (mm) { var r1 = arText(mm[2]); if (r1) return mm[1] + " " + r1; }
+    if (k.indexOf(" · ") > -1 || k.indexOf(" — ") > -1) { var sep = k.indexOf(" · ") > -1 ? " · " : " — ", parts = k.split(sep), hit = false; parts = parts.map(function (x) { var r = arText(x); if (r) { hit = true; return r; } return x; }); if (hit) return parts.join(sep); }
+    return null;
+  }
+  function arNode(n) {
+    var v = n.nodeValue; if (!v || !/[A-Za-z]/.test(v)) return;
+    var p = n.parentNode; if (!p || p.closest && p.closest("script,style,textarea,code,.no-ar,.l-en,[contenteditable],.ad-edit")) return;
+    var t = arText(v); if (t != null && t !== nT(v)) n.nodeValue = (/^\s/.test(v) ? " " : "") + t + (/\s$/.test(v) ? " " : "");
+  }
+  function arAttrs(el) { ["placeholder", "title", "aria-label"].forEach(function (a) { var v = el.getAttribute && el.getAttribute(a); if (v && /[A-Za-z]/.test(v)) { var t = arText(v); if (t) el.setAttribute(a, t); } }); }
+  function arTree(root) {
+    if (!root) return;
+    if (root.nodeType === 3) { arNode(root); return; }
+    if (root.nodeType !== 1) return;
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n; while ((n = w.nextNode())) arNode(n);
+    arAttrs(root); root.querySelectorAll("[placeholder],[title],[aria-label]").forEach(arAttrs);
+  }
+  function arStart() {
+    if (arObs) return; arTree(document.body);
+    arObs = new MutationObserver(function (ms) { ms.forEach(function (m) { if (m.type === "characterData") arNode(m.target); else if (m.type === "attributes") arAttrs(m.target); else m.addedNodes.forEach(arTree); }); });
+    arObs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["placeholder", "title", "aria-label"] });
+  }
+  function loadAr(cb) {
+    if (window.AMG_AR) { AR = window.AMG_AR; return cb(); }
+    if (arLoading) return; arLoading = true;
+    var f = document.createElement("link"); f.rel = "stylesheet"; f.href = "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"; document.head.appendChild(f);
+    var sc = document.createElement("script"); sc.src = "ar.js?v=1"; sc.onload = function () { AR = window.AMG_AR || { d: {}, rx: [] }; T.ar = arObj(T.en); cb(); }; sc.onerror = function () { arLoading = false; applyLang("en"); }; document.head.appendChild(sc);
+  }
+  function arObj(o) { var r = {}; for (var k in o) r[k] = typeof o[k] === "string" ? (arText(o[k]) || o[k]) : (o[k] && typeof o[k] === "object" ? arObj(o[k]) : o[k]); return r; }
+  function langEl(el) {
+    var fr = lang === "fr", ar = lang === "ar", v;
+    if (el.hasAttribute("data-fr")) { if (el.tagName === "META") swap(el, "", "content", fr); else swap(el, "", "text", fr); if (ar) { v = el.dataset.ar || arText(el.dataset.en); if (v) { if (el.tagName === "META") el.setAttribute("content", v); else el.textContent = v; } } }
+    if (el.hasAttribute("data-fr-html")) { swap(el, "Html", "html", fr); if (ar) { v = el.dataset.arHtml || (AR && AR.d[nT(el.dataset.enHtml)]); if (v) el.innerHTML = v; } }
+    if (el.hasAttribute("data-fr-placeholder")) { swap(el, "Placeholder", "placeholder", fr); if (ar && (v = arText(el.dataset.enPlaceholder))) el.setAttribute("placeholder", v); }
+    if (el.hasAttribute("data-fr-alt")) { swap(el, "Alt", "alt", fr); if (ar && (v = arText(el.dataset.enAlt))) el.setAttribute("alt", v); }
+  }
   function applyLang(l) {
-    lang = l === "fr" ? "fr" : "en";
-    var fr = lang === "fr";
+    var want = l === "fr" ? "fr" : l === "ar" ? "ar" : "en";
+    if (want === "ar" && !AR) { loadAr(function () { applyLang("ar"); }); return; }
+    if (lang === "ar" && want !== "ar" && arObs) { store.set("lang", want); location.reload(); return; }
+    lang = want;
+    var fr = lang === "fr", ar = lang === "ar";
     document.documentElement.lang = lang;
-    document.querySelectorAll("[data-fr]").forEach(function (el) {
-      if (el.tagName === "META") swap(el, "", "content", fr); else swap(el, "", "text", fr);
-    });
-    document.querySelectorAll("[data-fr-html]").forEach(function (el) { swap(el, "Html", "html", fr); });
-    document.querySelectorAll("[data-fr-placeholder]").forEach(function (el) { swap(el, "Placeholder", "placeholder", fr); });
-    document.querySelectorAll("[data-fr-alt]").forEach(function (el) { swap(el, "Alt", "alt", fr); });
+    document.documentElement.dir = ar ? "rtl" : "ltr";
+    document.querySelectorAll("[data-fr],[data-fr-html],[data-fr-placeholder],[data-fr-alt]").forEach(langEl);
     document.querySelectorAll("[data-setlang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.setlang === lang)); });
-    var og = document.querySelector('meta[property="og:locale"]'); if (og) og.content = fr ? "fr_FR" : "en_GB";
+    var og = document.querySelector('meta[property="og:locale"]'); if (og) og.content = fr ? "fr_FR" : ar ? "ar_SA" : "en_GB";
     store.set("lang", lang);
     updateWaLinks();
     refreshBasket();
     renderPromo();
+    if (ar) arStart();
   }
   // data-fr="" on attribute-based swaps must not wipe text: dataset keys are frPlaceholder etc.
   // (data-fr-placeholder -> dataset.frPlaceholder; data-fr -> dataset.fr)
@@ -425,7 +473,7 @@
   var SVG_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
   var SVG_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>';
   var SVG_BAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>';
-  function tx(en, fr) { return lang === "fr" ? fr : en; }
+  function tx(en, fr) { return lang === "fr" ? fr : lang === "ar" ? (arText(en) || en) : en; }
   function mk(tag, attrs, html) { var e = document.createElement(tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (html != null) e.innerHTML = html; return e; }
 
   // 1. WhatsApp icon beside every phone number, TikTok icon beside TikTok links
@@ -609,6 +657,13 @@
   function promoActive(P) { return P && P.on && new Date() < new Date((P.endsOn || P.departure) + "T00:00:00"); }
   function promoText(P) {
     var d = promoDays(P), fr = lang === "fr";
+    if (lang === "ar") return {
+      title: P.titleAr || arText(P.title) || P.title, dates: P.datesAr || arWords(P.dates), from: P.fromAr || arText(P.from) || P.from,
+      price: fmtPrice(P.price) + " " + (P.currency === "FCFA" ? "فرنك CFA" : P.currency) + " للشخص",
+      count: P.endsOn ? null : (d > 1 ? "المغادرة بعد " + d + " يومًا" : "المغادرة قريبًا"),
+      badge: P.lastPlaces ? "آخر الأماكن" : "عرض خاص", book: "احجز الآن", now: P.lastPlaces ? "— آخر الأماكن!" : "متاحة الآن!",
+      closes: P.endsOn ? "آخر موعد للحجز " + new Date(P.endsOn + "T00:00:00").toLocaleDateString("ar-u-nu-latn", { day: "numeric", month: "long" }) : "", add: "أضف إلى السلة"
+    };
     return {
       title: fr ? P.titleFr : P.title,
       dates: fr ? P.datesFr : P.dates,
@@ -783,7 +838,7 @@
       (r.removed || []).forEach(function (k) { var i = k.indexOf("|"), c = k.slice(0, i), n = k.slice(i + 1); if (HOTELS[c]) [2, 3, 4, 5].forEach(function (s) { HOTELS[c][s] = HOTELS[c][s].filter(function (h) { return h[0] !== n; }); }); });
       (r.added || []).forEach(function (a) {
         var c = a.city === "madinah" ? "madinah" : "makkah", s = Math.min(5, Math.max(2, +a.stars || 3)), n = String(a.hotel || "").replace(/[<>"&]/g, "");
-        if (n && !HOTELS[c][s].some(function (h) { return h[0] === n; })) HOTELS[c][s].push([n, String(a.loc || "").replace(/[<>"&]/g, ""), String(a.locFr || a.loc || "").replace(/[<>"&]/g, "")]);
+        if (n && !HOTELS[c][s].some(function (h) { return h[0] === n; })) HOTELS[c][s].push([n, String(a.loc || "").replace(/[<>"&]/g, ""), String(a.locFr || a.loc || "").replace(/[<>"&]/g, ""), String(a.locAr || "").replace(/[<>"&]/g, "")]);
       });
       PR = r.prices || {}; render();
     }).catch(function () {});
@@ -799,7 +854,7 @@
       var title = city === "makkah" ? (fr ? "Hôtel à La Mecque" : "Hotel in Makkah") : (fr ? "Hôtel à Médine" : "Hotel in Madinah");
       var stars = "★".repeat(HB.stars), other = fr ? "Un autre hôtel (non listé)" : "Another hotel (not listed)";
       var html = '<div class="hb-q"><h4>' + title + " · " + stars + '</h4><div class="hb-hotels">';
-      HOTELS[city][HB.stars].forEach(function (h) { html += '<button type="button" class="hb-hotel' + (HB[key] === h[0] ? " on" : "") + '" data-h="' + key + '" data-v="' + h[0] + '"><span class="hb-stars">' + stars + "</span>" + h[0] + "<small>" + (fr ? h[2] : h[1]) + "</small>" + (PR[h[0]] ? '<em class="hb-price">' + (fr ? "Dès " : "From ") + fmtN(PR[h[0]].p, fr) + (fr ? " SAR / nuit" : " SAR / night") + "</em>" : "") + "</button>"; });
+      HOTELS[city][HB.stars].forEach(function (h) { html += '<button type="button" class="hb-hotel' + (HB[key] === h[0] ? " on" : "") + '" data-h="' + key + '" data-v="' + h[0] + '"><span class="hb-stars">' + stars + "</span>" + h[0] + "<small>" + (fr ? h[2] : lang === "ar" && h[3] ? h[3] : h[1]) + "</small>" + (PR[h[0]] ? '<em class="hb-price">' + (fr ? "Dès " : "From ") + fmtN(PR[h[0]].p, fr) + (fr ? " SAR / nuit" : " SAR / night") + "</em>" : "") + "</button>"; });
       html += '<button type="button" class="hb-hotel hb-other' + (HB[key] === "Other" ? " on" : "") + '" data-h="' + key + '" data-v="Other">' + other + "<small>" + (fr ? "Écrivez le nom ci-dessous" : "Type the name below") + "</small></button>";
       if (HB[key] === "Other") { var ok = city === "makkah" ? "oMak" : "oMed"; html += '<input type="text" class="hb-otherin" data-o="' + ok + '" value="' + String(HB[ok]).replace(/"/g, "&quot;") + '" placeholder="' + (fr ? "Nom de l’hôtel souhaité" : "Name of the hotel you want") + '">'; }
       html += "</div></div>";
@@ -1081,7 +1136,8 @@
       } catch (e) {}
       return hTab(dt);
     }
-    function hijri(dt, fr, short) { var h = hParts(dt); return h.d + " " + HM[(fr ? "fr" : "en") + (short ? "s" : "")][h.m - 1] + " " + h.y + (fr ? " H" : " AH"); }
+    var HM_AR = ["محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
+    function hijri(dt, fr, short) { var h = hParts(dt); if (lang === "ar") return h.d + " " + HM_AR[h.m - 1] + " " + h.y + " هـ"; return h.d + " " + HM[(fr ? "fr" : "en") + (short ? "s" : "")][h.m - 1] + " " + h.y + (fr ? " H" : " AH"); }
     function ramadan(dt) { return hParts(dt).m === 9; }
     function at(y, m, d, h) { return new Date(Date.UTC(y, m - 1, d) + Math.round(h * 60) * 60000); }
     function hm(dt) { return String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0"); }
@@ -1309,16 +1365,16 @@
       ev.preventDefault();
       if (form.querySelector(".hp input").value) return;
       if (!validate(form)) { setStatus(form, "error", T[lang].fix); return; }
-      var f = fileIn.files[0];
-      if (!f) { fileIn.closest(".field").classList.add("invalid"); setStatus(form, "error", T[lang].fix); return; }
+      var f = fileIn.files[0], atHotel = window.AMG_PAY_HOTEL && window.AMG_PAY_HOTEL();
+      if (!f && !atHotel) { fileIn.closest(".field").classList.add("invalid"); setStatus(form, "error", T[lang].fix); return; }
       var btn = form.querySelector('button[type="submit"]'); btn.disabled = true;
       setStatus(form, "info", tx("Sending your payment details…", "Envoi de vos informations de paiement…"));
       var it = cur();
-      shrinkFile(f).then(function (file) {
+      (f ? shrinkFile(f) : Promise.resolve(null)).then(function (file) {
         var d = { action: "payment", item: it ? it.id : "other", paid_for: it ? it.en : (svc.options[svc.selectedIndex] ? svc.options[svc.selectedIndex].textContent : ""),
           service: svc.value || (it && it.service) || "general", ref: form.ref.value.trim(), name: form.name.value.trim(), phone: form.phone.value.trim(),
           email: form.email.value.trim(), amount: String(form.amount.value).replace(/[^\d]/g, ""), method: (form.querySelector('input[name="method"]:checked') || {}).value || "",
-          txn: form.txn.value.trim(), message: form.message.value.trim(), file: file, language: lang, page: location.pathname,
+          txn: form.txn.value.trim(), message: form.message.value.trim(), file: file || undefined, currency: atHotel || undefined, language: lang, page: location.pathname,
           website: form.querySelector(".hp input").value, turnstile_token: token(form) };
         return api(d);
       }).then(function (res) {
@@ -1381,9 +1437,130 @@
     if (actions) { initSearch(actions); initTheme(actions); initBasket(actions); }
     initShare(actions);
     initPromo(); initSoon(); initPrayer(); initNavHotels(); initHotels(); initVisa(); initHajj();
-    initPayLinks(); initPay();
+    initPayLinks(); initPay(); initPayAtHotel(); initBadal();
     refreshBasket();
     window.addEventListener("storage", function (e) { if (e.key === "basket") refreshBasket(); });
+  }
+
+
+  /* ---------- Website content set from the private dashboard (stored in the CRM sheet) ---------- */
+  var CMS = {}, CMS_PAGE = "", CMS_SIG = "";
+  function cmsLoadCache() { try { var c = JSON.parse(store.get("amgCMS") || "null"); if (c && c.items) return c.items; } catch (e) {} return {}; }
+  function cmsSig(items) { return JSON.stringify(Object.keys(items).filter(function (k) { return /^(cfg|price):/.test(k); }).sort().map(function (k) { return [k, items[k]]; })); }
+  function cmsCfg(items) {
+    CFG.badal = CFG.badal || { on: true, price: 500, currency: "SAR" };
+    Object.keys(items).forEach(function (k) {
+      var it = items[k], m;
+      if ((m = k.match(/^cfg:(promo|badal|payments)\.(\w+)$/))) {
+        var o = CFG[m[1]] = CFG[m[1]] || {}, f = m[2], v = it.en;
+        if (f === "on" || f === "lastPlaces") o[f] = !/^(no|off|false|0)$/i.test(v);
+        else if (f === "price") { if (Number(v) > 0) o.price = Number(v); }
+        else { if (v) o[f] = v; if (it.fr) o[f + "Fr"] = it.fr; if (it.ar) o[f + "Ar"] = it.ar; }
+      } else if ((m = k.match(/^price:([\w-]+)$/)) && Number(it.en) > 0) {
+        if (m[1] === "badal") CFG.badal.price = Number(it.en);
+        ((CFG.payments || {}).items || []).forEach(function (x) { if (x.id === m[1]) x.price = Number(it.en); });
+        if (CFG.promo && CFG.promo.id === m[1]) CFG.promo.price = Number(it.en);
+      }
+    });
+  }
+  function cssPath(el) {
+    var p = [];
+    while (el && el.nodeType === 1 && el !== document.body) {
+      var i = 1, s = el; while ((s = s.previousElementSibling)) if (s.tagName === el.tagName) i++;
+      p.unshift(el.tagName.toLowerCase() + ":nth-of-type(" + i + ")"); el = el.parentElement;
+    }
+    return p.join(">");
+  }
+  function cmsMark() {
+    CMS_PAGE = document.body.dataset.page || location.pathname.replace(/^\/|\.html$/g, "") || "index";
+    document.querySelectorAll("[data-fr],[data-fr-html],main img").forEach(function (el) { if (el.tagName === "META" || el.tagName === "TITLE" || el.tagName === "OPTION" || el.closest(".lang")) return; el.dataset.cid = CMS_PAGE + "|" + cssPath(el); });
+  }
+  function safeHtml(h) { // the dashboard may only use simple formatting
+    var d = document.createElement("div"); d.innerHTML = String(h || "");
+    d.querySelectorAll("*").forEach(function (n) {
+      if (["B", "STRONG", "I", "EM", "BR", "A", "SMALL", "SPAN"].indexOf(n.tagName) < 0) { n.replaceWith(document.createTextNode(n.textContent)); return; }
+      [].slice.call(n.attributes).forEach(function (a) { if (!(n.tagName === "A" && a.name === "href" && /^(https?:|mailto:|tel:|[\w-]+\.html)/.test(a.value))) n.removeAttribute(a.name); });
+    });
+    return d.innerHTML;
+  }
+  function cmsApplyOne(k, it) {
+    var id = k.slice(2), el = null;
+    document.querySelectorAll("[data-cid]").forEach(function (x) { if (x.dataset.cid === id) el = x; });
+    if (!el) return;
+    if (it.img) { if (el.tagName === "IMG") { el.removeAttribute("srcset"); el.src = it.img; } return; }
+    if (el.hasAttribute("data-fr-html")) {
+      if (it.en) { if (el.dataset.enHtml !== undefined) el.dataset.enHtml = safeHtml(it.en); else el.innerHTML = safeHtml(it.en); }
+      if (it.fr) el.setAttribute("data-fr-html", safeHtml(it.fr));
+      if (it.ar) el.dataset.arHtml = safeHtml(it.ar);
+    } else {
+      if (it.en) { if (el.dataset.en !== undefined) el.dataset.en = it.en; else el.textContent = it.en; }
+      if (it.fr) el.setAttribute("data-fr", it.fr);
+      if (it.ar) el.dataset.ar = it.ar;
+    }
+    if (el.dataset.en !== undefined || el.dataset.enHtml !== undefined) langEl(el);
+  }
+  function cmsApply(items) { Object.keys(items).forEach(function (k) { if (k.indexOf("e:" + CMS_PAGE + "|") === 0) cmsApplyOne(k, items[k]); }); cmsAnnounce(items["txt:announce"]); }
+  var annEl = null;
+  function cmsAnnounce(a) {
+    var txt = a && (a.en || a.fr || a.ar); if (annEl) { annEl.remove(); annEl = null; } if (!txt) return;
+    annEl = mk("div", { "class": "ann-bar" }); var sp = mk("span", { "data-fr": a.fr || a.en }); sp.textContent = a.en || a.fr || a.ar; if (a.ar) sp.dataset.ar = a.ar;
+    annEl.appendChild(sp); document.body.insertBefore(annEl, document.body.firstChild); langEl(sp);
+  }
+  function cmsInit() { CMS = cmsLoadCache(); CMS_SIG = cmsSig(CMS); cmsCfg(CMS); }
+  function cmsFetch() {
+    if (/[?&]edit=1/.test(location.search)) { var sc = document.createElement("script"); sc.src = "edit.js?v=1"; document.body.appendChild(sc); }
+    if (!CFG.formEndpoint) return;
+    api({ action: "content" }).then(function (r) {
+      if (!r || !r.ok) return;
+      var items = r.items || {}; store.set("amgCMS", JSON.stringify({ t: Date.now(), items: items }));
+      var sg = cmsSig(items); if (sg !== CMS_SIG) { try { var gk = sg + "|" + location.pathname; if (sessionStorage.getItem("amgCMSr") !== gk) { sessionStorage.setItem("amgCMSr", gk); location.reload(); return; } } catch (e) {} }
+      CMS = items; cmsApply(items);
+    }).catch(function () {});
+  }
+  window.AMG_SITE = { api: function (p) { return api(p); }, page: function () { return CMS_PAGE; }, items: function () { return CMS; }, applyOne: cmsApplyOne, lang: function () { return lang; }, setLang: function (l) { applyLang(l); }, arText: function (s) { return arText(s); } };
+
+  /* ---------- Badal Umrah (Umrah on behalf of a deceased or unable person): moving advert on Home ---------- */
+  function badalOption() {
+    if ((CFG.badal || {}).on === false) return;
+    var sel = document.getElementById("f_service"); if (!sel || sel.querySelector('option[value="badal"]')) return;
+    var o = mk("option", { value: "badal", "data-fr": "Omra Badal (au nom d’une personne)" }); o.textContent = "Badal Umrah (on behalf of someone)";
+    var ref = sel.querySelector('option[value="ziyarah"]'); sel.insertBefore(o, ref ? ref.nextSibling : null);
+  }
+  function initBadal() {
+    var B = CFG.badal || {}; if (B.on === false) return;
+    var page = document.body.dataset.page, link = "contact.html?service=badal";
+    var price = fmtN(B.price || 500) + " " + (B.currency || "SAR");
+    if (page !== "index") return;
+    var tk = mk("div", { "class": "badal-ticker" });
+    var one = '<span><b data-fr="Omra Badal">Badal Umrah</b> <i data-fr="Omra accomplie au nom d’un défunt ou d’une personne qui ne peut pas voyager">Umrah performed on behalf of a deceased person or someone unable to travel</i> <em>' + price + '</em> <a href="' + link + '" data-fr="Réserver →">Book →</a></span>';
+    tk.innerHTML = '<div class="bt-track">' + one + one + one + one + "</div>";
+    var hero = document.querySelector("#main > section");
+    var sec = mk("section", { "class": "badal-sec", id: "badal" });
+    sec.innerHTML = '<div class="container"><div class="badal-card"><span class="badal-badge" data-fr="Nouveau programme">New programme</span>' +
+      '<h2><span data-fr="Omra Badal">Badal Umrah</span> <small data-fr="Omra au nom d’un proche">Umrah on behalf of a loved one</small></h2>' +
+      '<p data-fr="Nous accomplissons l’Omra au nom d’un proche décédé ou d’une personne qui ne peut pas voyager (âge, maladie). Elle est accomplie à La Mecque par une personne de confiance qui a déjà fait sa propre Omra, et nous vous confirmons quand elle est terminée.">We perform Umrah on behalf of a deceased relative or someone who cannot travel (old age, illness). It is performed in Makkah by a trusted person who has already done their own Umrah, and we confirm to you when it is completed.</p>' +
+      '<div class="badal-row"><div class="badal-price"><b>' + price + '</b><small data-fr="par Omra">per Umrah</small></div>' +
+      '<a class="btn btn-gold" href="' + link + '" data-fr="Réserver une Omra Badal">Book a Badal Umrah</a><a class="btn btn-outline-light" data-wa="badal" href="#" target="_blank" rel="noopener" data-fr="Demander sur WhatsApp">Ask on WhatsApp</a></div></div></div>';
+    if (hero && hero.parentNode) { hero.parentNode.insertBefore(tk, hero.nextSibling); var after = document.querySelector(".promo-sec") || tk; after.parentNode.insertBefore(sec, after.nextSibling); }
+  }
+
+  /* ---------- Pay at the hotel (cash on arrival, for confirmed hotel bookings) ---------- */
+  function initPayAtHotel() {
+    var form = document.getElementById("payForm"); if (!form) return;
+    var row = form.querySelector(".method-row"); if (!row || row.querySelector('[value="property"]')) return;
+    var lb = mk("label", {}); lb.innerHTML = '<input type="radio" name="method" value="property"> <span data-fr="Payer à l’hôtel (espèces)">Pay at the hotel (cash)</span>'; row.appendChild(lb);
+    var note = mk("p", { "class": "pay-hotel-note" }); note.hidden = true; note.innerHTML = '<span data-fr="Pour une réservation d’hôtel confirmée : vous payez en espèces à votre arrivée à l’hôtel, à notre représentant. Indiquez la référence de votre devis. Aucun reçu à joindre maintenant.">For a confirmed hotel booking: you pay in cash on arrival at the hotel, to our representative. Enter your quotation reference. No receipt to attach now.</span>';
+    row.closest(".field").appendChild(note);
+    var amt = form.querySelector("#p_amount"), cur = mk("select", { id: "p_cur", "aria-label": "Currency" }); cur.hidden = true; cur.innerHTML = '<option value="SAR">SAR</option><option value="XOF">FCFA</option><option value="USD">USD</option><option value="NGN">NGN</option>'; amt.parentNode.insertBefore(cur, amt.nextSibling);
+    var txn = form.querySelector("#p_txn"), file = form.querySelector("#p_file");
+    function sync() {
+      var on = (form.querySelector('input[name="method"]:checked') || {}).value === "property";
+      txn.closest(".field").hidden = on; file.closest(".field").hidden = on; txn.required = !on; file.required = !on; note.hidden = !on; cur.hidden = !on;
+      var sb = form.querySelector('button[type="submit"] span'); if (sb) { if (sb.dataset.en === undefined) sb.dataset.en = sb.textContent; var t = on ? ["Send my booking", "Envoyer ma réservation", "أرسل حجزي"] : [sb.dataset.en, sb.getAttribute("data-fr"), arText(sb.dataset.en) || sb.dataset.en]; sb.textContent = lang === "fr" ? t[1] : lang === "ar" ? t[2] : t[0]; }
+    }
+    form.addEventListener("change", function (e) { if (e.target.name === "method") sync(); });
+    form.addEventListener("reset", function () { setTimeout(sync, 0); });
+    window.AMG_PAY_HOTEL = function () { return (form.querySelector('input[name="method"]:checked') || {}).value === "property" ? cur.value : ""; };
   }
 
   /* ---------- Boot ---------- */
@@ -1391,10 +1568,15 @@
     if (document.body.dataset.page === "admin") return;
     document.querySelectorAll(".year").forEach(function (y) { y.textContent = new Date().getFullYear(); });
     var q = new URLSearchParams(location.search).get("lang");
-    var initial = q || store.get("lang") || ((navigator.language || "").toLowerCase().indexOf("fr") === 0 ? "fr" : "en");
+    var nl = (navigator.language || "").toLowerCase();
+    var initial = q || store.get("lang") || (nl.indexOf("fr") === 0 ? "fr" : nl.indexOf("ar") === 0 ? "ar" : "en");
+    document.querySelectorAll(".lang").forEach(function (g) { if (!g.querySelector('[data-setlang="ar"]')) { var b = mk("button", { type: "button", "data-setlang": "ar", "aria-pressed": "false", lang: "ar", title: "العربية" }); b.textContent = "ع"; g.appendChild(b); } });
+    cmsMark(); cmsInit(); badalOption();
     document.querySelectorAll("[data-setlang]").forEach(function (b) { b.addEventListener("click", function () { applyLang(b.dataset.setlang); }); });
     initNav(); initReveal(); initImages(); initRouting(); initQuick(); initChat(); initForms(); initLightbox(); initTrack(); initTurnstile();
     initExtras();
+    cmsApply(CMS);
     applyLang(initial);
+    cmsFetch();
   });
 })();
