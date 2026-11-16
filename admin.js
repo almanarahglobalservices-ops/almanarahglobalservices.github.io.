@@ -4,7 +4,7 @@
   var CFG = window.SITE_CONFIG || {}, API = CFG.formEndpoint, $ = function (s, r) { return (r || document).querySelector(s); };
   var D = null, TAB = "check", Q = "";
   function tok() { try { return sessionStorage.getItem("amgTok") || ""; } catch (e) { return ""; } }
-  function setTok(t) { try { t ? sessionStorage.setItem("amgTok", t) : sessionStorage.removeItem("amgTok"); } catch (e) {} }
+  function setTok(t) { if (!t) { try { sessionStorage.removeItem("amgList"); } catch (e) {} } try { t ? sessionStorage.setItem("amgTok", t) : sessionStorage.removeItem("amgTok"); } catch (e) {} }
   function call(op, data) {
     data = data || {}; data.action = "admin"; data.op = op; data.token = tok();
     return fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(data), redirect: "follow" })
@@ -61,10 +61,13 @@
 
   /* ---------- data ---------- */
   function load() {
+    var first = !D || !D.enquiries;
+    if (first) { try { var c = JSON.parse(sessionStorage.getItem("amgList") || "null"); if (c && c.ok) { D = c; $("#adLogin").hidden = true; $("#adApp").hidden = false; draw(); } } catch (e) {} }
     busy(true);
     return call("list").then(function (r) {
       busy(false); if (!r.ok) { toast("Could not load: " + (r.error || ""), true); return; }
-      D = r; $("#adLogin").hidden = true; $("#adApp").hidden = false; draw();
+      D = r; try { sessionStorage.setItem("amgList", JSON.stringify(r)); } catch (e) {}
+      var y = window.scrollY; $("#adLogin").hidden = true; $("#adApp").hidden = false; draw(); window.scrollTo(0, y);
     }).catch(function (e) { busy(false); if (String(e.message) !== "auth") toast("Connection problem. Try again.", true); });
   }
   $("#adRefresh").addEventListener("click", load);
@@ -244,6 +247,11 @@
     $("#nhName").focus();
   }
   document.addEventListener("input", function (ev) { if (ev.target.id === "nhName") showSug(); });
+  document.addEventListener("change", function (ev) {
+    var t = ev.target; if (!t.classList || !t.classList.contains("sel-all")) return;
+    var q = t.dataset.city === "removed" ? ".ad-price.removed .hsel" : '.ad-price:not(.removed)[data-city="' + t.dataset.city + '"] .hsel';
+    document.querySelectorAll(q).forEach(function (c) { c.checked = t.checked; });
+  });
   document.addEventListener("keydown", function (ev) { if (ev.target.id === "nhPaste" && ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); fillFromPaste(); } });
   document.addEventListener("click", function (ev) { var s = $("#nhSug"); if (s && !s.hidden && !ev.target.closest(".nh-wrap")) s.hidden = true; });
 
@@ -330,23 +338,33 @@
       '<label class="ad-mini">Location / distance (Arabic)<input id="nhLocAr" dir="rtl" placeholder="على بعد 300 م من الحرم"></label>' +
       '<div class="ad-row"><input id="nhPrice" inputmode="numeric" placeholder="From price SAR / night (optional)"><button class="btn btn-gold btn-sm" data-act="hotel-add">Add hotel</button></div></div></details>';
     ["makkah", "madinah"].forEach(function (city) {
-      html += '<h3 class="ad-sub">' + (city === "makkah" ? "Makkah" : "Madinah") + "</h3>";
+      html += '<h3 class="ad-sub">' + (city === "makkah" ? "Makkah" : "Madinah") + '</h3><div class="ad-bulk" data-city="' + city + '"><label><input type="checkbox" class="sel-all" data-city="' + city + '"> Select all</label><button class="btn btn-outline btn-sm" data-act="bulk-remove" data-city="' + city + '">Remove selected</button></div>';
       list.filter(function (x) { return x.city === city && x.status !== "Removed"; }).sort(function (a, b) { return b.stars - a.stars; }).forEach(function (x) {
-        html += '<div class="ad-price" data-city="' + x.city + '" data-stars="' + x.stars + '" data-hotel="' + esc(x.hotel) + '" data-loc="' + esc(x.loc) + '" data-locfr="' + esc(x.locFr) + '" data-locar="' + esc(x.locAr || "") + '" data-status="' + (x.builtin ? "" : "Added") + '"><span><b>' + esc(x.hotel) + (x.builtin ? "" : ' <em class="ad-new">added</em>') + '</b><small>' + STAR[x.stars] + " · " + esc(x.loc) + '</small></span><input inputmode="numeric" class="hp-p" value="' + esc(x.price) + '" placeholder="SAR"><button class="ad-x" data-act="hotel-remove" title="Remove this hotel" aria-label="Remove">✕</button></div>';
+        html += '<div class="ad-price" data-city="' + x.city + '" data-stars="' + x.stars + '" data-hotel="' + esc(x.hotel) + '" data-loc="' + esc(x.loc) + '" data-locfr="' + esc(x.locFr) + '" data-locar="' + esc(x.locAr || "") + '" data-status="' + (x.builtin ? "" : "Added") + '"><input type="checkbox" class="hsel" aria-label="Select"><span><b>' + esc(x.hotel) + (x.builtin ? "" : ' <em class="ad-new">added</em>') + '</b><small>' + STAR[x.stars] + " · " + esc(x.loc) + '</small></span><input inputmode="numeric" class="hp-p" value="' + esc(x.price) + '" placeholder="SAR"><button class="ad-x" data-act="hotel-remove" title="Remove this hotel" aria-label="Remove">✕</button></div>';
       });
     });
     var rem = list.filter(function (x) { return x.status === "Removed"; });
     if (rem.length) {
-      html += '<h3 class="ad-sub">Removed hotels (hidden on the website)</h3>';
-      rem.forEach(function (x) { html += '<div class="ad-price removed" data-city="' + x.city + '" data-stars="' + x.stars + '" data-hotel="' + esc(x.hotel) + '" data-loc="' + esc(x.loc) + '" data-locfr="' + esc(x.locFr) + '" data-locar="' + esc(x.locAr || "") + '" data-status="' + (x.builtin ? "" : "Added") + '"><span><b>' + esc(x.hotel) + "</b><small>" + (x.city === "makkah" ? "Makkah" : "Madinah") + " · " + STAR[x.stars] + '</small></span><input type="hidden" class="hp-p" value="' + esc(x.price) + '"><button class="btn btn-outline btn-sm" data-act="hotel-restore">Restore</button></div>'; });
+      html += '<h3 class="ad-sub">Removed hotels (hidden on the website)</h3><div class="ad-bulk" data-city="removed"><label><input type="checkbox" class="sel-all" data-city="removed"> Select all</label><button class="btn btn-outline btn-sm" data-act="bulk-restore">Restore selected</button></div>';
+      rem.forEach(function (x) { html += '<div class="ad-price removed" data-city="' + x.city + '" data-stars="' + x.stars + '" data-hotel="' + esc(x.hotel) + '" data-loc="' + esc(x.loc) + '" data-locfr="' + esc(x.locFr) + '" data-locar="' + esc(x.locAr || "") + '" data-status="' + (x.builtin ? "" : "Added") + '"><input type="checkbox" class="hsel" aria-label="Select"><span><b>' + esc(x.hotel) + "</b><small>" + (x.city === "makkah" ? "Makkah" : "Madinah") + " · " + STAR[x.stars] + '</small></span><input type="hidden" class="hp-p" value="' + esc(x.price) + '"><button class="btn btn-outline btn-sm" data-act="hotel-restore">Restore</button></div>'; });
     }
     return html + '<div class="ad-sticky"><button class="btn btn-primary" data-act="prices">Save hotel prices</button></div>';
   }
   function rowData(x, status) { return { hotel: x.dataset.hotel, city: x.dataset.city, stars: x.dataset.stars, price: x.querySelector(".hp-p").value, loc: x.dataset.loc, locFr: x.dataset.locfr, locAr: x.dataset.locar || "", status: status }; }
   function saveHotels(rows, msg) {
     busy(true);
-    return call("prices_set", { rows: rows }).then(function (r) { busy(false); if (!r.ok) return toast("Error: " + r.error, true); toast(msg); return load(); }).catch(function () { busy(false); toast("Connection problem.", true); });
+    return call("prices_set", { rows: rows }).then(function (r) {
+      busy(false); if (!r.ok) return toast("Error: " + r.error, true);
+      D.prices = D.prices || [];
+      rows.forEach(function (x) {
+        var row = { Hotel: x.hotel, City: x.city, Stars: x.stars, "From price (SAR / night)": x.price, Location: x.loc || "", "Location (FR)": x.locFr || "", "Location (AR)": x.locAr || "", Status: x.status || "" };
+        var i = -1; D.prices.forEach(function (p, j) { if (p.Hotel === x.hotel && p.City === x.city) i = j; });
+        if (i > -1) D.prices[i] = row; else D.prices.push(row);
+      });
+      var y = window.scrollY; toast(msg); draw(); window.scrollTo(0, y);
+    }).catch(function () { busy(false); toast("Connection problem.", true); });
   }
+
 
   /* ---------- actions ---------- */
   function out(el, html) { var o = el.querySelector(".ad-out"); if (o) o.innerHTML = html; }
@@ -404,6 +422,11 @@
       var exists = hotelRows().some(function (x) { return x.hotel.toLowerCase() === nm.toLowerCase() && x.city === $("#nhCity").value; });
       if (exists) return toast("This hotel is already in the list.", true);
       saveHotels([{ hotel: nm, city: $("#nhCity").value, stars: $("#nhStars").value, price: $("#nhPrice").value, loc: $("#nhLoc").value.trim(), locFr: $("#nhLocFr").value.trim() || $("#nhLoc").value.trim(), locAr: $("#nhLocAr").value.trim(), status: "Added" }], "Hotel added — it appears on the website within 10 minutes.");
+    } else if (act === "bulk-remove" || act === "bulk-restore") {
+      var restore = act === "bulk-restore", sel = [].filter.call(document.querySelectorAll(restore ? ".ad-price.removed" : '.ad-price:not(.removed)[data-city="' + b.dataset.city + '"]'), function (x) { var c = x.querySelector(".hsel"); return c && c.checked; });
+      if (!sel.length) return toast("Tick the hotels first.", true);
+      if (!restore && !confirm("Remove " + sel.length + " hotel(s) from the website? You can restore them later.")) return;
+      saveHotels(sel.map(function (x) { return rowData(x, restore ? (x.dataset.status === "Added" ? "Added" : "") : "Removed"); }), sel.length + (restore ? " hotel(s) restored." : " hotel(s) removed from the website."));
     } else if (act === "site-save") {
       siteSave();
     } else if (act === "site-undo") {
