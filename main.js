@@ -770,7 +770,7 @@
     }
   };
   window.AMG_HOTELS = HOTELS;
-  var HB = { city: "both", nMak: 5, nMed: 4, date: "", stars: 4, hMak: "", hMed: "", oMak: "", oMed: "", dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
+  var HB = { city: "both", nMak: 5, nMed: 4, date: "", hMak: "", hMed: "", sMak: 0, sMed: 0, lMak: "", lMed: "", xMak: false, xMed: false, dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
   function initNavHotels() {
     var menu = document.getElementById("menu");
     if (menu && !menu.querySelector('[data-nav="hotels"]')) {
@@ -818,47 +818,106 @@
     var fr = lang === "fr", L = [];
     var cityName = { makkah: fr ? "La Mecque" : "Makkah", madinah: fr ? "Médine" : "Madinah" };
     var rec = fr ? "hôtel à choisir" : "hotel not chosen yet", oth = fr ? "autre hôtel (à préciser par téléphone)" : "another hotel (to discuss by phone)";
-    function hn(v, city, typed) { if (v === "Other") return typed ? typed + (fr ? " (non listé)" : " (not listed)") : oth; if (!v) return rec; var a = (HOTELS[city][HB.stars] || []).filter(function (h) { return h[0] === v; })[0]; return v + (a ? " (" + (fr ? a[2] : a[1]) + ")" : ""); }
+    function hn(city) { var k = city === "makkah" ? "Mak" : "Med", v = HB["h" + k]; if (!v) return rec; return v + (HB["s" + k] ? " " + "★".repeat(HB["s" + k]) : "") + (HB["l" + k] ? " (" + HB["l" + k] + ")" : "") + (HB["x" + k] ? (fr ? " — pas dans notre liste" : " — not in our list") : ""); }
     var distT = { closest: fr ? "Le plus proche du Haram" : "Closest to the Haram", walk: fr ? "À distance de marche" : "Walking distance", shuttle: fr ? "Avec navette (économique)" : "With shuttle (economy)" };
     var mealT = { ro: fr ? "Chambre seule" : "Room only", bb: fr ? "Petit-déjeuner" : "Breakfast", hb: fr ? "Demi-pension" : "Half board", fb: fr ? "Pension complète" : "Full board" };
-    L.push((fr ? "Demande d’hôtel" : "Hotel request") + " — " + HB.stars + "★");
-    if (HB.city !== "madinah") L.push(cityName.makkah + ": " + HB.nMak + (fr ? " nuits — " : " nights — ") + hn(HB.hMak, "makkah", HB.oMak));
-    if (HB.city !== "makkah") L.push(cityName.madinah + ": " + HB.nMed + (fr ? " nuits — " : " nights — ") + hn(HB.hMed, "madinah", HB.oMed));
+    L.push(fr ? "Demande d’hôtel" : "Hotel request");
+    if (HB.city !== "madinah") L.push(cityName.makkah + ": " + HB.nMak + (fr ? " nuits — " : " nights — ") + hn("makkah"));
+    if (HB.city !== "makkah") L.push(cityName.madinah + ": " + HB.nMed + (fr ? " nuits — " : " nights — ") + hn("madinah"));
     L.push((fr ? "Arrivée" : "Check-in") + ": " + (HB.date || (fr ? "à confirmer" : "to be confirmed")));
     L.push((fr ? "Chambres" : "Rooms") + ": " + HB.rooms + " × " + HB.room + " · " + HB.adults + (fr ? " adulte(s)" : " adult(s)") + (HB.kids ? ", " + HB.kids + (fr ? " enfant(s)" : " child(ren)") : ""));
     L.push((fr ? "Repas" : "Meals") + ": " + mealT[HB.meals]);
     if (HB.budget) L.push((fr ? "Budget" : "Budget") + ": " + HB.budget);
     return L.join("\n");
   }
+  /* ---------- Hotel booking (hotels.html): search a hotel by name, stars shown automatically ---------- */
+  var HDB = null, HDB_LOADING = null, HPR = {}, HREM = {}, HADD = [];
+  function hNorm(t) {
+    return String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ًͯ-ٰٟـ]/g, "")
+      .replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
+      .replace(/\b(the|hotel|hotels|by|and)\b/g, " ").replace(/(^|\s)(فندق|فنادق)(?=\s|$)/g, " ")
+      .replace(/[^a-z0-9؀-ۿ]+/g, " ").trim();
+  }
+  function hDist(m) {
+    m = Number(m) || 0; if (!m) return "";
+    var t = m < 1000 ? Math.round(m / 10) * 10 + " m" : (Math.round(m / 100) / 10) + " km";
+    return lang === "fr" ? "à " + t.replace(".", ",") + " du Haram" : lang === "ar" ? "على بعد " + t.replace(" m", " م").replace(" km", " كم") + " من الحرم" : t + " from the Haram";
+  }
+  function hApplyPrices(r) {
+    if (!r || !r.ok) return;
+    HPR = r.prices || {}; HREM = {}; HADD = r.added || [];
+    (r.removed || []).forEach(function (k) { HREM[k] = 1; var i = k.indexOf("|"), c = k.slice(0, i), n = k.slice(i + 1); if (HOTELS[c]) [2, 3, 4, 5].forEach(function (st) { HOTELS[c][st] = HOTELS[c][st].filter(function (h) { return h[0] !== n; }); }); });
+    HADD.forEach(function (a) {
+      var c = a.city === "madinah" ? "madinah" : "makkah", st = Math.min(5, Math.max(2, +a.stars || 3)), n = String(a.hotel || "").replace(/[<>"&]/g, "");
+      if (n && !HOTELS[c][st].some(function (h) { return h[0] === n; })) HOTELS[c][st].push([n, String(a.loc || "").replace(/[<>"&]/g, ""), String(a.locFr || a.loc || "").replace(/[<>"&]/g, ""), String(a.locAr || "").replace(/[<>"&]/g, "")]);
+    });
+    HDB = null; // rebuilt with the new list
+  }
+  function hBuild(raw) {
+    var db = { makkah: [], madinah: [] };
+    ["makkah", "madinah"].forEach(function (c) {
+      var seen = {};
+      function add(o) { var k = hNorm(o.n) || hNorm(o.ar); if (!k || seen[k] || HREM[c + "|" + o.n]) return; seen[k] = 1; o.k = hNorm(o.n) + " | " + hNorm(o.ar); db[c].push(o); }
+      [5, 4, 3, 2].forEach(function (st) { (HOTELS[c][st] || []).forEach(function (h) { add({ n: h[0], ar: "", s: st, en: h[1], fr: h[2], arl: h[3] || "", top: 1 }); }); });
+      ((raw || {})[c] || []).forEach(function (r) { var st = Math.round(Number(r[2]) || 0); if (!r[0]) return; add({ n: r[0], ar: r[1] || "", s: st >= 1 && st <= 5 ? st : 0, d: Number(r[3]) || 0 }); });
+    });
+    return db;
+  }
+  function hLoad() {
+    if (HDB_LOADING) return HDB_LOADING;
+    HDB_LOADING = fetch("hotels-raw.json").then(function (r) { return r.json(); }).catch(function () { return null; }).then(function (raw) { hBuild.raw = raw; HDB = hBuild(raw); return HDB; });
+    return HDB_LOADING;
+  }
+  function hDB() { if (!HDB) HDB = hBuild(hBuild.raw); return HDB; }
+  function hLoc(o) { return o.en ? (lang === "fr" ? o.fr : lang === "ar" && o.arl ? o.arl : o.en) : hDist(o.d); }
+  function hSearch(city, q) {
+    var list = hDB()[city] || [], nq = hNorm(q), out = [];
+    if (!nq) return list.filter(function (o) { return o.top; }).slice(0, 10);
+    var words = nq.split(" ");
+    list.forEach(function (o) {
+      if (!words.every(function (w) { return o.k.indexOf(w) > -1; })) return;
+      var sc = (o.k.indexOf(nq) === 0 || o.k.indexOf(" | " + nq) > -1 ? 0 : 1) + (o.top ? 0 : 0.5) + (o.s ? 0 : 0.3) + (o.d ? o.d / 100000 : 0.2);
+      out.push([sc, o]);
+    });
+    return out.sort(function (a, b) { return a[0] - b[0]; }).slice(0, 12).map(function (x) { return x[1]; });
+  }
   function initHotels() {
     var box = document.getElementById("hotelBuilder"); if (!box) return;
-    var PR = {};
-    if (CFG.formEndpoint) api({ action: "prices" }).then(function (r) {
-      if (!r || !r.ok) return;
-      (r.removed || []).forEach(function (k) { var i = k.indexOf("|"), c = k.slice(0, i), n = k.slice(i + 1); if (HOTELS[c]) [2, 3, 4, 5].forEach(function (s) { HOTELS[c][s] = HOTELS[c][s].filter(function (h) { return h[0] !== n; }); }); });
-      (r.added || []).forEach(function (a) {
-        var c = a.city === "madinah" ? "madinah" : "makkah", s = Math.min(5, Math.max(2, +a.stars || 3)), n = String(a.hotel || "").replace(/[<>"&]/g, "");
-        if (n && !HOTELS[c][s].some(function (h) { return h[0] === n; })) HOTELS[c][s].push([n, String(a.loc || "").replace(/[<>"&]/g, ""), String(a.locFr || a.loc || "").replace(/[<>"&]/g, ""), String(a.locAr || "").replace(/[<>"&]/g, "")]);
-      });
-      PR = r.prices || {}; render();
-    }).catch(function () {});
+    var cached = siteCache(); if (cached && cached.prices) hApplyPrices(cached.prices);
+    siteData().then(function (d) { if (d && d.prices) { hApplyPrices(d.prices); render(); } });
+    setTimeout(hLoad, 1500);
     var form = document.getElementById("hotelForm"), sum = document.getElementById("h_summary");
     var today = new Date(); today.setDate(today.getDate() + 3);
     var minDate = today.toISOString().slice(0, 10);
+    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
     function chips(key, opts) {
       return '<div class="hb-chips">' + opts.map(function (o) { return '<button type="button" class="hb-chip' + (String(HB[key]) === String(o[0]) ? " on" : "") + '" data-k="' + key + '" data-v="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>";
     }
     function stepper(key, min, max) { var a = ' data-s="' + key + '" data-min="' + min + '" data-max="' + max + '"'; return '<div class="hb-step"><button type="button"' + a + ' data-d="-1" aria-label="-">−</button><b>' + HB[key] + '</b><button type="button"' + a + ' data-d="1" aria-label="+">+</button></div>'; }
-    function hotelList(city) {
-      var fr = lang === "fr", key = city === "makkah" ? "hMak" : "hMed";
-      var title = city === "makkah" ? (fr ? "Hôtel à La Mecque" : "Hotel in Makkah") : (fr ? "Hôtel à Médine" : "Hotel in Madinah");
-      var stars = "★".repeat(HB.stars), other = fr ? "Un autre hôtel (non listé)" : "Another hotel (not listed)";
-      var html = '<div class="hb-q"><h4>' + title + " · " + stars + '</h4><div class="hb-hotels">';
-      HOTELS[city][HB.stars].forEach(function (h) { html += '<button type="button" class="hb-hotel' + (HB[key] === h[0] ? " on" : "") + '" data-h="' + key + '" data-v="' + h[0] + '"><span class="hb-stars">' + stars + "</span>" + h[0] + "<small>" + (fr ? h[2] : lang === "ar" && h[3] ? h[3] : h[1]) + "</small>" + (PR[h[0]] ? '<em class="hb-price">' + (fr ? "Dès " : "From ") + fmtN(PR[h[0]].p, fr) + (fr ? " SAR / nuit" : " SAR / night") + "</em>" : "") + "</button>"; });
-      html += '<button type="button" class="hb-hotel hb-other' + (HB[key] === "Other" ? " on" : "") + '" data-h="' + key + '" data-v="Other">' + other + "<small>" + (fr ? "Écrivez le nom ci-dessous" : "Type the name below") + "</small></button>";
-      if (HB[key] === "Other") { var ok = city === "makkah" ? "oMak" : "oMed"; html += '<input type="text" class="hb-otherin" data-o="' + ok + '" value="' + String(HB[ok]).replace(/"/g, "&quot;") + '" placeholder="' + (fr ? "Nom de l’hôtel souhaité" : "Name of the hotel you want") + '">'; }
-      html += "</div></div>";
+    function price(n) { var p = HPR[n]; return p && p.p ? (lang === "fr" ? "Dès " + fmtN(p.p) + " SAR / nuit" : "From " + fmtN(p.p) + " SAR / night") : ""; }
+    function sugHtml(city, q) {
+      var fr = lang === "fr", list = hSearch(city, q), html = "";
+      if (!String(q || "").trim()) html += '<p class="hb-sugh">' + (fr ? "Hôtels populaires — ou tapez un nom" : "Popular hotels — or type a name") + "</p>";
+      list.forEach(function (o) {
+        var pr = price(o.n);
+        html += '<button type="button" class="hb-opt" data-pick="' + city + '" data-n="' + esc(o.n) + '" data-st="' + (o.s || 0) + '" data-l="' + esc(hLoc(o)) + '"><span class="hb-stars">' + (o.s ? "★".repeat(o.s) : "") + "</span><b>" + esc(o.n) + "</b>" + (o.ar && lang === "ar" ? ' <span dir="rtl">' + esc(o.ar) + "</span>" : "") + "<small>" + esc(hLoc(o)) + (pr ? " · <em>" + pr + "</em>" : "") + "</small></button>";
+      });
+      var t = String(q || "").trim();
+      if (t.length >= 3) html += '<button type="button" class="hb-opt hb-other" data-pick="' + city + '" data-n="' + esc(t) + '" data-st="0" data-l="" data-x="1"><b>' + (fr ? "Utiliser « " : "Use “") + esc(t) + (fr ? " » (pas dans la liste)" : "” (not in the list)") + "</b><small>" + (fr ? "Nous vérifions et vous proposons un prix" : "We will check it and send you a price") + "</small></button>";
+      if (!list.length && t.length < 3) html += '<p class="hb-sugh">' + (fr ? "Tapez au moins 2 lettres…" : "Type at least 2 letters…") + "</p>";
       return html;
+    }
+    function hotelPick(city) {
+      var fr = lang === "fr", k = city === "makkah" ? "Mak" : "Med";
+      var title = city === "makkah" ? (fr ? "Hôtel à La Mecque" : "Hotel in Makkah") : (fr ? "Hôtel à Médine" : "Hotel in Madinah");
+      var html = '<div class="hb-q"><h4>' + title + "</h4>";
+      if (HB["h" + k]) {
+        var pr = price(HB["h" + k]);
+        html += '<div class="hb-picked"><div><span class="hb-stars">' + (HB["s" + k] ? "★".repeat(HB["s" + k]) : "") + "</span><b>" + esc(HB["h" + k]) + "</b><small>" + esc(HB["l" + k] || (HB["x" + k] ? (fr ? "Pas dans notre liste — nous vérifions" : "Not in our list — we will check") : "")) + (pr ? " · <em>" + pr + "</em>" : "") + '</small></div><button type="button" class="hb-change" data-clear="' + k + '">' + (fr ? "Changer" : "Change") + "</button></div>";
+      } else {
+        html += '<div class="hb-search"><input type="search" class="hb-sin" data-city="' + city + '" autocomplete="off" placeholder="' + (fr ? "Tapez le nom de l’hôtel… ex. Swissôtel, Hilton, Elaf" : "Type the hotel name… e.g. Swissôtel, Hilton, Elaf") + '"><div class="hb-sug" data-for="' + city + '">' + sugHtml(city, "") + "</div></div>";
+      }
+      return html + "</div>";
     }
     function render() {
       var fr = lang === "fr";
@@ -868,28 +927,31 @@
       if (HB.city !== "madinah") html += "<div><small>" + (fr ? "La Mecque" : "Makkah") + "</small>" + stepper("nMak", 1, 30) + "</div>";
       if (HB.city !== "makkah") html += "<div><small>" + (fr ? "Médine" : "Madinah") + "</small>" + stepper("nMed", 1, 30) + "</div>";
       html += '<div><small>' + (fr ? "Date d’arrivée" : "Check-in date") + '</small><input type="date" class="hb-date" min="' + minDate + '" value="' + HB.date + '"></div></div></div>';
-      html += '<div class="hb-q"><h4>3. ' + (fr ? "Catégorie" : "Hotel category") + "</h4>" + chips("stars", [[2, "★★"], [3, "★★★"], [4, "★★★★"], [5, "★★★★★"]]) + "</div>";
-      html += '<div class="hb-q hb-num"><h4>4. ' + (fr ? "Choisissez l’hôtel" : "Choose the hotel") + "</h4>";
-      if (HB.city !== "madinah") html += hotelList("makkah");
-      if (HB.city !== "makkah") html += hotelList("madinah");
-      html += '<p class="note">' + (fr ? "Catégories selon les principaux sites de réservation. Les prix « dès » sont par chambre et par nuit ; le prix exact dépend de vos dates et figure dans votre devis." : "Star categories as listed on major booking sites. “From” prices are per room per night; the exact price depends on your dates and is confirmed in your quotation.") + "</p>";
-      html += "</div>";
-      html += '<div class="hb-q"><h4>5. ' + (fr ? "Chambres et voyageurs" : "Rooms & guests") + "</h4>" + chips("room", [["Double", "Double"], ["Triple", "Triple"], ["Quad", fr ? "Quadruple" : "Quad"], ["Suite", fr ? "Suite familiale" : "Family suite"]]);
-      html += '<div class="hb-row"><div><small>' + (fr ? "Chambres" : "Rooms") + "</small>" + stepper("rooms", 1, 20) + "</div><div><small>" + (fr ? "Adultes" : "Adults") + "</small>" + stepper("adults", 1, 60) + "</div><div><small>" + (fr ? "Enfants" : "Children") + "</small>" + stepper("kids", 0, 20) + "</div></div></div>";
-      html += '<div class="hb-q"><h4>6. ' + (fr ? "Repas" : "Meals") + "</h4>" + chips("meals", [["ro", fr ? "Chambre seule" : "Room only"], ["bb", fr ? "Petit-déj." : "Breakfast"], ["hb", fr ? "Demi-pension" : "Half board"], ["fb", fr ? "Pension complète" : "Full board"]]) + "</div>";
+      html += '<div class="hb-q hb-num"><h4>3. ' + (fr ? "Choisissez l’hôtel" : "Choose the hotel") + "</h4>";
+      if (HB.city !== "madinah") html += hotelPick("makkah");
+      if (HB.city !== "makkah") html += hotelPick("madinah");
+      html += '<p class="note">' + (fr ? "Étoiles selon les principaux sites de réservation. Les prix « dès » sont par chambre et par nuit ; le prix exact dépend de vos dates et figure dans votre devis." : "Stars as listed on major booking sites. “From” prices are per room per night; the exact price depends on your dates and is confirmed in your quotation.") + "</p></div>";
+      html += '<div class="hb-q"><h4>4. ' + (fr ? "Chambres et voyageurs" : "Rooms & guests") + "</h4>" + chips("room", [["Double", "Double"], ["Triple", "Triple"], ["Quad", fr ? "Quadruple" : "Quad"], ["Suite", fr ? "Suite familiale" : "Family suite"]]);
+      html += '<div class="hb-row"><div><small>' + (fr ? "Chambres" : "Rooms") + "</small>" + stepper("rooms", 1, 20) + "</div><div><small>" + (fr ? "Adultes" : "Adults") + "</small>" + stepper("adults", 1, 60) + "</div><div><small>" + (fr ? "Enfants" : "Children") + "</small>" + stepper("kids", 0, 30) + "</div></div></div>";
+      html += '<div class="hb-q"><h4>5. ' + (fr ? "Repas" : "Meals") + "</h4>" + chips("meals", [["ro", fr ? "Chambre seule" : "Room only"], ["bb", fr ? "Petit-déj." : "Breakfast"], ["hb", fr ? "Demi-pension" : "Half board"], ["fb", fr ? "Pension complète" : "Full board"]]) + "</div>";
       box.innerHTML = html;
       sum.value = hbText();
     }
     box.addEventListener("click", function (e) {
-      var c = e.target.closest(".hb-chip"), s = e.target.closest("[data-s]"), h = e.target.closest(".hb-hotel");
-      if (c) { var k = c.dataset.k, v = c.dataset.v; HB[k] = (k === "stars") ? +v : v; if (k === "stars") { HB.hMak = ""; HB.hMed = ""; } }
+      var c = e.target.closest(".hb-chip"), s = e.target.closest("[data-s]"), pk = e.target.closest("[data-pick]"), cl = e.target.closest("[data-clear]");
+      if (c) { HB[c.dataset.k] = c.dataset.v; }
       else if (s) { var key = s.dataset.s; HB[key] = Math.min(+s.dataset.max, Math.max(+s.dataset.min, HB[key] + (+s.dataset.d))); }
-      else if (h) { HB[h.dataset.h] = h.dataset.v; }
+      else if (pk) { var k = pk.dataset.pick === "makkah" ? "Mak" : "Med"; HB["h" + k] = pk.dataset.n; HB["s" + k] = +pk.dataset.st || 0; HB["l" + k] = pk.dataset.l || ""; HB["x" + k] = !!pk.dataset.x; }
+      else if (cl) { var k2 = cl.dataset.clear; HB["h" + k2] = ""; HB["s" + k2] = 0; HB["l" + k2] = ""; HB["x" + k2] = false; render(); var inp = box.querySelector('.hb-sin[data-city="' + (k2 === "Mak" ? "makkah" : "madinah") + '"]'); if (inp) inp.focus(); return; }
       else return;
       render();
     });
+    box.addEventListener("focusin", function (e) { if (e.target.classList && e.target.classList.contains("hb-sin")) hLoad().then(function () { var sg = box.querySelector('.hb-sug[data-for="' + e.target.dataset.city + '"]'); if (sg) sg.innerHTML = sugHtml(e.target.dataset.city, e.target.value); }); });
+    box.addEventListener("input", function (e) {
+      if (e.target.classList.contains("hb-sin")) { var sg = box.querySelector('.hb-sug[data-for="' + e.target.dataset.city + '"]'); if (sg) sg.innerHTML = sugHtml(e.target.dataset.city, e.target.value); }
+    });
+    box.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.classList && e.target.classList.contains("hb-sin")) { e.preventDefault(); var f = box.querySelector('.hb-sug[data-for="' + e.target.dataset.city + '"] .hb-opt'); if (f) f.click(); } });
     box.addEventListener("change", function (e) { if (e.target.classList.contains("hb-date")) { HB.date = e.target.value; sum.value = hbText(); } });
-    box.addEventListener("input", function (e) { var o = e.target.dataset && e.target.dataset.o; if (o) { HB[o] = e.target.value.slice(0, 80); sum.value = hbText(); } });
     promoEls.push(function () {
       render();
       if (CFG.formEndpoint) { var b = form.querySelector('button[type="submit"] span'); if (b) { b.textContent = lang === "fr" ? "Demander mon devis" : "Request my quotation"; b.setAttribute("data-fr", "Demander mon devis"); } }
@@ -1443,9 +1505,21 @@
   }
 
 
+  /* ---------- Website data from the CRM (content + hotel prices): one call per page, kept in the browser ---------- */
+  var SITE_P = null;
+  function siteCache() { try { var c = JSON.parse(store.get("amgSite") || "null"); return c && c.d ? c.d : null; } catch (e) { return null; } }
+  function siteData() {
+    if (SITE_P) return SITE_P;
+    SITE_P = !CFG.formEndpoint ? Promise.resolve(null) : api({ action: "site" }).then(function (r) {
+      if (r && r.ok) { store.set("amgSite", JSON.stringify({ t: Date.now(), d: r })); return r; }
+      return null;
+    }).catch(function () { return null; });
+    return SITE_P;
+  }
+
   /* ---------- Website content set from the private dashboard (stored in the CRM sheet) ---------- */
   var CMS = {}, CMS_PAGE = "", CMS_SIG = "";
-  function cmsLoadCache() { try { var c = JSON.parse(store.get("amgCMS") || "null"); if (c && c.items) return c.items; } catch (e) {} return {}; }
+  function cmsLoadCache() { var d = siteCache(); if (d && d.content) return d.content.items || {}; try { var c = JSON.parse(store.get("amgCMS") || "null"); if (c && c.items) return c.items; } catch (e) {} return {}; }
   function cmsSig(items) { return JSON.stringify(Object.keys(items).filter(function (k) { return /^(cfg|price):/.test(k); }).sort().map(function (k) { return [k, items[k]]; })); }
   function cmsCfg(items) {
     CFG.badal = CFG.badal || { on: true, price: 500, currency: "SAR" };
@@ -1509,10 +1583,9 @@
   function cmsInit() { CMS = cmsLoadCache(); CMS_SIG = cmsSig(CMS); cmsCfg(CMS); }
   function cmsFetch() {
     if (/[?&]edit=1/.test(location.search)) { var sc = document.createElement("script"); sc.src = "edit.js?v=1"; document.body.appendChild(sc); }
-    if (!CFG.formEndpoint) return;
-    api({ action: "content" }).then(function (r) {
-      if (!r || !r.ok) return;
-      var items = r.items || {}; store.set("amgCMS", JSON.stringify({ t: Date.now(), items: items }));
+    siteData().then(function (d) {
+      if (!d || !d.content) return;
+      var items = d.content.items || {};
       var sg = cmsSig(items); if (sg !== CMS_SIG) { try { var gk = sg + "|" + location.pathname; if (sessionStorage.getItem("amgCMSr") !== gk) { sessionStorage.setItem("amgCMSr", gk); location.reload(); return; } } catch (e) {} }
       CMS = items; cmsApply(items);
     }).catch(function () {});
