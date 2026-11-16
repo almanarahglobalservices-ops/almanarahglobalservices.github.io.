@@ -1035,3 +1035,19 @@ html[dir="rtl"],html[dir="rtl"] body{overflow-x:hidden}
 html[lang="ar"] .l-fr{display:none!important}
 html[lang="ar"] .l-en{direction:ltr;text-align:left}
 html[lang="ar"] .l-en::before{content:"هذا النص القانوني متاح بالإنجليزية والفرنسية فقط (النسخة الإنجليزية أدناه).";display:block;direction:rtl;text-align:right;background:#f6f1e6;border:1px solid #e2c27a;border-radius:12px;padding:10px 14px;margin-bottom:18px;font-family:"Tajawal",Tahoma,sans-serif;color:#101b45}
+/* v10: hotel search on the hotels page */
+.hb-search{position:relative}
+.hb-sin{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;font:600 1rem var(--sans);background:#fff;color:var(--ink)}
+.hb-sin:focus{outline:none;border-color:#b78a32;box-shadow:0 0 0 3px rgba(183,138,50,.18)}
+.hb-sug{margin-top:8px;display:grid;gap:6px;max-height:360px;overflow:auto}
+.hb-sugh{margin:2px 0;font-size:.8rem;color:var(--muted);font-weight:600}
+.hb-opt{text-align:start;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;font:600 .9rem/1.3 var(--sans);color:#101b45;cursor:pointer}
+.hb-opt:hover,.hb-opt:focus{border-color:#b78a32;background:#fbf7ee}
+.hb-opt b{font-weight:800}.hb-opt small{display:block;color:var(--muted);font-weight:600;font-size:.76rem;margin-top:2px}
+.hb-opt em,.hb-picked em{font-style:normal;color:#b78a32;font-weight:800}
+.hb-opt.hb-other{border-style:dashed}
+.hb-picked{display:flex;align-items:center;justify-content:space-between;gap:10px;border:2px solid #b78a32;background:#fbf7ee;border-radius:14px;padding:11px 14px}
+.hb-picked b{display:block;font-size:1rem;color:#101b45}.hb-picked small{display:block;color:var(--muted);font-weight:600;font-size:.8rem;margin-top:2px}
+.hb-change{border:1px solid #101b45;background:#fff;color:#101b45;border-radius:999px;padding:7px 14px;font:700 .82rem var(--sans);cursor:pointer;flex:none}
+[data-theme="dark"] .hb-sin,[data-theme="dark"] .hb-opt,[data-theme="dark"] .hb-change{background:#0e111f;color:var(--ink)}
+[data-theme="dark"] .hb-picked{background:#181e35}[data-theme="dark"] .hb-picked b{color:#fff}
