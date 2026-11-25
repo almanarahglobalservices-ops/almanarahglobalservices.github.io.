@@ -696,7 +696,7 @@
       }
       return;
     }
-    var link = "contact.html?service=umrah&promo=" + P.id;
+    var link = P.link || ("contact.html?service=umrah&promo=" + P.id);
     // Top announcement bar
     var bar = mk("div", { "class": "promo-bar" });
     bar.innerHTML = '<div class="container"><span class="pb-dot"></span><span class="pb-t"></span><a class="pb-btn" href="' + link + '"></a></div>';
