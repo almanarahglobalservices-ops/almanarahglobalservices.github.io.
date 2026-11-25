@@ -864,11 +864,28 @@
       return p;
     }
     var maxImg = store.custom_image_limit || MAX_IMAGES;
+    /* automatic plan reminders: before expiry, after expiry, and when the free limit is reached */
+    function planBanner() {
+      var pl = plan(), btn = ' <button type="button" class="mk-btn gold" data-goplan>' + T3x("Renew / upgrade", "Renouveler / passer à une offre", "جدّد / رقِّ باقتك") + "</button>";
+      var nameOf = function (id) { var x = (PLANS || []).filter(function (y) { return y.id === id; })[0]; return esc(x ? x.name : id); };
+      if (store.plan_expires_at) {
+        var days = Math.ceil((new Date(store.plan_expires_at) - Date.now()) / 864e5);
+        if (days <= 7) return '<div class="mk-msg ' + (days <= 2 ? "err" : "warn") + '">⏳ ' + T3x("Your " + esc(pl.name) + " plan ends in " + Math.max(0, days) + " day(s) (" + dateFmt(store.plan_expires_at) + "). Renew now so your products stay visible.", "Votre offre " + esc(pl.name) + " se termine dans " + Math.max(0, days) + " jour(s) (" + dateFmt(store.plan_expires_at) + "). Renouvelez maintenant pour que vos produits restent visibles.", "باقتك " + esc(pl.name) + " تنتهي بعد " + Math.max(0, days) + " يوم (" + dateFmt(store.plan_expires_at) + "). جدّدها الآن حتى تبقى منتجاتك ظاهرة.") + btn + "</div>";
+      }
+      if (store.expired_plan_id) {
+        var hid = data.products.filter(function (p) { return p.hidden_by_plan; }).length;
+        return '<div class="mk-msg err">⚠ ' + T3x("Your " + nameOf(store.expired_plan_id) + " plan ended on " + dateFmt(store.plan_expired_at) + ". Your store is back on the Free plan (" + pl.product_limit + " products)" + (hid ? " and " + hid + " product(s) are hidden" : "") + ". Renew to show them again.", "Votre offre " + nameOf(store.expired_plan_id) + " a pris fin le " + dateFmt(store.plan_expired_at) + ". Votre boutique est revenue à l’offre gratuite (" + pl.product_limit + " produits)" + (hid ? " et " + hid + " produit(s) sont masqués" : "") + ". Renouvelez pour les afficher de nouveau.", "انتهت باقتك " + nameOf(store.expired_plan_id) + " في " + dateFmt(store.plan_expired_at) + "، ورجع متجرك إلى الباقة المجانية (" + pl.product_limit + " منتجًا)" + (hid ? " وأُخفي " + hid + " منتج" : "") + ". جدّد الاشتراك لإظهارها من جديد.") + btn + "</div>";
+      }
+      if (pl.id === "free" && data.products.length >= pl.product_limit) return '<div class="mk-msg info">ℹ ' + T3x("You have reached the " + pl.product_limit + " free products. Choose a plan to add more.", "Vous avez atteint les " + pl.product_limit + " produits gratuits. Choisissez une offre pour en ajouter d’autres.", "وصلت إلى حد " + pl.product_limit + " منتجًا المجانية. اختر باقة لإضافة المزيد.") + btn + "</div>";
+      return "";
+    }
+    document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-goplan]")) { tab = "plan"; history.replaceState(null, "", location.pathname + location.search + "#plan"); shell(); window.scrollTo(0, 0); } });
     function shell() {
       var nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
       var tabs = [["over", t("t_over")], ["prod", t("t_prod"), data.products.length], ["req", t("t_req"), nNew], ["promo", t("t_promo")], ["store", t("t_store")], ["plan", t("t_plan")]];
       app.innerHTML = (adminView ? '<div class="mk-msg warn">' + t("admin_mode") + ' <a href="/manage.html">' + t("to_admin") + "</a></div>" : "") +
         '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button type="button" class="mk-btn" data-tuto>▶ ' + (L() === "fr" ? "Tutoriel" : "Tutorial") + '</button><button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
+        planBanner() +
         '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="tabBody"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", location.pathname + location.search + "#" + tab); shell(); }); });
       $("#lo").addEventListener("click", async function () { await sb.auth.signOut(); location.href = "/sell.html?mode=login"; });
@@ -909,7 +926,7 @@
       B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
         '<p style="margin:-4px 0 16px"><button class="btn btn-outline btn-sm" id="quickP" type="button">' + t("quick") + "</button></p>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.hidden_by_plan ? '<small style="color:#8b2a22">' + T3x("Hidden: plan ended", "Masqué : offre terminée", "مخفي: انتهت الباقة") + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn ok" data-sell="' + p.id + '">' + T3x("＋1 sold", "＋1 vendu", "＋1 مُباع") + '</button><button class="mk-btn" data-stk="' + p.id + '">📦 ' + T3x("Stock", "Stock", "المخزون") + '</button><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
       $("#addP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } productModal(null); });
@@ -921,7 +938,7 @@
         if (b.dataset.sell) { var ps = find(b.dataset.sell); if (ps.stock === 0 && !confirm(T3x("Stock is 0. Record a sale anyway?", "Le stock est à 0. Enregistrer quand même une vente ?", "المخزون صفر. تسجيل بيع رغم ذلك؟"))) return; if (await adjustStock(ps, 1)) shell(); return; }
         if (b.dataset.stk) { var pk = find(b.dataset.stk); var v = prompt(T3x("How many do you have in stock now? (leave empty = not tracked)", "Combien en avez-vous en stock maintenant ? (vide = non suivi)", "كم عندك في المخزن الآن؟ (اتركه فارغًا = غير محدد)"), pk.stock == null ? "" : pk.stock); if (v === null) return; v = v.trim(); if (v !== "" && (isNaN(+v) || +v < 0)) return alert(t("required")); if (await adjustStock(pk, 0, v === "" ? null : Math.round(+v))) shell(); return; }
         if (b.dataset.h) { await sb.from("products").update({ status: "hidden" }).eq("id", b.dataset.h); await loadAll(); shell(); }
-        if (b.dataset.s) { await sb.from("products").update({ status: "pending" }).eq("id", b.dataset.s); await loadAll(); shell(); }
+        if (b.dataset.s) { var rs = await sb.from("products").update({ status: "pending" }).eq("id", b.dataset.s); if (rs.error) { if (/PLAN_LIMIT/.test(rs.error.message)) { alert(t("limit")); tab = "plan"; } else alert(t("fail")); } await loadAll(); shell(); }
         if (b.dataset.d && confirm(t("sure"))) { var p = find(b.dataset.d); await sb.from("products").delete().eq("id", b.dataset.d); (p.images || []).forEach(removeImg); await loadAll(); shell(); }
       });
     }
