@@ -855,7 +855,7 @@
     try { await sb.rpc("expire_plans"); } catch (e) {}
     var tab = (location.hash || "#over").slice(1), D2 = {}, filt = { st: "pending", pr: "pending", q: "" };
     async function load() {
-      var [s, p, pr, rq, o, rv, rp, bn] = await Promise.all([
+      var [s, p, pr, rq, o, rv, rp, bn, ms] = await Promise.all([
         sb.from("stores").select("*,profiles(email)").order("created_at", { ascending: false }),
         sb.from("products").select("*,stores(name,slug,country)").order("updated_at", { ascending: false }).limit(2000),
         sb.from("promotions").select("*,stores(name,slug),products(title)").order("created_at", { ascending: false }),
@@ -863,16 +863,17 @@
         sb.from("orders").select("*,stores(name,slug)").order("created_at", { ascending: false }).limit(500),
         sb.from("reviews").select("*,stores(name,slug)").order("created_at", { ascending: false }).limit(500),
         sb.from("reports").select("*,stores(name,slug),products(title)").order("created_at", { ascending: false }).limit(500),
-        sb.from("banners").select("*").order("sort_order")
+        sb.from("banners").select("*").order("sort_order"),
+        sb.from("messages").select("*").order("created_at", { ascending: false }).limit(500)
       ]);
-      D2 = { stores: s.data || [], products: p.data || [], promos: pr.data || [], preqs: rq.data || [], orders: o.data || [], reviews: rv.data || [], reports: rp.data || [], banners: bn.data || [] };
+      D2 = { stores: s.data || [], products: p.data || [], promos: pr.data || [], preqs: rq.data || [], orders: o.data || [], reviews: rv.data || [], reports: rp.data || [], banners: bn.data || [], msgs: (ms && ms.data) || [] };
     }
     function cnt(arr, st) { return arr.filter(function (x) { return x.status === st; }).length; }
     function shell() {
-      var tabs = [["over", "Overview"], ["stores", "Stores", cnt(D2.stores, "pending")], ["products", "Products", cnt(D2.products, "pending")], ["promos", "Promotions", cnt(D2.promos, "pending")], ["pay", "Plan payments", cnt(D2.preqs, "pending")], ["reviews", "Reviews", cnt(D2.reviews, "pending")], ["reports", "Reports", cnt(D2.reports, "open")], ["banners", "Banners"], ["orders", "Customer requests"], ["cats", "Categories"], ["plans", "Plans"]];
+      var tabs = [["over", "Overview"], ["stores", "Stores", cnt(D2.stores, "pending")], ["products", "Products", cnt(D2.products, "pending")], ["promos", "Promotions", cnt(D2.promos, "pending")], ["pay", "Plan payments", cnt(D2.preqs, "pending")], ["reviews", "Reviews", cnt(D2.reviews, "pending")], ["reports", "Reports", cnt(D2.reports, "open")], ["msgs", "Messages", cnt(D2.msgs, "open")], ["banners", "Banners"], ["orders", "Customer requests"], ["cats", "Categories"], ["plans", "Plans"]];
       app.innerHTML = '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="aB"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", "#" + tab); shell(); }); });
-      var fn = { over: aOver, stores: aStores, products: aProducts, promos: aPromos, pay: aPay, orders: aOrders, cats: aCats, plans: aPlans, reviews: aReviews, reports: aReports, banners: aBanners }[tab] || aOver; fn();
+      var fn = { over: aOver, stores: aStores, products: aProducts, promos: aPromos, pay: aPay, orders: aOrders, cats: aCats, plans: aPlans, reviews: aReviews, reports: aReports, msgs: aMsgs, banners: aBanners }[tab] || aOver; fn();
     }
     var B = function () { return $("#aB"); };
     async function act(promise) { var r = await promise; if (r && r.error) alert(r.error.message); await load(); shell(); }
@@ -987,6 +988,15 @@
       }).join("") : emptyBox("⚑", "No reports")) + "</div>";
       $$("button[data-id]", B()).forEach(function (b) { b.addEventListener("click", function () { act(sb.from("reports").update({ status: "closed" }).eq("id", b.dataset.id)); }); });
     }
+    function aMsgs() {
+      var SUBJ = { question: "General question", open_store: "Open a store", plan: "Plan / payment", ads: "Advertising", problem: "Problem", other: "Other" };
+      B().innerHTML = '<div class="mk-list">' + (D2.msgs.length ? D2.msgs.map(function (r) {
+        return '<div class="mk-row"><div class="mid"><b>✉ ' + esc(r.name) + " — " + esc(SUBJ[r.subject] || r.subject) + "</b><small>" + (r.country ? cName(r.country) + " · " : "") + dateFmt(r.created_at) + "</small><small style=\"white-space:pre-wrap;color:var(--ink)\">" + esc(r.message) + "</small>" + (r.phone ? "<small>📞 " + esc(r.phone) + "</small>" : "") + (r.email ? "<small>✉ " + esc(r.email) + "</small>" : "") + "</div>" +
+          '<div class="acts">' + (r.phone && wa(r.phone) ? '<a class="mk-btn" target="_blank" rel="noopener" href="' + wa(r.phone, "AL MANARAH GLOBAL SERVICES — ") + '">WhatsApp</a>' : "") + (r.email ? '<a class="mk-btn" href="mailto:' + esc(r.email) + '">E-mail</a>' : "") + (r.status === "open" ? '<button class="mk-btn ok" data-mid="' + r.id + '">Mark handled</button>' : '<span class="mk-small">✓ handled</span>') + '<button class="mk-btn no" data-mdel="' + r.id + '">Delete</button></div></div>';
+      }).join("") : emptyBox("✉", "No messages")) + "</div>";
+      $$("[data-mid]", B()).forEach(function (b) { b.addEventListener("click", function () { act(sb.from("messages").update({ status: "closed" }).eq("id", b.dataset.mid)); }); });
+      $$("[data-mdel]", B()).forEach(function (b) { b.addEventListener("click", function () { if (confirm("Delete this message?")) act(sb.from("messages").delete().eq("id", b.dataset.mdel)); }); });
+    }
     function aBanners() {
       var img = "";
       B().innerHTML = '<p class="mk-small">Banners rotate at the top of the home page. Use wide images (about 1500 × 500). You can sell banner space to sellers.</p><div class="mk-list">' + D2.banners.map(function (b) {
@@ -1026,6 +1036,21 @@
 
   /* ---------------- boot ---------------- */
   var page = document.body.dataset.market;
-  var run = { home: pageHome, shop: pageShop, store: pageStore, product: pageProduct, sell: pageSell, manage: pageManage }[page];
+  async function pageContact() {
+    var f = $("#ctForm"); if (!f) return;
+    try { var cc = myCountry(); if (cc) f.country.value = cc; } catch (e) {}
+    f.addEventListener("submit", async function (e) {
+      e.preventDefault(); var box = $("#ctMsg"), L2 = L();
+      var T = function (en, fr, ar) { return L2 === "fr" ? fr : L2 === "ar" ? ar : en; };
+      if (!f.cname.value.trim() || !f.message.value.trim()) return msg(box, "err", T("Please enter your name and message.", "Indiquez votre nom et votre message.", "اكتب اسمك ورسالتك."));
+      if (!f.phone.value.trim() && !f.email.value.trim()) return msg(box, "err", T("Add a phone number or an e-mail so we can reply.", "Ajoutez un téléphone ou un e-mail pour que nous puissions répondre.", "أضف رقم هاتف أو بريدًا لنرد عليك."));
+      var b = f.querySelector("button[type=submit]"); b.disabled = true;
+      var r = await sb.rpc("submit_message", { p_name: f.cname.value.trim(), p_phone: f.phone.value.trim() || null, p_email: f.email.value.trim() || null, p_country: f.country.value || null, p_subject: f.subject.value, p_message: f.message.value.trim() });
+      b.disabled = false;
+      if (r.error) return msg(box, "err", t("fail"));
+      f.reset(); msg(box, "ok", T("Thank you! Your message has been sent. We will reply soon.", "Merci ! Votre message a été envoyé. Nous vous répondrons rapidement.", "شكرًا! تم إرسال رسالتك وسنرد عليك قريبًا."));
+    });
+  }
+  var run = { contact: pageContact, home: pageHome, shop: pageShop, store: pageStore, product: pageProduct, sell: pageSell, manage: pageManage }[page];
   if (run) run().catch(function (e) { console.error(e); var b = document.querySelector("[data-mk-root]"); if (b) b.innerHTML = '<div class="mk-msg err">' + t("fail") + "</div>"; });
 })();
