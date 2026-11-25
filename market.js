@@ -478,10 +478,49 @@
     var items = pr.data || [], pm = await promoMap(items), state = { q: "", cat: 0 };
     var rv = await sb.from("reviews").select("name,rating,comment,created_at").eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(100);
     var revs = rv.data || [], avg = revs.length ? revs.reduce(function (a, r) { return a + r.rating; }, 0) / revs.length : 0;
-    var link = storeUrl(s.slug);
+    var link = storeUrl(s.slug), picks = [];
+    /* multi-select: the customer picks several products and sends one request */
+    function T3(en, fr, ar) { return L() === "fr" ? fr : L() === "ar" ? ar : en; }
+    function pickBar() {
+      var bar = $("#stPickBar"); if (!bar) { bar = document.createElement("div"); bar.id = "stPickBar"; bar.className = "mk-pickbar"; document.body.appendChild(bar); }
+      if (!picks.length) { bar.classList.add("mk-hide"); return; }
+      bar.classList.remove("mk-hide");
+      bar.innerHTML = '<span><b>' + picks.length + "</b> " + T3("selected", "sélectionné(s)", "مختار") + '</span><button type="button" class="mk-link" data-pclear>' + T3("Clear", "Effacer", "مسح") + '</button><button type="button" class="btn btn-gold btn-sm" data-preq>' + T3("Request these", "Demander ces produits", "اطلب هذه") + " →</button>";
+    }
+    function markPicks() { $$("#stGrid [data-pick]").forEach(function (b) { var on = picks.indexOf(b.dataset.pick) > -1; b.classList.toggle("on", on); b.textContent = on ? "✓" : "+"; }); }
+    function pickedItems() { return picks.map(function (id) { return items.filter(function (p) { return p.id === id; })[0]; }).filter(Boolean); }
+    function multiModal() {
+      var list = pickedItems(), tot = {};
+      list.forEach(function (p) { var x = priceOf(p, pm); if (x.now) tot[x.cur] = (tot[x.cur] || 0) + x.now; });
+      var lines = list.map(function (p) { var x = priceOf(p, pm); return "• " + p.title + (x.now ? " — " + money(x.now, x.cur) : ""); });
+      var totTxt = Object.keys(tot).map(function (c) { return money(tot[c], c); }).join(" + ");
+      var md = document.createElement("div"); md.className = "mk-modal";
+      md.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h3 style="margin-top:0">' + T3("Your selection", "Votre sélection", "اختياراتك") + " (" + list.length + ')</h3><div class="mk-small" style="white-space:pre-line;color:var(--ink);line-height:1.6">' + esc(lines.join("\n")) + "</div>" + (totTxt ? '<p style="margin:10px 0"><b>' + t("total") + ": " + esc(totTxt) + "</b></p>" : "") +
+        '<form class="mk-form" id="mrF"><div><label>' + t("name") + ' *</label><input name="cname" required maxlength="80"></div><div><label>' + t("phone") + ' *</label><input name="phone" required type="tel" maxlength="30"></div><div class="full"><label>' + t("city") + '</label><input name="city" maxlength="60"></div><div class="full"><label>' + t("message") + '</label><textarea name="note" maxlength="800" style="min-height:70px"></textarea></div>' +
+        '<div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">' + t("send") + "</button>" + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, T3("Hello, I am interested in:", "Bonjour, je suis intéressé(e) par :", "السلام عليكم، أنا مهتم بـ:") + "\n" + lines.join("\n") + (totTxt ? "\n" + t("total") + ": " + totTxt : "") + "\n" + link) + '">' + t("wa") + "</a>" : "") + '</div><div class="full" id="mrM"></div></form></div>';
+      document.body.appendChild(md);
+      $(".x", md).onclick = function () { md.remove(); }; md.addEventListener("click", function (e) { if (e.target === md) md.remove(); });
+      $("#mrF", md).addEventListener("submit", async function (e) {
+        e.preventDefault(); var f = e.target, b = f.querySelector("button[type=submit]"); b.disabled = true;
+        var note = (f.note.value.trim() ? f.note.value.trim() + "\n" : "") + T3("Grouped request:", "Demande groupée :", "طلب مجمّع:") + "\n" + lines.join("\n");
+        var refs = [], bad = false;
+        for (var i = 0; i < list.length; i++) { var r = await sb.rpc("submit_request", { p_store: s.id, p_product: list[i].id, p_qty: 1, p_name: f.cname.value.trim(), p_phone: f.phone.value.trim(), p_city: f.city.value.trim() || null, p_note: note.slice(0, 800) }); if (r.error) bad = true; else refs.push(r.data); }
+        b.disabled = false;
+        if (bad && !refs.length) return msg($("#mrM", md), "err", t("fail"));
+        msg($("#mrM", md), "ok", t("sent") + " <b>" + esc(refs.join(", ")) + "</b>"); f.reset(); picks = []; markPicks(); pickBar();
+      });
+    }
+    document.addEventListener("click", function (e) {
+      var pb = e.target.closest && e.target.closest("#stGrid [data-pick]");
+      if (pb) { e.preventDefault(); e.stopPropagation(); var id = pb.dataset.pick, i = picks.indexOf(id); if (i > -1) picks.splice(i, 1); else picks.push(id); markPicks(); pickBar(); return; }
+      if (e.target.closest && e.target.closest("[data-pclear]")) { picks = []; markPicks(); pickBar(); }
+      if (e.target.closest && e.target.closest("[data-preq]")) multiModal();
+    }, true);
     function grid() {
       var list = items.filter(function (p) { return (!state.cat || p.category_id === state.cat) && (!state.q || (p.title + " " + (p.description || "")).toLowerCase().indexOf(state.q) > -1); });
-      $("#stGrid").innerHTML = list.length ? list.map(function (p) { return card(p, pm); }).join("") : emptyBox("🛍️", t("none"));
+      $("#stGrid").innerHTML = list.length ? list.map(function (p) { return card(p, pm).replace('<div class="img">', '<div class="img"><button type="button" class="mk-pick" data-pick="' + p.id + '" aria-label="select">+</button>'); }).join("") : emptyBox("🛍️", t("none"));
+      markPicks(); pickBar();
+      if (list.length > 1 && !$("#stPickHint")) { var h = document.createElement("p"); h.id = "stPickHint"; h.className = "mk-small"; h.style.margin = "0 0 10px"; h.textContent = T3("Tip: tap + on several products to request them together.", "Astuce : touchez + sur plusieurs produits pour les demander ensemble.", "نصيحة: اضغط + على عدة منتجات لتطلبها معًا."); $("#stGrid").before(h); }
     }
     rerender = function () {
       var used = Array.from(new Set(items.map(function (p) { return p.category_id; })));
