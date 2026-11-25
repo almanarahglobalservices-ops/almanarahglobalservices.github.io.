@@ -1069,3 +1069,9 @@ html[lang="ar"] .l-en::before{content:"هذا النص القانوني متاح
 .pt-bar.open>.container{padding:0 14px}
 [dir=rtl] .pt-bar{left:auto;right:14px}
 @media (max-width:860px){body[data-market="product"] .pt-bar{bottom:84px}}
+/* header account button (Sign in / My store) — visible on every screen size */
+.acct-btn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #B78A32;border-radius:999px;padding:7px 13px;font-weight:700;font-size:.86rem;color:#101B45;background:#fff;white-space:nowrap;text-decoration:none;transition:.2s}
+.acct-btn:hover{background:#101B45;color:#fff;border-color:#101B45}
+.acct-btn.in{background:#101B45;color:#fff;border-color:#101B45}
+@media (max-width:420px){.acct-btn{padding:7px 9px}.acct-btn .t{font-size:.78rem}}
+@media (max-width:350px){.acct-btn .t{display:none}}

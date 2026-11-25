@@ -10,6 +10,22 @@
 
   /* ---------- Language (EN default in HTML, FR in data-fr* attributes) ---------- */
   var lang = "en";
+  /* header account button on every page: "Sign in" for visitors, "My store" once signed in */
+  (function acctBtn() {
+    try {
+      var na = document.querySelector(".nav-actions"); if (!na || na.querySelector(".acct-btn")) return;
+      var inn = false; try { inn = !!localStorage.getItem("sb-rcioefzhysholnfogljy-auth-token"); } catch (e) {}
+      var a = document.createElement("a"); a.className = "acct-btn" + (inn ? " in" : "");
+      a.href = inn ? "/sell.html#prod" : "/sell.html?mode=login";
+      var tx = document.createElement("span"); tx.className = "t";
+      if (inn) { tx.textContent = "My store"; tx.setAttribute("data-fr", "Ma boutique"); tx.setAttribute("data-ar", "متجري"); }
+      else { tx.textContent = "Sign in"; tx.setAttribute("data-fr", "Se connecter"); tx.setAttribute("data-ar", "تسجيل الدخول"); }
+      var ic = document.createElement("span"); ic.className = "i"; ic.setAttribute("aria-hidden", "true"); ic.textContent = inn ? "🏪" : "👤";
+      a.appendChild(ic); a.appendChild(tx);
+      var pb = na.querySelector('.btn[href="sell.html"]'); if (pb && inn) pb.style.display = "none";
+      na.insertBefore(a, na.querySelector(".burger"));
+    } catch (e) {}
+  })();
   var T = {
     en: {
       wa_hello: "Hello AL MANARAH GLOBAL SERVICES, I would like information about: ",
