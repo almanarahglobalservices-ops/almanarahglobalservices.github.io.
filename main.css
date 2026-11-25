@@ -1090,3 +1090,13 @@ html[lang="ar"] .l-en::before{content:"هذا النص القانوني متاح
 /* phones: never wider than the screen */
 html,body{max-width:100%;overflow-x:clip}
 img,video,iframe,table{max-width:100%}
+
+/* phones: everything in the header shrinks so all buttons (incl. Sign in) always fit */
+@media (max-width:560px){
+  .nav{gap:6px}.nav-actions{gap:3px}
+  .nav-actions .icon-btn,.acct-btn,.burger{width:32px;height:32px;font-size:1rem}
+  .nav-actions .icon-btn svg{width:16px;height:16px}
+  .lang{gap:0}.lang button{padding:3px 5px;font-size:.68rem}
+  .brand img{width:34px;height:34px}.brand b{font-size:.78rem}.brand small{font-size:.5rem}
+}
+@media (max-width:400px){.nav-actions .theme-btn{display:none}.brand span{display:none}}

@@ -24,6 +24,9 @@
       a.appendChild(ic); a.appendChild(tx);
       var pb = na.querySelector('.btn[href="sell.html"]'); if (pb && inn) pb.style.display = "none";
       na.insertBefore(a, na.querySelector(".burger"));
+      /* put it where the basket button was (right after search / day-night) once those icons exist */
+      var place = function () { var bk = na.querySelector(".bk-btn"); if (bk) na.insertBefore(a, bk); };
+      document.addEventListener("DOMContentLoaded", place); window.addEventListener("load", place); setTimeout(place, 0);
     } catch (e) {}
   })();
   var T = {
