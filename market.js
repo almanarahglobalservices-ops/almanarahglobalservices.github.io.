@@ -385,22 +385,25 @@
     var CC = myCountry();
     var hc = $("#mkCountry"); if (hc) { hc.innerHTML = ["", "CI", "NG"].map(function (c) { return '<button type="button" class="mk-chip' + (CC === c ? " on" : "") + '" data-cc="' + c + '">' + (c ? cName(c) : "🌍 " + t("all_countries")) + "</button>"; }).join(""); hc.addEventListener("click", function (e) { var b = e.target.closest("[data-cc]"); if (!b) return; setCountry(b.dataset.cc); location.reload(); }); }
     function PQ() { var q = sb.from("products").select(CC ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved"); return CC ? q.or(mkOr(CC), { referencedTable: "stores" }) : q; }
-    var [cnt, stc, recent, feat, stores] = await Promise.all([
-      sb.from("products").select("category_id,store_id").eq("status", "approved").limit(5000),
-      sb.from("stores").select("category_id").eq("status", "approved").limit(5000),
+    /* speed: counts come from one small server summary, and all home queries run at the same time */
+    var now = new Date().toISOString();
+    var [mc, recent, feat, stores, ban, prm, disc] = await Promise.all([
+      sb.rpc("market_counts"),
       PQ().order("created_at", { ascending: false }).limit(80),
       PQ().gt("featured_until", new Date().toISOString()).limit(8),
-      (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").or(mkOr(CC)) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").neq("kind", "ad").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
-    ]);
-    var byCat = {}, byStore = {}, stCat = {};
-    (stc.data || []).forEach(function (r) { stCat[r.category_id] = (stCat[r.category_id] || 0) + 1; });
-    (cnt.data || []).forEach(function (r) { byCat[r.category_id] = (byCat[r.category_id] || 0) + 1; byStore[r.store_id] = (byStore[r.store_id] || 0) + 1; });
-    var now = new Date().toISOString();
-    var [ban, prm, disc] = await Promise.all([
+      (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").or(mkOr(CC)) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").neq("kind", "ad").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8),
       sb.from("banners").select("*").eq("active", true).order("sort_order"),
       sb.from("promotions").select("product_id,store_id").eq("status", "approved").lte("starts_at", now).or("ends_at.is.null,ends_at.gt." + now).limit(100),
       PQ().not("compare_at_price", "is", null).order("created_at", { ascending: false }).limit(24)
     ]);
+    var byCat = {}, byStore = {}, stCat = {}, totalP = 0;
+    if (mc && mc.data && !mc.error) { byCat = mc.data.cat_products || {}; stCat = mc.data.cat_stores || {}; byStore = mc.data.store_products || {}; totalP = mc.data.total || 0; }
+    else {
+      var [cnt, stc] = await Promise.all([sb.from("products").select("category_id,store_id").eq("status", "approved").limit(5000), sb.from("stores").select("category_id").eq("status", "approved").neq("kind", "ad").limit(5000)]);
+      (stc.data || []).forEach(function (r) { stCat[r.category_id] = (stCat[r.category_id] || 0) + 1; });
+      (cnt.data || []).forEach(function (r) { byCat[r.category_id] = (byCat[r.category_id] || 0) + 1; byStore[r.store_id] = (byStore[r.store_id] || 0) + 1; });
+      totalP = (cnt.data || []).length;
+    }
     var pids = (prm.data || []).map(function (x) { return x.product_id; }).filter(Boolean), sids = (prm.data || []).filter(function (x) { return !x.product_id; }).map(function (x) { return x.store_id; });
     var dealQ = [];
     if (pids.length) dealQ.push(sb.from("products").select(PSEL).eq("status", "approved").in("id", pids.slice(0, 50)));
@@ -429,7 +432,7 @@
       $("#mkDeals").innerHTML = groupByStore(deals).map(function (g) { var mx = Math.max.apply(null, g.items.map(function (p) { return priceOf(p, pm).off; })); return storeOffer(g, smap, "-" + mx + "%", g.items.length + " " + (LF ? "offre(s)" : LA ? "عرض" : "deal(s)")); }).join("");
       $("#mkRecentWrap").classList.toggle("mk-hide", !recentList.length);
       $("#mkRecent").innerHTML = recentList.slice(0, 8).map(function (p) { return card(p, pm); }).join("");
-      var st = $("#mkStats"); if (st) st.innerHTML = "<div><b>" + (cnt.data || []).length + "</b>" + t("products") + "</div><div><b>" + Object.keys(byStore).length + "</b>" + t("stores") + "</div><div><b>" + (CATS.length) + "</b>" + (L() === "fr" ? "catégories" : L() === "ar" ? "أقسام" : "categories") + "</div>";
+      var st = $("#mkStats"); if (st) st.innerHTML = "<div><b>" + totalP + "</b>" + t("products") + "</div><div><b>" + Object.keys(byStore).length + "</b>" + t("stores") + "</div><div><b>" + (CATS.length) + "</b>" + (L() === "fr" ? "catégories" : L() === "ar" ? "أقسام" : "categories") + "</div>";
       $("#mkCats").innerHTML = CATS.filter(function (c) { return c.active; }).map(function (c) {
         var trv = c.slug === "travel";
         return '<a class="mk-cat' + (trv ? " travel" : "") + '" href="' + "/shop.html?cat=" + c.slug + '"><span class="ico">' + esc(c.icon || "🛍️") + "</span>" + esc(catName(c)) +

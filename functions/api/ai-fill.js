@@ -87,18 +87,3 @@ Rules:
   });
 }
 
-// Diagnostic (temporary): GET /api/ai-fill?check=1 lists the models this key can use and tests them. No secret is shown.
-export async function onRequestGet({ request, env }) {
-  if (new URL(request.url).searchParams.get("check") !== "1") return json({ error: "NO" }, 404);
-  const key = env.GEMINI_API_KEY;
-  if (!key) return json({ key: false });
-  const lr = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=" + encodeURIComponent(key));
-  const lj = await lr.json().catch(() => ({}));
-  const names = (lj.models || []).filter((m) => (m.supportedGenerationMethods || []).includes("generateContent")).map((m) => m.name.replace("models/", ""));
-  const tests = {};
-  for (const model of MODELS) {
-    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(key), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Reply OK" }] }] }) });
-    tests[model] = r.status;
-  }
-  return json({ key: true, listStatus: lr.status, models: names, tests });
-}
