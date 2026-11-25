@@ -26,7 +26,7 @@
 <link rel="stylesheet" href="main.css">
 <link rel="stylesheet" href="market.css">
 <script>document.documentElement.classList.remove('no-js')</script>
-<script type="application/ld+json">{"@type": "TravelAgency", "@id": "https://almanarahglobalservices.com/#org", "name": "AL MANARAH GLOBAL SERVICES", "url": "https://almanarahglobalservices.com/", "logo": "https://almanarahglobalservices.com/logo.png", "image": "https://almanarahglobalservices.com/makkah.jpg", "email": "almanarahglobalservices@gmail.com", "telephone": "+225 05 06 12 23 37", "address": {"@type": "PostalAddress", "streetAddress": "No. 13, Adjame Bromakote, à proximité de l’école Saint Bernard", "addressLocality": "Abidjan", "addressCountry": "CI"}, "identifier": {"@type": "PropertyValue", "propertyID": "Nigeria Corporate Affairs Commission (CAC) RC number", "value": "9306173"}, "contactPoint": [{"@type": "ContactPoint", "telephone": "+225 05 06 12 23 37", "contactType": "customer service", "availableLanguage": ["English", "French"]}, {"@type": "ContactPoint", "telephone": "+225 05 44 12 71 12", "contactType": "customer service", "availableLanguage": ["English", "French"]}], "sameAs": ["https://www.tiktok.com/@almanarahglobalservices"], "knowsLanguage": ["en", "fr"], "@context": "https://schema.org"}</script>
+<script type="application/ld+json">{"@type": "Organization", "@id": "https://almanarahglobalservices.com/#org", "name": "AL MANARAH GLOBAL SERVICES", "url": "https://almanarahglobalservices.com/", "logo": "https://almanarahglobalservices.com/logo.png", "image": "https://almanarahglobalservices.com/makkah.jpg", "email": "almanarahglobalservices@gmail.com", "telephone": "+225 05 06 12 23 37", "address": {"@type": "PostalAddress", "streetAddress": "No. 13, Adjame Bromakote, à proximité de l’école Saint Bernard", "addressLocality": "Abidjan", "addressCountry": "CI"}, "contactPoint": [{"@type": "ContactPoint", "telephone": "+225 05 06 12 23 37", "contactType": "customer service", "availableLanguage": ["English", "French"]}, {"@type": "ContactPoint", "telephone": "+225 05 44 12 71 12", "contactType": "customer service", "availableLanguage": ["English", "French"]}], "sameAs": ["https://www.tiktok.com/@almanarahglobalservices"], "knowsLanguage": ["en", "fr"], "@context": "https://schema.org"}</script>
 </head>
 <body data-page="market-home" data-market="home">
 <a class="skip" href="#main" data-fr="Aller au contenu">Skip to content</a>
@@ -47,7 +47,7 @@
 </svg>
 <div class="topbar">
   <div class="container">
-    <span data-fr="Abidjan, Côte d’Ivoire · Société enregistrée au Nigeria (CAC RC 9306173)">Abidjan, Côte d’Ivoire · Company registered in Nigeria (CAC RC 9306173)</span>
+    <span data-fr="Place de marché &amp; voyages · Abidjan, Côte d’Ivoire" data-ar="سوق وسفريات · أبيدجان، ساحل العاج">Marketplace &amp; travel · Abidjan, Côte d’Ivoire</span>
     <span><a href="tel:+2250506122337">+225 05 06 12 23 37</a><span class="sep">|</span><a href="mailto:almanarahglobalservices@gmail.com">almanarahglobalservices@gmail.com</a></span>
   </div>
 </div>
@@ -62,7 +62,6 @@
       <a href="index.html" data-nav="home" class="active" aria-current="page" data-fr="Accueil" data-ar="الرئيسية">Home</a>
       <a href="shop.html" data-nav="shop" data-fr="Boutique" data-ar="السوق">Shop</a>
       <a href="services.html" data-nav="services" data-fr="Services" data-ar="الخدمات">Services</a>
-      <a href="travel.html" data-nav="travel" data-fr="Accueil voyages" data-ar="السفريات">Travel home</a>
       <a href="umrah.html" data-nav="umrah" data-fr="Omra" data-ar="العمرة">Umrah</a>
       <a href="hajj.html" data-nav="hajj" data-fr="Hajj" data-ar="الحج">Hajj</a>
       <a href="visas.html" data-nav="visas" data-fr="Visas" data-ar="التأشيرات">Visas</a>
@@ -92,9 +91,16 @@
   <div class="mk-stats" id="mkStats"></div>
 </div></section>
 
+<section style="padding:26px 0 0" id="mkBanWrap" class="mk-hide"><div class="container"><div class="mk-ban" id="mkBanners"></div></div></section>
+
 <section class="section" style="padding-bottom:30px"><div class="container">
   <div class="mk-sec-head"><h2 data-fr="Acheter par catégorie" data-ar="تسوّق حسب القسم">Shop by category</h2><a class="mk-more" href="shop.html" data-fr="Tous les produits →" data-ar="كل المنتجات ←">All products →</a></div>
   <div class="mk-cats" id="mkCats"><div class="mk-skel" style="min-height:128px"></div><div class="mk-skel" style="min-height:128px"></div><div class="mk-skel" style="min-height:128px"></div></div>
+</div></section>
+
+<section class="section mk-hide" id="mkDealsWrap" style="padding:40px 0"><div class="container">
+  <div class="mk-sec-head"><h2 data-fr="🔥 Bonnes affaires" data-ar="🔥 عروض وتخفيضات">🔥 Deals</h2></div>
+  <div class="mk-grid" id="mkDeals"></div>
 </div></section>
 
 <section class="section tint mk-hide" id="mkFeatWrap" style="padding:50px 0"><div class="container">
@@ -107,18 +113,18 @@
   <div class="mk-grid" id="mkNew"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div>
 </div></section>
 
+<section class="section mk-hide" id="mkRecentWrap" style="padding:40px 0"><div class="container">
+  <div class="mk-sec-head"><h2 data-fr="Vus récemment" data-ar="شاهدتها مؤخرًا">Recently viewed</h2></div>
+  <div class="mk-grid" id="mkRecent"></div>
+</div></section>
+
 <section class="section tint mk-hide" id="mkStoresWrap" style="padding:56px 0"><div class="container">
   <div class="mk-sec-head"><h2 data-fr="Boutiques sur AL MANARAH" data-ar="متاجر على المنارة">Stores on AL MANARAH</h2></div>
   <div class="mk-stores" id="mkStores"></div>
 </div></section>
 
-<section class="section" style="padding:56px 0"><div class="container">
-  <div class="mk-travel"><div class="t">
-    <span class="kicker" style="color:var(--gold-soft)" data-fr="Voyages &amp; Omra" data-ar="السفريات والعمرة">Travel &amp; Umrah</span>
-    <h2 data-fr="Omra, Hajj, visas et hôtels — par AL MANARAH." data-ar="العمرة والحج والتأشيرات والفنادق — مع المنارة.">Umrah, Hajj, visas and hotels — by AL MANARAH.</h2>
-    <p data-fr="Notre propre service de voyage : forfaits depuis la Côte d’Ivoire et le Nigeria, Omra Badal, hôtels à La Mecque et Médine et visas saoudiens, avec devis écrit." data-ar="خدمتنا الخاصة للسفر: باقات من ساحل العاج ونيجيريا، والعمرة البدل، وفنادق مكة والمدينة، والتأشيرات السعودية مع عرض سعر مكتوب.">Our own travel service: packages from Côte d’Ivoire and Nigeria, Badal Umrah, Makkah and Madinah hotels and Saudi visas, with a written quotation.</p>
-    <div class="actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:18px"><a class="btn btn-gold" href="umrah.html" data-fr="Forfaits Omra" data-ar="باقات العمرة">Umrah packages</a><a class="btn btn-outline-light" href="travel.html" data-fr="Tous nos services de voyage" data-ar="كل خدمات السفر">All travel services</a></div>
-  </div><div class="im" role="img" aria-label="Makkah"></div></div>
+<section style="padding:10px 0 34px"><div class="container">
+  <a class="mk-trv" href="services.html"><span class="ico">✈️</span><span class="t"><b data-fr="Voyages par AL MANARAH" data-ar="السفريات مع المنارة">Travel by AL MANARAH</b><small data-fr="Omra, Hajj, hôtels, visas (Schengen, Chine, Qatar…)" data-ar="عمرة، حج، فنادق، تأشيرات (شنغن، الصين، قطر…)">Umrah, Hajj, hotels, visas (Schengen, China, Qatar…)</small></span><span class="go" data-fr="Voir →" data-ar="عرض ←">See →</span></a>
 </div></section>
 
 <section class="section dark"><div class="container">
@@ -138,7 +144,6 @@
       <div>
         <a class="brand" href="index.html"><img src="logo.png" alt="AL MANARAH logo" width="54" height="54"><span><b>Al Manarah</b><small>GLOBAL SERVICES</small></span></a>
         <p data-fr="La place de marché des vendeurs de confiance — et l’Omra, le Hajj, les visas et les voyages, organisés avec soin." data-ar="سوق التجار الموثوقين — والعمرة والحج والتأشيرات والسفر بعناية.">The marketplace for trusted sellers — plus Umrah, Hajj, visas and travel, arranged with care.</p>
-        <span class="rc" data-fr="Enregistrée au Nigeria · CAC RC 9306173">Registered in Nigeria · CAC RC 9306173</span>
       </div>
       <div>
         <h4 data-fr="Services">Services</h4>
@@ -176,7 +181,7 @@
     </div>
     <div class="footbottom">
       <span>© <span class="year">2026</span> AL MANARAH GLOBAL SERVICES. <span data-fr="Tous droits réservés.">All rights reserved.</span></span>
-      <span data-fr="L’enregistrement CAC (Nigeria) n’est pas une licence d’opérateur Hajj/Omra saoudien.">CAC (Nigeria) registration is not a Saudi Hajj/Umrah operator licence.</span>
+      
     </div>
   </div>
 </footer>

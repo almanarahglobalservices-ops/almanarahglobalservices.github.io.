@@ -81,7 +81,19 @@
     my_reqs: ["My payment requests", "Mes demandes de paiement", "طلبات الدفع"], boost: ["Want more visibility? Ask us to feature your products.", "Plus de visibilité ? Demandez la mise en avant de vos produits.", "تريد ظهورًا أكبر؟ اطلب تمييز منتجاتك."],
     boost_btn: ["Request a feature", "Demander une mise en avant", "اطلب التمييز"], admin_mode: ["Admin mode — you are managing this store.", "Mode admin — vous gérez cette boutique.", "وضع المدير — أنت تدير هذا المتجر."],
     to_admin: ["Admin panel", "Panneau admin", "لوحة المدير"], note_from: ["Note from AL MANARAH:", "Note d’AL MANARAH :", "ملاحظة من المنارة:"],
-    loading: ["Loading…", "Chargement…", "جارٍ التحميل…"]
+    loading: ["Loading…", "Chargement…", "جارٍ التحميل…"],
+    c_new: ["New", "Neuf", "جديد"], c_used: ["Used", "Occasion", "مستعمل"], c_refurbished: ["Refurbished", "Reconditionné", "مُجدَّد"], condition: ["Condition", "État", "الحالة"],
+    any_cond: ["Any condition", "Tout état", "كل الحالات"], any_city: ["All cities", "Toutes les villes", "كل المدن"], pmin: ["Min price", "Prix min", "أقل سعر"], pmax: ["Max price", "Prix max", "أعلى سعر"],
+    negotiable: ["Negotiable", "Négociable", "قابل للتفاوض"], top: ["TOP", "TOP", "مميز"], saved: ["Saved", "Favoris", "المحفوظات"], no_saved: ["No saved products yet. Tap ♥ on a product to save it.", "Aucun favori. Touchez ♥ sur un produit pour l’enregistrer.", "لا توجد محفوظات. اضغط ♥ على المنتج لحفظه."],
+    views: ["views", "vues", "مشاهدة"], posted: ["Posted", "Publié", "نُشر"], member: ["Member since", "Membre depuis", "عضو منذ"], similar: ["Similar products", "Produits similaires", "منتجات مشابهة"],
+    safety_t: ["Safety tips", "Conseils de sécurité", "نصائح الأمان"],
+    safety: [["Meet the seller in a safe public place.", "Check the item before you pay.", "Never send money in advance to someone you don’t know.", "Report anything suspicious."], ["Rencontrez le vendeur dans un lieu public sûr.", "Vérifiez l’article avant de payer.", "N’envoyez jamais d’argent à l’avance à un inconnu.", "Signalez tout ce qui est suspect."], ["قابل البائع في مكان عام وآمن.", "افحص المنتج قبل الدفع.", "لا ترسل مالًا مقدمًا لشخص لا تعرفه.", "أبلغ عن أي شيء مريب."]],
+    report: ["Report", "Signaler", "إبلاغ"], report_t: ["Report this listing", "Signaler cette annonce", "الإبلاغ عن هذا الإعلان"], reason: ["Reason", "Motif", "السبب"],
+    r_scam: ["Scam / fraud", "Arnaque / fraude", "احتيال"], r_fake: ["Fake or wrong item", "Article faux ou différent", "منتج مزيف أو مختلف"], r_sold: ["Already sold / unavailable", "Déjà vendu / indisponible", "تم بيعه / غير متوفر"], r_bad: ["Offensive or forbidden", "Offensant ou interdit", "محتوى مسيء أو ممنوع"], r_other: ["Other", "Autre", "أخرى"],
+    details: ["Details", "Détails", "التفاصيل"], your_contact: ["Your phone or email (optional)", "Votre téléphone ou e-mail (facultatif)", "هاتفك أو بريدك (اختياري)"], thanks_report: ["Thank you. AL MANARAH will review this.", "Merci. AL MANARAH va vérifier.", "شكرًا لك، ستراجعه المنارة."],
+    reviews: ["Reviews", "Avis", "التقييمات"], no_reviews: ["No reviews yet.", "Pas encore d’avis.", "لا توجد تقييمات بعد."], write_review: ["Rate this seller", "Noter ce vendeur", "قيّم هذا البائع"],
+    your_name: ["Your name", "Votre nom", "اسمك"], comment: ["Comment", "Commentaire", "تعليق"], review_sent: ["Thank you! Your review will appear after checking.", "Merci ! Votre avis apparaîtra après vérification.", "شكرًا! سيظهر تقييمك بعد المراجعة."],
+    share_p: ["Share", "Partager", "مشاركة"], deals: ["Deals", "Bonnes affaires", "عروض"]
   };
   function t(k) { var r = D[k]; if (!r) return k; var l = L(); return l === "fr" ? r[1] : l === "ar" ? (r[2] || r[0]) : r[0]; }
 
@@ -105,6 +117,18 @@
   function dateFmt(d) { if (!d) return ""; try { return new Date(d).toLocaleDateString(L() === "fr" ? "fr-FR" : L() === "ar" ? "ar" : "en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return d; } }
   function pubUrl(path) { return sb.storage.from("market").getPublicUrl(path).data.publicUrl; }
   function rnd() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function lsGet(k) { try { var v = JSON.parse(localStorage.getItem(k) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function isFav(id) { return lsGet("mk_fav").indexOf(id) > -1; }
+  function pushRecent(id) { var r = lsGet("mk_recent").filter(function (x) { return x !== id; }); r.unshift(id); lsSet("mk_recent", r.slice(0, 12)); }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-fav]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var id = b.dataset.fav, f = lsGet("mk_fav"), i = f.indexOf(id);
+    if (i > -1) f.splice(i, 1); else f.unshift(id);
+    lsSet("mk_fav", f.slice(0, 200)); b.textContent = i > -1 ? "♡" : "♥";
+  }, true);
+  function stars(n) { n = Math.round(n || 0); return '<span class="mk-stars">' + "★★★★★".slice(0, n) + '<span style="color:#ccc">' + "★★★★★".slice(0, 5 - n) + "</span></span>"; }
   var rerender = function () {};
   document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-setlang]")) setTimeout(function () { rerender(); }, 60); });
 
@@ -163,13 +187,15 @@
   }
   function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now) + (pr.was ? "<s>" + money(pr.was) + "</s>" : "") + "</span>"; }
 
-  var PSEL = "id,title,price,compare_at_price,images,store_id,category_id,featured_until,created_at,stores(name,slug,verified,city)";
+  var PSEL = "id,title,price,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city)";
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
     return '<a class="mk-card" href="/product.html?id=' + p.id + '"><div class="img">' +
       (img ? '<img src="' + esc(img) + '" alt="' + esc(p.title) + '" loading="lazy">' : '<span class="noimg">' + esc((catById(p.category_id) || {}).icon || "🛍️") + "</span>") +
-      (pr.off ? '<span class="mk-badge">-' + pr.off + "%</span>" : feat ? '<span class="mk-badge dark">' + t("featured") + "</span>" : "") +
+      (feat ? '<span class="mk-badge top">' + t("top") + "</span>" : pr.off ? '<span class="mk-badge">-' + pr.off + "%</span>" : "") +
+      '<button type="button" class="mk-fav" data-fav="' + p.id + '" aria-label="' + t("saved") + '">' + (isFav(p.id) ? "♥" : "♡") + "</button>" +
+      (p.condition && p.condition !== "new" ? '<span class="mk-cond">' + t("c_" + p.condition) + "</span>" : "") +
       '</div><div class="body"><h3>' + esc(p.title) + "</h3>" + priceHtml(pr) +
       '<span class="seller">' + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + (s.city ? " · " + esc(s.city) : "") + "</span></div></a>";
   }
@@ -191,13 +217,42 @@
     ]);
     var byCat = {}, byStore = {};
     (cnt.data || []).forEach(function (r) { byCat[r.category_id] = (byCat[r.category_id] || 0) + 1; byStore[r.store_id] = (byStore[r.store_id] || 0) + 1; });
-    var all = (recent.data || []).concat(feat.data || []), pm = await promoMap(all);
+    var now = new Date().toISOString();
+    var [ban, prm, disc] = await Promise.all([
+      sb.from("banners").select("*").eq("active", true).order("sort_order"),
+      sb.from("promotions").select("product_id,store_id").eq("status", "approved").lte("starts_at", now).or("ends_at.is.null,ends_at.gt." + now).limit(100),
+      sb.from("products").select(PSEL).eq("status", "approved").not("compare_at_price", "is", null).order("created_at", { ascending: false }).limit(24)
+    ]);
+    var pids = (prm.data || []).map(function (x) { return x.product_id; }).filter(Boolean), sids = (prm.data || []).filter(function (x) { return !x.product_id; }).map(function (x) { return x.store_id; });
+    var dealQ = [];
+    if (pids.length) dealQ.push(sb.from("products").select(PSEL).eq("status", "approved").in("id", pids.slice(0, 50)));
+    if (sids.length) dealQ.push(sb.from("products").select(PSEL).eq("status", "approved").in("store_id", sids.slice(0, 20)).limit(24));
+    var dealRes = await Promise.all(dealQ), dealPool = (disc.data || []);
+    dealRes.forEach(function (r) { dealPool = dealPool.concat(r.data || []); });
+    var rec = lsGet("mk_recent"), recRes = rec.length ? await sb.from("products").select(PSEL).eq("status", "approved").in("id", rec) : { data: [] };
+    var recentList = rec.map(function (id) { return (recRes.data || []).filter(function (p) { return p.id === id; })[0]; }).filter(Boolean);
+    var all = (recent.data || []).concat(feat.data || [], dealPool, recentList), pm = await promoMap(all);
+    var seen = {}, deals = dealPool.filter(function (p) { if (seen[p.id]) return false; seen[p.id] = 1; return priceOf(p, pm).off > 0; }).sort(function (a, b) { return priceOf(b, pm).off - priceOf(a, pm).off; }).slice(0, 8);
+    var bans = (ban.data || []).filter(function (b) { return !b.ends_at || b.ends_at > now; });
+    if (bans.length) {
+      $("#mkBanWrap").classList.remove("mk-hide");
+      var bx = $("#mkBanners"), cur = 0;
+      bx.innerHTML = bans.map(function (b, i) { var inner = '<img src="' + esc(b.image_url) + '" alt="' + esc(b.title || "") + '">' + (b.title ? '<span class="cap">' + esc(b.title) + "</span>" : ""); return b.link ? '<a class="' + (i ? "" : "on") + '" href="' + esc(b.link) + '">' + inner + "</a>" : '<div class="sl ' + (i ? "" : "on") + '">' + inner + "</div>"; }).join("") + (bans.length > 1 ? '<div class="dots">' + bans.map(function (b, i) { return '<button type="button" data-d="' + i + '"' + (i ? "" : ' class="on"') + ' aria-label="' + (i + 1) + '"></button>'; }).join("") + "</div>" : "");
+      var slides = $$("a,div.sl", bx), dots = $$(".dots button", bx);
+      function go(i) { cur = (i + slides.length) % slides.length; slides.forEach(function (x, j) { x.classList.toggle("on", j === cur); }); dots.forEach(function (x, j) { x.classList.toggle("on", j === cur); }); }
+      dots.forEach(function (d) { d.addEventListener("click", function () { go(+d.dataset.d); }); });
+      if (slides.length > 1) setInterval(function () { go(cur + 1); }, 5000);
+    }
     rerender = function () {
+      $("#mkDealsWrap").classList.toggle("mk-hide", !deals.length);
+      $("#mkDeals").innerHTML = deals.map(function (p) { return card(p, pm); }).join("");
+      $("#mkRecentWrap").classList.toggle("mk-hide", !recentList.length);
+      $("#mkRecent").innerHTML = recentList.slice(0, 8).map(function (p) { return card(p, pm); }).join("");
       var st = $("#mkStats"); if (st) st.innerHTML = "<div><b>" + (cnt.data || []).length + "</b>" + t("products") + "</div><div><b>" + Object.keys(byStore).length + "</b>" + t("stores") + "</div><div><b>" + (CATS.length) + "</b>" + (L() === "fr" ? "catégories" : L() === "ar" ? "أقسام" : "categories") + "</div>";
       $("#mkCats").innerHTML = CATS.filter(function (c) { return c.active; }).map(function (c) {
         var trv = c.slug === "travel";
-        return '<a class="mk-cat' + (trv ? " travel" : "") + '" href="' + (trv ? "/travel.html" : "/shop.html?cat=" + c.slug) + '"><span class="ico">' + esc(c.icon || "🛍️") + "</span>" + esc(catName(c)) +
-          '<span class="cnt">' + (trv ? (L() === "fr" ? "Omra · Hajj · Visas" : L() === "ar" ? "عمرة · حج · تأشيرات" : "Umrah · Hajj · Visas") : (byCat[c.id] || 0) + " " + t("products")) + "</span></a>";
+        return '<a class="mk-cat' + (trv ? " travel" : "") + '" href="' + (trv ? "/services.html" : "/shop.html?cat=" + c.slug) + '"><span class="ico">' + esc(c.icon || "🛍️") + "</span>" + esc(catName(c)) +
+          '<span class="cnt">' + (trv ? (L() === "fr" ? "Omra · Hajj · Hôtels · Visas" : L() === "ar" ? "عمرة · حج · فنادق · تأشيرات" : "Umrah · Hajj · Hotels · Visas") : (byCat[c.id] || 0) + " " + t("products")) + "</span></a>";
       }).join("");
       var f = feat.data || [];
       $("#mkFeatWrap").classList.toggle("mk-hide", !f.length);
@@ -215,32 +270,50 @@
   /* =============== SHOP =============== */
   async function pageShop() {
     await cats();
-    var state = { cat: qs("cat") || "", q: qs("q") || "", sort: "new", page: 0, items: [], done: false, pm: { p: {}, s: {} } };
+    var state = { cat: qs("cat") || "", q: qs("q") || "", sort: "new", page: 0, items: [], done: false, pm: { p: {}, s: {} }, city: "", cond: "", min: "", max: "", fav: qs("fav") === "1" };
     var input = $("#shopQ"), sort = $("#shopSort"); input.value = state.q;
+    var cityRes = await sb.from("stores").select("city").eq("status", "approved").limit(2000);
+    var cities = Array.from(new Set((cityRes.data || []).map(function (x) { return (x.city || "").trim(); }).filter(Boolean))).sort();
+    function filtersUI() {
+      $("#fCity").innerHTML = '<option value="">' + t("any_city") + "</option>" + cities.map(function (c) { return '<option' + (state.city === c ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("");
+      $("#fCond").innerHTML = '<option value="">' + t("any_cond") + "</option>" + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + (state.cond === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("");
+      $("#fMin").placeholder = t("pmin"); $("#fMax").placeholder = t("pmax");
+      $("#shopFilters").classList.toggle("mk-hide", state.fav);
+    }
+    $("#fApply").addEventListener("click", function () { state.city = $("#fCity").value; state.cond = $("#fCond").value; state.min = $("#fMin").value; state.max = $("#fMax").value; load(true); });
+    ["#fCity", "#fCond"].forEach(function (id) { $(id).addEventListener("change", function () { $("#fApply").click(); }); });
     function chips() {
-      $("#shopChips").innerHTML = '<a class="mk-chip' + (state.cat ? "" : " on") + '" data-cat="">' + t("all") + "</a>" + CATS.filter(function (c) { return c.active; }).map(function (c) {
-        return c.slug === "travel" ? '<a class="mk-chip" href="/travel.html">' + esc(c.icon) + " " + esc(catName(c)) + "</a>" : '<a class="mk-chip' + (state.cat === c.slug ? " on" : "") + '" data-cat="' + c.slug + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>";
+      filtersUI();
+      $("#shopChips").innerHTML = '<a class="mk-chip' + (state.fav ? " on" : "") + '" data-fav-chip="1">♥ ' + t("saved") + '</a><a class="mk-chip' + (state.cat || state.fav ? "" : " on") + '" data-cat="">' + t("all") + "</a>" + CATS.filter(function (c) { return c.active; }).map(function (c) {
+        return c.slug === "travel" ? '<a class="mk-chip" href="/services.html">' + esc(c.icon) + " " + esc(catName(c)) + "</a>" : '<a class="mk-chip' + (state.cat === c.slug ? " on" : "") + '" data-cat="' + c.slug + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>";
       }).join("");
       var c = CATS.filter(function (x) { return x.slug === state.cat; })[0];
-      $("#shopTitle").textContent = c ? catName(c) : (state.q ? "“" + state.q + "”" : (L() === "fr" ? "Tous les produits" : L() === "ar" ? "كل المنتجات" : "All products"));
+      $("#shopTitle").textContent = state.fav ? "♥ " + t("saved") : c ? catName(c) : (state.q ? "“" + state.q + "”" : (L() === "fr" ? "Tous les produits" : L() === "ar" ? "كل المنتجات" : "All products"));
       input.placeholder = t("search"); $("#shopGo").textContent = t("go"); $("#shopMore").textContent = t("more");
       sort.innerHTML = '<option value="new">' + t("newest") + '</option><option value="asc">' + t("cheap") + '</option><option value="desc">' + t("dear") + "</option>"; sort.value = state.sort;
     }
     function draw() {
-      $("#shopGrid").innerHTML = state.items.length ? state.items.map(function (p) { return card(p, state.pm); }).join("") : emptyBox("🔎", t("none"), t("none_hint"), true);
+      $("#shopGrid").innerHTML = state.items.length ? state.items.map(function (p) { return card(p, state.pm); }).join("") : state.fav ? emptyBox("♡", t("no_saved")) : emptyBox("🔎", t("none"), t("none_hint"), true);
       $("#shopMore").classList.toggle("mk-hide", state.done || !state.items.length);
     }
     async function load(reset) {
       if (reset) { state.page = 0; state.items = []; state.done = false; $("#shopGrid").innerHTML = '<div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div>'; }
-      var per = 24, q = sb.from("products").select(PSEL).eq("status", "approved");
-      var c = CATS.filter(function (x) { return x.slug === state.cat; })[0]; if (c) q = q.eq("category_id", c.id);
+      var per = 24, q = sb.from("products").select(state.city ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved");
+      if (state.fav) { var fv = lsGet("mk_fav"); if (!fv.length) { state.items = []; state.done = true; return draw(); } q = q.in("id", fv.slice(0, 200)); }
+      if (state.city) q = q.eq("stores.city", state.city);
+      if (state.cond) q = q.eq("condition", state.cond);
+      if (state.min !== "") q = q.gte("price", +state.min);
+      if (state.max !== "") q = q.lte("price", +state.max);
+      var c = CATS.filter(function (x) { return x.slug === state.cat; })[0]; if (c && !state.fav) q = q.eq("category_id", c.id);
       if (state.q) q = q.or("title.ilike.%" + state.q.replace(/[%,()]/g, " ") + "%,description.ilike.%" + state.q.replace(/[%,()]/g, " ") + "%");
       q = state.sort === "asc" ? q.order("price", { ascending: true }) : state.sort === "desc" ? q.order("price", { ascending: false }) : q.order("created_at", { ascending: false });
       var r = await q.range(state.page * per, state.page * per + per - 1);
       var got = r.data || []; state.items = state.items.concat(got); state.done = got.length < per; state.page++;
       state.pm = await promoMap(state.items); draw();
     }
-    $("#shopChips").addEventListener("click", function (e) { var a = e.target.closest("[data-cat]"); if (!a) return; e.preventDefault(); state.cat = a.dataset.cat; history.replaceState(null, "", "/shop.html" + (state.cat ? "?cat=" + state.cat : "")); chips(); load(true); });
+    $("#shopChips").addEventListener("click", function (e) {
+      var fc = e.target.closest("[data-fav-chip]"); if (fc) { e.preventDefault(); state.fav = true; state.cat = ""; history.replaceState(null, "", "/shop.html?fav=1"); chips(); load(true); return; }
+      var a = e.target.closest("[data-cat]"); if (!a) return; e.preventDefault(); state.fav = false; state.cat = a.dataset.cat; history.replaceState(null, "", "/shop.html" + (state.cat ? "?cat=" + state.cat : "")); chips(); load(true); });
     $("#shopForm").addEventListener("submit", function (e) { e.preventDefault(); state.q = input.value.trim(); load(true); chips(); });
     sort.addEventListener("change", function () { state.sort = sort.value; load(true); });
     $("#shopMore").addEventListener("click", function () { load(false); });
@@ -260,6 +333,8 @@
     var md = document.querySelector('meta[name="description"]'); if (md && s.description) md.content = s.description.slice(0, 160);
     var pr = await sb.from("products").select(PSEL).eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(1000);
     var items = pr.data || [], pm = await promoMap(items), state = { q: "", cat: 0 };
+    var rv = await sb.from("reviews").select("name,rating,comment,created_at").eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(100);
+    var revs = rv.data || [], avg = revs.length ? revs.reduce(function (a, r) { return a + r.rating; }, 0) / revs.length : 0;
     var link = storeUrl(s.slug);
     function grid() {
       var list = items.filter(function (p) { return (!state.cat || p.category_id === state.cat) && (!state.q || (p.title + " " + (p.description || "")).toLowerCase().indexOf(state.q) > -1); });
@@ -269,20 +344,34 @@
       var used = Array.from(new Set(items.map(function (p) { return p.category_id; })));
       box.innerHTML = '<div class="st-cover"' + (s.cover_url ? ' style="background-image:url(\'' + esc(s.cover_url) + '\')"' : "") + '></div><div class="container"><div class="st-head">' +
         (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="' + esc(s.name) + '">' : '<span class="logo">' + initials(s.name) + "</span>") +
-        '<div class="t"><h1>' + esc(s.name) + "</h1>" + '<div class="meta">' + (s.verified ? '<span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + "<span>" + esc(catName(catById(s.category_id))) + "</span>" + (s.city ? "<span>📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + "</span>" : "") + "<span>" + items.length + " " + t("products") + "</span></div></div>" +
+        '<div class="t"><h1>' + esc(s.name) + "</h1>" + '<div class="meta">' + (s.verified ? '<span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + "<span>" + esc(catName(catById(s.category_id))) + "</span>" + (s.city ? "<span>📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + "</span>" : "") + "<span>" + items.length + " " + t("products") + "</span>" + (revs.length ? "<span>" + stars(avg) + " " + avg.toFixed(1) + " (" + revs.length + ")</span>" : "") + "<span>" + t("member") + " " + dateFmt(s.created_at) + "</span></div></div>" +
         '<div class="st-actions">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2 btn-sm" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, t("wa_store") + " " + link) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline btn-sm" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + "</div></div>" +
         (s.status !== "approved" ? '<div class="mk-msg warn" style="margin-top:16px">' + t("preview") + "</div>" : "") +
         (s.description ? '<p class="st-desc">' + esc(s.description) + "</p>" : "") +
         '<div class="st-share"><b>' + t("share") + ':</b> <code>' + esc(link) + '</code> <button class="mk-btn" id="stCopy" type="button">' + t("copy") + '</button> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(s.name + " — " + link) + '">' + t("wa") + "</a></div>" +
         '<section class="section" style="padding-top:34px"><div class="mk-bar"><input id="stQ" type="search" placeholder="' + t("in_store") + '"></div>' +
         (used.length > 1 ? '<div class="mk-chips" id="stChips"><a class="mk-chip on" data-c="0">' + t("all") + "</a>" + used.map(function (id) { var c = catById(id); return c ? '<a class="mk-chip" data-c="' + id + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>" : ""; }).join("") + "</div>" : "") +
-        '<div class="mk-grid" id="stGrid"></div></section></div>';
+        '<div class="mk-grid" id="stGrid"></div></section>' +
+        '<section class="section" style="padding-top:0"><div class="grid-2" style="align-items:start"><div><h2>' + t("reviews") + (revs.length ? " " + stars(avg) + ' <span class="mk-small">' + avg.toFixed(1) + " / 5 · " + revs.length + "</span>" : "") + "</h2>" +
+        (revs.length ? revs.slice(0, 20).map(function (r) { return '<div class="mk-rev">' + stars(r.rating) + " <b>" + esc(r.name) + '</b> <span class="mk-small">' + dateFmt(r.created_at) + "</span>" + (r.comment ? "<p style=\"margin:6px 0 0\">" + esc(r.comment) + "</p>" : "") + "</div>"; }).join("") : '<p class="mk-small">' + t("no_reviews") + "</p>") +
+        '<p style="margin-top:14px"><button type="button" class="mk-link" id="stReport">⚑ ' + t("report") + '</button></p></div><div class="mk-panel"><h3 style="margin-top:0">' + t("write_review") + '</h3><form class="mk-form" id="rvF"><div class="full"><div class="mk-rate" id="rvStars">' + [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-n="' + n + '" aria-label="' + n + '">★</button>'; }).join("") + '</div></div><div class="full"><label>' + t("your_name") + ' *</label><input name="rn" required maxlength="60"></div><div class="full"><label>' + t("comment") + '</label><textarea name="rc" maxlength="600" style="min-height:80px"></textarea></div><div class="full"><button class="btn btn-primary btn-sm" type="submit">' + t("send") + '</button><div id="rvM"></div></div></form></div></div></section></div>';
       grid();
       $("#stQ").addEventListener("input", function () { state.q = this.value.trim().toLowerCase(); grid(); });
       var ch = $("#stChips"); if (ch) ch.addEventListener("click", function (e) { var a = e.target.closest("[data-c]"); if (!a) return; state.cat = +a.dataset.c; $$(".mk-chip", ch).forEach(function (x) { x.classList.toggle("on", x === a); }); grid(); });
+      var rate = 0;
+      $$("#rvStars button").forEach(function (b) { b.addEventListener("click", function () { rate = +b.dataset.n; $$("#rvStars button").forEach(function (x) { x.classList.toggle("on", +x.dataset.n <= rate); }); }); });
+      $("#rvF").addEventListener("submit", async function (e) { e.preventDefault(); var f = e.target; if (!rate) return msg($("#rvM"), "err", t("required")); var r = await sb.rpc("submit_review", { p_store: s.id, p_name: f.rn.value.trim(), p_rating: rate, p_comment: f.rc.value.trim() || null }); if (r.error) return msg($("#rvM"), "err", t("fail")); msg($("#rvM"), "ok", t("review_sent")); f.reset(); });
+      $("#stReport").addEventListener("click", function () { reportModal(s.id, null); });
       $("#stCopy").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
     };
     rerender();
+  }
+
+  function reportModal(storeId, productId) {
+    var m = document.createElement("div"); m.className = "mk-modal";
+    m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h3 style="margin-top:0">⚑ ' + t("report_t") + '</h3><form class="mk-form" id="rpF"><div class="full"><label>' + t("reason") + '</label><select name="r">' + ["r_scam", "r_fake", "r_sold", "r_bad", "r_other"].map(function (k) { return '<option value="' + k + '">' + t(k) + "</option>"; }).join("") + '</select></div><div class="full"><label>' + t("details") + '</label><textarea name="d" maxlength="800" style="min-height:80px"></textarea></div><div class="full"><label>' + t("your_contact") + '</label><input name="c" maxlength="80"></div><div class="full"><button class="btn btn-primary btn-sm" type="submit">' + t("send") + '</button><div id="rpM"></div></div></form></div>';
+    document.body.appendChild(m); $(".x", m).onclick = function () { m.remove(); };
+    $("#rpF", m).onsubmit = async function (e) { e.preventDefault(); var f = e.target; var r = await sb.rpc("submit_report", { p_store: storeId || null, p_product: productId || null, p_reason: f.r.value, p_details: f.d.value.trim() || null, p_contact: f.c.value.trim() || null }); if (r.error) return msg($("#rpM", m), "err", t("fail")); msg($("#rpM", m), "ok", t("thanks_report")); setTimeout(function () { m.remove(); }, 1600); };
   }
 
   /* =============== PRODUCT =============== */
@@ -294,8 +383,14 @@
     if (!p) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
     document.title = p.title + " | AL MANARAH GLOBAL SERVICES";
     var s = p.stores || {}, pm = await promoMap([p]), pr = priceOf(p, pm), imgs = p.images || [], cur = 0;
-    var more = await sb.from("products").select(PSEL).eq("store_id", p.store_id).eq("status", "approved").neq("id", p.id).limit(8);
-    var morePm = await promoMap(more.data || []);
+    var [more, sim, st] = await Promise.all([
+      sb.from("products").select(PSEL).eq("store_id", p.store_id).eq("status", "approved").neq("id", p.id).limit(8),
+      sb.from("products").select(PSEL).eq("category_id", p.category_id).eq("status", "approved").neq("store_id", p.store_id).order("created_at", { ascending: false }).limit(8),
+      sb.from("product_stats").select("views").eq("product_id", p.id).maybeSingle()
+    ]);
+    var views = ((st.data || {}).views || 0) + (p.status === "approved" ? 1 : 0);
+    if (p.status === "approved") { pushRecent(p.id); sb.rpc("add_view", { p_product: p.id }).then(function () {}, function () {}); }
+    var morePm = await promoMap((more.data || []).concat(sim.data || []));
     var link = productUrl(p.id);
     rerender = function () {
       var c = catById(p.category_id), waText = t("wa_msg") + "\n" + p.title + " — " + money(pr.now) + "\n" + link;
@@ -304,16 +399,22 @@
         '<div class="pd" style="margin-top:18px"><div><div class="pd-main">' + (imgs.length ? '<img id="pdImg" src="' + esc(imgs[cur]) + '" alt="' + esc(p.title) + '">' : '<div class="mk-empty" style="height:100%;border:0"><span class="e">' + esc((c || {}).icon || "🛍️") + "</span></div>") + "</div>" +
         (imgs.length > 1 ? '<div class="pd-thumbs">' + imgs.map(function (u, i) { return '<button type="button" data-i="' + i + '"' + (i === cur ? ' class="on"' : "") + '><img src="' + esc(u) + '" alt=""></button>'; }).join("") + "</div>" : "") + "</div>" +
         "<div><h1>" + esc(p.title) + "</h1>" + priceHtml(pr) + (pr.off ? ' <span class="mk-status s-new">-' + pr.off + "%</span>" : "") +
-        (p.stock != null ? '<p class="mk-small" style="margin-top:8px">' + (p.stock > 0 ? t("stock") + " (" + p.stock + ")" : t("out")) + "</p>" : "") +
+        '<div class="mk-tags"><span class="mk-tag">' + t("c_" + (p.condition || "new")) + "</span>" + (p.negotiable ? '<span class="mk-tag">🤝 ' + t("negotiable") + "</span>" : "") + (p.stock != null ? '<span class="mk-tag">' + (p.stock > 0 ? t("stock") + " (" + p.stock + ")" : t("out")) + "</span>" : "") + '<span class="mk-tag">👁 ' + views + " " + t("views") + '</span><span class="mk-tag">' + t("posted") + " " + dateFmt(p.created_at) + "</span></div>" +
         '<div class="pd-cta" style="margin-top:18px">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + "</div>" +
+        '<div class="mk-inline" style="margin-top:12px"><button type="button" class="mk-btn" data-fav="' + p.id + '">' + (isFav(p.id) ? "♥" : "♡") + " " + t("saved") + '</button><a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(p.title + " — " + money(pr.now) + "\n" + link) + '">' + t("share_p") + ' (WhatsApp)</a><button type="button" class="mk-btn" id="pdCopy">' + t("copy") + "</button></div>" +
         (p.description ? '<div class="pd-desc">' + esc(p.description) + "</div>" : "") +
+        '<div class="mk-safe"><b>🛡 ' + t("safety_t") + "</b><ul>" + t("safety").map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><p style="margin:8px 0 0"><button type="button" class="mk-link" id="pdReport">⚑ ' + t("report") + "</button></p></div>" +
         '<a class="pd-seller" href="/store/' + esc(s.slug) + '">' + (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name) + "</span>") +
         '<span><span class="mk-small">' + t("seller") + "</span><br><b>" + esc(s.name) + "</b>" + (s.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + "<br><span class=\"mk-small\">" + esc(s.city || "") + '</span></span><span class="mk-more" style="margin-inline-start:auto">' + t("view_store") + " →</span></a>" +
         '<div class="mk-panel"><h3 style="margin-top:0">' + t("req_title") + '</h3><p class="mk-small">' + t("req_note") + '</p><form id="reqForm" class="mk-form">' +
         '<div><label>' + t("name") + ' *</label><input name="cname" required maxlength="80" autocomplete="name"></div><div><label>' + t("phone") + ' *</label><input name="phone" required type="tel" maxlength="30" autocomplete="tel"></div>' +
         '<div><label>' + t("city") + '</label><input name="city" maxlength="60"></div><div><label>' + t("qty") + '</label><input name="qty" type="number" min="1" value="1"></div>' +
         '<div class="full"><label>' + t("message") + '</label><textarea name="note" maxlength="800" style="min-height:80px"></textarea></div><div class="full"><button class="btn btn-primary" type="submit">' + t("send") + '</button><div id="reqMsg"></div></div></form></div></div></div>' +
-        ((more.data || []).length ? '<section class="section" style="padding-bottom:0"><div class="mk-sec-head"><h2>' + t("more_store") + '</h2><a class="mk-more" href="/store/' + esc(s.slug) + '">' + t("view_store") + ' →</a></div><div class="mk-grid">' + more.data.map(function (x) { return card(x, morePm); }).join("") + "</div></section>" : "");
+        ((more.data || []).length ? '<section class="section" style="padding-bottom:0"><div class="mk-sec-head"><h2>' + t("more_store") + '</h2><a class="mk-more" href="/store/' + esc(s.slug) + '">' + t("view_store") + ' →</a></div><div class="mk-grid">' + more.data.map(function (x) { return card(x, morePm); }).join("") + "</div></section>" : "") +
+        ((sim.data || []).length ? '<section class="section" style="padding-bottom:0"><div class="mk-sec-head"><h2>' + t("similar") + '</h2></div><div class="mk-grid">' + sim.data.map(function (x) { return card(x, morePm); }).join("") + "</div></section>" : "") +
+        '<div class="mk-sticky">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-primary" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + "</div>";
+      $("#pdCopy").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
+      $("#pdReport").addEventListener("click", function () { reportModal(p.store_id, p.id); });
       var th = $(".pd-thumbs"); if (th) th.addEventListener("click", function (e) { var b = e.target.closest("[data-i]"); if (!b) return; cur = +b.dataset.i; $("#pdImg").src = imgs[cur]; $$("button", th).forEach(function (x) { x.classList.toggle("on", x === b); }); });
       $("#reqForm").addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button"); b.disabled = true;
@@ -484,6 +585,8 @@
         '<div><label>' + t("price") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.price != null ? p.price : "") + '"></div>' +
         '<div><label>' + t("old_price") + '</label><input name="old" type="number" min="0" step="1" value="' + esc(p.compare_at_price || "") + '"></div>' +
         '<div><label>' + t("qty_stock") + '</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock != null ? p.stock : "") + '"></div>' +
+        '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + ((p.condition || "new") === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
+        '<div><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" name="neg" style="width:auto"' + (p.negotiable ? " checked" : "") + "> " + t("negotiable") + "</label></div>" +
         '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="3000">' + esc(p.description || "") + "</textarea></div>" +
         '<div class="full"><label>' + t("photos") + '</label><div class="mk-imgs" id="pImgs"></div></div>' +
         '<div class="full"><p class="mk-small">' + t("review_note") + '</p><button class="btn btn-primary" type="submit">' + t("save") + '</button><div id="pM"></div></div></form></div>';
@@ -503,7 +606,7 @@
       drawImgs();
       $("#pF", m).addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button[type=submit]"), M = $("#pM", m);
-        var row = { title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: Math.max(0, Math.round(+f.price.value || 0)), compare_at_price: +f.old.value ? Math.round(+f.old.value) : null, stock: f.stock.value === "" ? null : Math.max(0, Math.round(+f.stock.value)), description: f.description.value.trim() || null, images: imgs };
+        var row = { title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: Math.max(0, Math.round(+f.price.value || 0)), compare_at_price: +f.old.value ? Math.round(+f.old.value) : null, stock: f.stock.value === "" ? null : Math.max(0, Math.round(+f.stock.value)), description: f.description.value.trim() || null, images: imgs, condition: f.cond.value, negotiable: f.neg.checked };
         if (!row.title || !row.category_id) return msg(M, "err", t("required"));
         b.disabled = true;
         var r = p.id ? await sb.from("products").update(row).eq("id", p.id) : await sb.from("products").insert(Object.assign({ store_id: store.id }, row));
@@ -580,21 +683,24 @@
     try { await sb.rpc("expire_plans"); } catch (e) {}
     var tab = (location.hash || "#over").slice(1), D2 = {}, filt = { st: "pending", pr: "pending", q: "" };
     async function load() {
-      var [s, p, pr, rq, o] = await Promise.all([
+      var [s, p, pr, rq, o, rv, rp, bn] = await Promise.all([
         sb.from("stores").select("*,profiles(email)").order("created_at", { ascending: false }),
         sb.from("products").select("*,stores(name,slug)").order("updated_at", { ascending: false }).limit(2000),
         sb.from("promotions").select("*,stores(name,slug),products(title)").order("created_at", { ascending: false }),
         sb.from("plan_requests").select("*,stores(name,slug)").order("created_at", { ascending: false }),
-        sb.from("orders").select("*,stores(name,slug)").order("created_at", { ascending: false }).limit(500)
+        sb.from("orders").select("*,stores(name,slug)").order("created_at", { ascending: false }).limit(500),
+        sb.from("reviews").select("*,stores(name,slug)").order("created_at", { ascending: false }).limit(500),
+        sb.from("reports").select("*,stores(name,slug),products(title)").order("created_at", { ascending: false }).limit(500),
+        sb.from("banners").select("*").order("sort_order")
       ]);
-      D2 = { stores: s.data || [], products: p.data || [], promos: pr.data || [], preqs: rq.data || [], orders: o.data || [] };
+      D2 = { stores: s.data || [], products: p.data || [], promos: pr.data || [], preqs: rq.data || [], orders: o.data || [], reviews: rv.data || [], reports: rp.data || [], banners: bn.data || [] };
     }
     function cnt(arr, st) { return arr.filter(function (x) { return x.status === st; }).length; }
     function shell() {
-      var tabs = [["over", "Overview"], ["stores", "Stores", cnt(D2.stores, "pending")], ["products", "Products", cnt(D2.products, "pending")], ["promos", "Promotions", cnt(D2.promos, "pending")], ["pay", "Plan payments", cnt(D2.preqs, "pending")], ["orders", "Customer requests"], ["cats", "Categories"], ["plans", "Plans"]];
+      var tabs = [["over", "Overview"], ["stores", "Stores", cnt(D2.stores, "pending")], ["products", "Products", cnt(D2.products, "pending")], ["promos", "Promotions", cnt(D2.promos, "pending")], ["pay", "Plan payments", cnt(D2.preqs, "pending")], ["reviews", "Reviews", cnt(D2.reviews, "pending")], ["reports", "Reports", cnt(D2.reports, "open")], ["banners", "Banners"], ["orders", "Customer requests"], ["cats", "Categories"], ["plans", "Plans"]];
       app.innerHTML = '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="aB"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", "#" + tab); shell(); }); });
-      var fn = { over: aOver, stores: aStores, products: aProducts, promos: aPromos, pay: aPay, orders: aOrders, cats: aCats, plans: aPlans }[tab] || aOver; fn();
+      var fn = { over: aOver, stores: aStores, products: aProducts, promos: aPromos, pay: aPay, orders: aOrders, cats: aCats, plans: aPlans, reviews: aReviews, reports: aReports, banners: aBanners }[tab] || aOver; fn();
     }
     var B = function () { return $("#aB"); };
     async function act(promise) { var r = await promise; if (r && r.error) alert(r.error.message); await load(); shell(); }
@@ -677,6 +783,32 @@
           (r.status === "pending" ? '<div class="acts"><button class="mk-btn ok" data-a="ok" data-id="' + r.id + '">Confirm payment</button><button class="mk-btn no" data-a="no" data-id="' + r.id + '">Reject</button></div>' : "") + "</div>";
       }).join("") : emptyBox("🧾", "No payment requests")) + "</div>";
       $$("[data-a]", B()).forEach(function (b) { b.addEventListener("click", function () { var id = b.dataset.id, q = sb.from("plan_requests"); if (b.dataset.a === "ok" && confirm("Payment received? The plan will be activated.")) act(q.update({ status: "approved" }).eq("id", id)); if (b.dataset.a === "no") { var n = prompt("Reason:"); if (n !== null) act(q.update({ status: "rejected", admin_note: n }).eq("id", id)); } }); });
+    }
+
+    function aReviews() {
+      B().innerHTML = '<div class="mk-list">' + (D2.reviews.length ? D2.reviews.map(function (r) {
+        return '<div class="mk-row"><div class="mid"><b>' + stars(r.rating) + " " + esc(r.name) + "</b><small>🏪 " + esc((r.stores || {}).name || "") + " · " + dateFmt(r.created_at) + "</small>" + (r.comment ? "<small>💬 " + esc(r.comment) + "</small>" : "") + "</div>" + stLabel(r.status) +
+          '<div class="acts">' + (r.status !== "approved" ? '<button class="mk-btn ok" data-a="ok" data-id="' + r.id + '">Approve</button>' : "") + (r.status !== "rejected" ? '<button class="mk-btn no" data-a="no" data-id="' + r.id + '">Reject</button>' : "") + '<button class="mk-btn no" data-a="del" data-id="' + r.id + '">Delete</button></div></div>';
+      }).join("") : emptyBox("⭐", "No reviews")) + "</div>";
+      $$("[data-a]", B()).forEach(function (b) { b.addEventListener("click", function () { var q = sb.from("reviews"), id = b.dataset.id; if (b.dataset.a === "ok") act(q.update({ status: "approved" }).eq("id", id)); if (b.dataset.a === "no") act(q.update({ status: "rejected" }).eq("id", id)); if (b.dataset.a === "del" && confirm("Delete this review?")) act(q.delete().eq("id", id)); }); });
+    }
+    function aReports() {
+      B().innerHTML = '<div class="mk-list">' + (D2.reports.length ? D2.reports.map(function (r) {
+        return '<div class="mk-row"><div class="mid"><b>⚑ ' + esc(t(r.reason) || r.reason) + "</b><small>🏪 " + esc((r.stores || {}).name || "") + (r.products ? " · 📦 " + esc(r.products.title) : "") + " · " + dateFmt(r.created_at) + "</small>" + (r.details ? "<small>" + esc(r.details) + "</small>" : "") + (r.contact ? "<small>📞 " + esc(r.contact) + "</small>" : "") + '</div><span class="mk-status ' + (r.status === "open" ? "s-pending" : "s-approved") + '">' + esc(r.status) + "</span>" +
+          '<div class="acts">' + (r.product_id ? '<a class="mk-btn" target="_blank" href="/product.html?id=' + r.product_id + '">View product</a>' : "") + (r.stores ? '<a class="mk-btn" target="_blank" href="/store/' + esc(r.stores.slug) + '">View store</a>' : "") + (r.status === "open" ? '<button class="mk-btn ok" data-id="' + r.id + '">Mark handled</button>' : "") + "</div></div>";
+      }).join("") : emptyBox("⚑", "No reports")) + "</div>";
+      $$("button[data-id]", B()).forEach(function (b) { b.addEventListener("click", function () { act(sb.from("reports").update({ status: "closed" }).eq("id", b.dataset.id)); }); });
+    }
+    function aBanners() {
+      var img = "";
+      B().innerHTML = '<p class="mk-small">Banners rotate at the top of the home page. Use wide images (about 1500 × 500). You can sell banner space to sellers.</p><div class="mk-list">' + D2.banners.map(function (b) {
+        return '<div class="mk-row"><img class="th" style="width:150px" src="' + esc(b.image_url) + '" alt=""><div class="mid"><b>' + esc(b.title || "—") + "</b><small>" + esc(b.link || "") + " · order " + b.sort_order + (b.ends_at ? " · until " + dateFmt(b.ends_at) : "") + "</small></div>" + '<span class="mk-status ' + (b.active ? "s-approved" : "s-hidden") + '">' + (b.active ? "on" : "off") + '</span><div class="acts"><button class="mk-btn" data-t="' + b.id + '">' + (b.active ? "Turn off" : "Turn on") + '</button><button class="mk-btn no" data-d="' + b.id + '">Delete</button></div></div>';
+      }).join("") + '</div><div class="mk-panel" style="margin-top:20px"><h3 style="margin-top:0">Add a banner</h3><form class="mk-form" id="bnF"><div class="full"><label>Image *</label><div class="mk-imgs" id="bnImg"></div></div><div><label>Title (optional)</label><input name="ti" maxlength="80"></div><div><label>Link (optional, e.g. /store/name)</label><input name="li" maxlength="200"></div><div><label>Order</label><input name="o" type="number" value="' + (D2.banners.length + 1) + '"></div><div><label>Show until (optional)</label><input name="e" type="date"></div><div class="full"><button class="btn btn-primary btn-sm">Add</button><div id="bnM"></div></div></form></div>';
+      function im() { var b = $("#bnImg"); b.innerHTML = img ? '<div class="im" style="width:200px"><img src="' + esc(img) + '" alt=""><button type="button">✕</button></div>' : '<label class="add">＋<input type="file" accept="image/*" hidden></label>'; var x = $("button", b); if (x) x.onclick = function () { img = ""; im(); }; var i = $("input", b); if (i) i.onchange = async function () { b.innerHTML = '<div class="add">…</div>'; try { img = await upload(i.files[0], "b"); } catch (e) { alert(e.message); } im(); }; }
+      im();
+      $("#bnF").onsubmit = function (e) { e.preventDefault(); var f = e.target; if (!img) return msg($("#bnM"), "err", "Choose an image."); act(sb.from("banners").insert({ image_url: img, title: f.ti.value.trim() || null, link: f.li.value.trim() || null, sort_order: +f.o.value || 0, ends_at: f.e.value ? new Date(f.e.value + "T23:59:59").toISOString() : null })); };
+      $$("[data-t]", B()).forEach(function (b) { b.onclick = function () { var x = D2.banners.filter(function (y) { return y.id === b.dataset.t; })[0]; act(sb.from("banners").update({ active: !x.active }).eq("id", x.id)); }; });
+      $$("[data-d]", B()).forEach(function (b) { b.onclick = function () { if (confirm("Delete this banner?")) act(sb.from("banners").delete().eq("id", b.dataset.d)); }; });
     }
 
     function aOrders() {

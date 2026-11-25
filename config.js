@@ -11,6 +11,7 @@ window.SITE_CONFIG = {
   // Promotion shown on every page (floating card + top bar). Set on: false to hide.
   promo: {
     on: true,
+    float: false,                  // bottom floating card (false = hidden)
     id: "dec2026",
     title: "December Umrah 2026", titleFr: "Omra de décembre 2026",
     dates: "26 Dec 2026 – 4 Jan 2027", datesFr: "26 déc. 2026 – 4 janv. 2027",

@@ -536,7 +536,7 @@
     ["contact.html?service=ziyarah", "Ziyarah", "Ziyarah", "ziyarah visit visite tour"],
     ["partners.html", "Agency partnership", "Partenariat agences", "partner partenaire agency agence representative représentant commission"],
     ["experiences.html", "Pilgrim experiences & photos", "Expériences et photos", "photos gallery galerie experiences témoignages testimonials pilgrims pèlerins"],
-    ["about.html", "About us", "À propos", "about propos company société abidjan cac registration"],
+    ["about.html", "About us", "À propos", "about propos company société abidjan marketplace"],
     ["contact.html", "Contact & quotation", "Contact et devis", "contact quotation devis enquiry demande phone téléphone whatsapp email address adresse"],
     ["track.html", "Track my booking", "Suivre mon dossier", "track suivi reference référence booking réservation status statut"],
     ["terms.html", "Terms, cancellation & refunds", "Conditions, annulation et remboursement", "terms conditions cancellation annulation refund remboursement"],
@@ -706,8 +706,8 @@
     var closed = false; try { closed = sessionStorage.getItem("promoClosed") === P.id; } catch (e) {}
     var fl = mk("aside", { "class": "promo-float", "aria-label": "Offer" });
     fl.innerHTML = '<button type="button" class="pf-x" aria-label="Close">✕</button><span class="pf-badge"></span><h4 class="pf-title"></h4><p class="pf-dates"></p><p class="pf-price"></p><p class="pf-count"></p><div class="pf-actions"><a class="btn btn-gold btn-sm pf-book" href="' + link + '"></a><button type="button" class="btn btn-outline btn-sm pf-add"></button></div>';
-    document.body.appendChild(fl);
-    if (!closed) setTimeout(function () { fl.classList.add("show"); }, 2500);
+    if (P.float !== false) document.body.appendChild(fl);
+    if (!closed && P.float !== false) setTimeout(function () { fl.classList.add("show"); }, 2500);
     fl.querySelector(".pf-x").addEventListener("click", function () { fl.classList.remove("show"); try { sessionStorage.setItem("promoClosed", P.id); } catch (e) {} });
     fl.querySelector(".pf-add").addEventListener("click", function () { promoAddToBasket(P); var b = document.querySelector(".bk-btn"); if (b) { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); } });
     fl.querySelector(".pf-book").addEventListener("click", function () { promoAddToBasket(P); });
@@ -718,7 +718,7 @@
     });
     // Big offer block on Home and Umrah pages
     var page = document.body.dataset.page;
-    if (page === "index" || page === "umrah") {
+    if (page === "index" || page === "umrah" || page === "travel") {
       var first = document.querySelector("#main > section");
       var sec = mk("section", { "class": "promo-sec" });
       sec.innerHTML = '<div class="container"><div class="promo-box"><div><span class="pf-badge"></span><h2 class="ps-title"></h2><p class="ps-sub"></p><div class="ps-facts"><span class="ps-dates"></span><span class="ps-from"></span></div></div><div class="ps-right"><p class="ps-price"></p><p class="ps-count"></p><a class="btn btn-gold ps-book" href="' + link + '"></a></div></div></div>';
@@ -799,7 +799,7 @@
     var kids = ["travel", "umrah", "hajj", "hotels", "visas"].map(function (k) { return menu.querySelector('[data-nav="' + k + '"]'); }).filter(Boolean);
     var wrap = mk("div", { "class": "nav-drop" });
     var btn = mk("button", { type: "button", "class": "nav-drop-btn", "aria-expanded": "false", "aria-controls": "navSub" });
-    var label = mk("span", { "data-fr": "Voyages & Omra", "data-ar": "السفريات والعمرة" }); label.textContent = "Travel & Umrah";
+    var label = mk("span", { "data-fr": "Voyages", "data-ar": "السفريات" }); label.textContent = "Travel";
     var sign = mk("span", { "class": "nav-drop-sign", "aria-hidden": "true" }); sign.textContent = "+";
     btn.appendChild(label); btn.appendChild(sign);
     var sub = mk("div", { "class": "nav-sub", id: "navSub" });
