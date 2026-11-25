@@ -12,7 +12,7 @@ function json(o, status) {
   return new Response(JSON.stringify(o), { status: status || 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
 
-const MODELS = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-2.5-flash"];
+const MODELS = ["gemini-3-flash-preview", "gemini-flash-lite-latest", "gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
 async function gemini(env, payload) {
   const list = (env.GEMINI_MODEL ? [env.GEMINI_MODEL] : []).concat(MODELS.filter((m) => m !== env.GEMINI_MODEL));
   let last;
@@ -96,7 +96,7 @@ export async function onRequestGet({ request, env }) {
   const lj = await lr.json().catch(() => ({}));
   const names = (lj.models || []).filter((m) => (m.supportedGenerationMethods || []).includes("generateContent")).map((m) => m.name.replace("models/", ""));
   const tests = {};
-  for (const model of names.filter((n) => /flash/.test(n)).slice(0, 8)) {
+  for (const model of MODELS) {
     const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(key), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Reply OK" }] }] }) });
     tests[model] = r.status;
   }
