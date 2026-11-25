@@ -13,7 +13,7 @@
   window.AMG_MARKET = sb;
 
   /* ---------------- i18n ---------------- */
-  function L() { try { return (window.AMG_SITE && window.AMG_SITE.lang()) || localStorage.getItem("lang") || "en"; } catch (e) { return "en"; } }
+  function L() { try { var q = (location.search.match(/[?&]lang=(en|fr|ar)/) || [])[1]; return (window.AMG_SITE && window.AMG_SITE.lang()) || q || localStorage.getItem("langUser") || localStorage.getItem("lang") || (localStorage.getItem("mk_country") === "NG" ? "en" : "fr"); } catch (e) { return "fr"; } }
   var D = {
     all: ["All", "Tout", "الكل"], search: ["Search products…", "Rechercher des produits…", "ابحث عن منتج…"], go: ["Search", "Rechercher", "بحث"],
     newest: ["Newest", "Plus récents", "الأحدث"], cheap: ["Price: low to high", "Prix croissant", "السعر: من الأقل"], dear: ["Price: high to low", "Prix décroissant", "السعر: من الأعلى"],
@@ -268,6 +268,7 @@
       '<h2>' + T("Welcome 👋", "Bienvenue 👋", "مرحبًا بك 👋") + '</h2><p class="wl-sub">' + T("The marketplace of Côte d’Ivoire and Nigeria. What would you like to do?", "La marketplace de Côte d’Ivoire et du Nigeria. Que voulez-vous faire ?", "سوق ساحل العاج ونيجيريا. ماذا تريد أن تفعل؟") + "</p>" +
       '<div class="wl-ch"><a href="/shop.html" data-go class="wl-b"><span>🛍️</span><b>' + T("I want to buy", "Je veux acheter", "أريد الشراء") + "</b><small>" + T("Find stores near you", "Trouvez des boutiques près de chez vous", "اعثر على متاجر قريبة منك") + '</small></a>' +
       '<a href="/sell.html" data-go class="wl-b gold"><span>🏪</span><b>' + T("I want to sell", "Je veux vendre", "أريد البيع") + "</b><small>" + T("Open your store — free", "Ouvrez votre boutique — gratuit", "افتح متجرك مجانًا") + "</small></a></div>" +
+      '<button type="button" class="wl-skip" data-tuto style="text-decoration:none;color:#B78A32;font-weight:700">▶ ' + T("How to open my store (video)", "Comment ouvrir ma boutique (vidéo)", "كيف أفتح متجري (فيديو)") + "</button>" +
       '<button type="button" class="wl-vid" data-vid><img src="/lancement.jpg" alt=""><span class="pl">▶</span><span class="lb">' + T("Discover in 50 seconds", "Découvrir en 50 secondes", "اكتشف في 50 ثانية") + "</span></button>" +
       '<button type="button" class="wl-skip">' + T("Just browse", "Visiter le site", "تصفح الموقع") + " →</button></div>";
     document.body.appendChild(m);
@@ -278,6 +279,16 @@
     $("[data-vid]", m).onclick = function () { var b = this; b.outerHTML = '<video class="wl-video" src="/lancement.mp4?v=2" poster="/lancement.jpg" controls autoplay playsinline></video>'; done(); };
   }
   window.AMG_WELCOME = welcome;
+  function tutoModal() {
+    var lg = L() === "fr" ? "fr" : "en";
+    var m = document.createElement("div"); m.className = "mk-modal mk-wel";
+    m.innerHTML = '<div class="box" style="width:min(900px,100%)"><button class="x" type="button" aria-label="close">✕</button><h3 style="margin:0 0 10px;color:#101B45">' + (lg === "fr" ? "Comment ouvrir votre boutique et ajouter vos produits" : "How to open your store and add your products") + '</h3><video class="wl-video" style="max-height:none;aspect-ratio:16/9" src="/tuto-' + lg + '.mp4" poster="/tuto-' + lg + '.jpg" controls autoplay playsinline></video><p style="margin:12px 0 0"><a class="btn btn-primary btn-sm" href="/sell.html">' + (lg === "fr" ? "Ouvrir ma boutique" : "Open my store") + "</a></p></div>";
+    document.body.appendChild(m);
+    function close() { var v = $("video", m); if (v) v.pause(); m.remove(); }
+    $(".x", m).onclick = close; m.addEventListener("click", function (e) { if (e.target === m) close(); });
+  }
+  window.AMG_TUTO = tutoModal;
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#tutoBtn,[data-tuto]")) { e.preventDefault(); tutoModal(); } });
 
   async function pageHome() {
     setTimeout(function () { welcome(false); }, 900);
@@ -732,7 +743,7 @@
       var nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
       var tabs = [["over", t("t_over")], ["prod", t("t_prod"), data.products.length], ["req", t("t_req"), nNew], ["promo", t("t_promo")], ["store", t("t_store")], ["plan", t("t_plan")]];
       app.innerHTML = (adminView ? '<div class="mk-msg warn">' + t("admin_mode") + ' <a href="/manage.html">' + t("to_admin") + "</a></div>" : "") +
-        '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
+        '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button type="button" class="mk-btn" data-tuto>▶ ' + (L() === "fr" ? "Tutoriel" : "Tutorial") + '</button><button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
         '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="tabBody"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", location.pathname + location.search + "#" + tab); shell(); }); });
       $("#lo").addEventListener("click", async function () { await sb.auth.signOut(); location.href = "/sell.html?mode=login"; });
@@ -1077,5 +1088,6 @@
     });
   }
   var run = { contact: pageContact, home: pageHome, shop: pageShop, store: pageStore, product: pageProduct, sell: pageSell, manage: pageManage }[page];
-  if (run) run().catch(function (e) { console.error(e); var b = document.querySelector("[data-mk-root]"); if (b) b.innerHTML = '<div class="mk-msg err">' + t("fail") + "</div>"; });
+  function go() { if (run) run().catch(function (e) { console.error(e); var b = document.querySelector("[data-mk-root]"); if (b) b.innerHTML = '<div class="mk-msg err">' + t("fail") + "</div>"; }); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go); else go();
 })();
