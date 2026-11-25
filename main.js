@@ -1643,10 +1643,10 @@
     document.querySelectorAll(".year").forEach(function (y) { y.textContent = new Date().getFullYear(); });
     var q = new URLSearchParams(location.search).get("lang");
     var nl = (navigator.language || "").toLowerCase();
-    var initial = q || store.get("lang") || (nl.indexOf("fr") === 0 ? "fr" : nl.indexOf("ar") === 0 ? "ar" : "en");
+    var initial = q || store.get("langUser") || (nl.indexOf("ar") === 0 ? "ar" : "fr"); // French is the main language
     document.querySelectorAll(".lang").forEach(function (g) { if (!g.querySelector('[data-setlang="ar"]')) { var b = mk("button", { type: "button", "data-setlang": "ar", "aria-pressed": "false", lang: "ar", title: "العربية" }); b.textContent = "ع"; g.appendChild(b); } });
     cmsMark(); cmsInit(); badalOption();
-    document.querySelectorAll("[data-setlang]").forEach(function (b) { b.addEventListener("click", function () { applyLang(b.dataset.setlang); }); });
+    document.querySelectorAll("[data-setlang]").forEach(function (b) { b.addEventListener("click", function () { store.set("langUser", b.dataset.setlang); applyLang(b.dataset.setlang); }); });
     initNav(); initReveal(); initImages(); initRouting(); initQuick(); initChat(); initForms(); initLightbox(); initTrack(); initTurnstile();
     initExtras();
     cmsApply(CMS);
