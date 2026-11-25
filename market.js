@@ -227,6 +227,19 @@
       "<h3>" + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</h3><span class="meta">' + esc(catName(catById(s.category_id))) + (s.city ? " · " + esc(s.city) : "") + (n != null ? " · " + n + " " + t("products") : "") + "</span></div></a>";
   }
 
+  /* home: one card per store (store name + what's new / its offers), details inside the store */
+  function groupByStore(list) {
+    var g = {}, order = [];
+    (list || []).forEach(function (p) { if (!p || !p.store_id) return; if (!g[p.store_id]) { g[p.store_id] = { p: p, items: [] }; order.push(p.store_id); } g[p.store_id].items.push(p); });
+    return order.map(function (id) { return g[id]; });
+  }
+  function storeOffer(gr, smap, badge, sub) {
+    var p = gr.p, s = Object.assign({}, p.stores || {}, smap[p.store_id] || {}), img = (p.images || [])[0];
+    return '<a class="mk-store mk-offer" href="/' + esc(s.slug || "") + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + ">" + (badge ? '<span class="ob">' + badge + "</span>" : "") + '</div><div class="info">' +
+      (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name || "") + "</span>") +
+      "<h3>" + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + '</h3><span class="meta">' + (s.city ? esc(s.city) + " · " : "") + sub + '</span><span class="go">' + (L() === "fr" ? "Voir la boutique →" : L() === "ar" ? "ادخل المتجر ←" : "Visit store →") + "</span></div></a>";
+  }
+
   /* live search: suggestions while typing (stores, products, categories) */
   function liveSearch(input) {
     if (!input || input.dataset.live) return; input.dataset.live = 1;
@@ -300,7 +313,7 @@
     var [cnt, stc, recent, feat, stores] = await Promise.all([
       sb.from("products").select("category_id,store_id").eq("status", "approved").limit(5000),
       sb.from("stores").select("category_id").eq("status", "approved").limit(5000),
-      PQ().order("created_at", { ascending: false }).limit(12),
+      PQ().order("created_at", { ascending: false }).limit(80),
       PQ().gt("featured_until", new Date().toISOString()).limit(8),
       (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("country", CC) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
     ]);
@@ -336,7 +349,9 @@
     }
     rerender = function () {
       $("#mkDealsWrap").classList.toggle("mk-hide", !deals.length);
-      $("#mkDeals").innerHTML = deals.map(function (p) { return card(p, pm); }).join("");
+      var smap = {}; (stores.data || []).forEach(function (x) { smap[x.id] = x; });
+      var LF = L() === "fr", LA = L() === "ar";
+      $("#mkDeals").innerHTML = groupByStore(deals).map(function (g) { var mx = Math.max.apply(null, g.items.map(function (p) { return priceOf(p, pm).off; })); return storeOffer(g, smap, "-" + mx + "%", g.items.length + " " + (LF ? "offre(s)" : LA ? "عرض" : "deal(s)")); }).join("");
       $("#mkRecentWrap").classList.toggle("mk-hide", !recentList.length);
       $("#mkRecent").innerHTML = recentList.slice(0, 8).map(function (p) { return card(p, pm); }).join("");
       var st = $("#mkStats"); if (st) st.innerHTML = "<div><b>" + (cnt.data || []).length + "</b>" + t("products") + "</div><div><b>" + Object.keys(byStore).length + "</b>" + t("stores") + "</div><div><b>" + (CATS.length) + "</b>" + (L() === "fr" ? "catégories" : L() === "ar" ? "أقسام" : "categories") + "</div>";
@@ -347,9 +362,9 @@
       }).join("");
       var f = feat.data || [];
       $("#mkFeatWrap").classList.toggle("mk-hide", !f.length);
-      $("#mkFeat").innerHTML = f.map(function (p) { return card(p, pm); }).join("");
+      $("#mkFeat").innerHTML = groupByStore(f).map(function (g) { return storeOffer(g, smap, "⭐", g.items.length + " " + (LF ? "produit(s) à la une" : LA ? "منتج مميز" : "featured")); }).join("");
       var r = recent.data || [];
-      $("#mkNew").innerHTML = r.length ? r.map(function (p) { return card(p, pm); }).join("") : emptyBox("🛍️", t("none"), t("none_hint"), true);
+      $("#mkNew").innerHTML = r.length ? groupByStore(r).slice(0, 8).map(function (g) { return storeOffer(g, smap, (LF ? "Nouveau" : LA ? "جديد" : "New"), g.items.length + " " + (LF ? "nouveauté(s)" : LA ? "جديد" : "new")); }).join("") : emptyBox("🛍️", t("none"), t("none_hint"), true);
       var s = stores.data || [];
       $("#mkStoresWrap").classList.toggle("mk-hide", !s.length);
       $("#mkStores").innerHTML = s.map(function (x) { return storeCard(x, byStore[x.id] || 0); }).join("");

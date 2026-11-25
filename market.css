@@ -238,3 +238,6 @@
 .wl-vid .lb{position:absolute;left:0;right:0;bottom:12px;color:#fff;font-weight:700}
 .wl-video{width:100%;max-height:62vh;border-radius:16px;margin-top:12px;background:#000}
 .wl-skip{margin-top:10px;background:none;border:0;color:var(--muted);font-size:.9rem;cursor:pointer;text-decoration:underline}
+.mk-offer .cover{position:relative;height:150px;background-size:cover;background-position:center;background-color:#eef0f6}
+.mk-offer .ob{position:absolute;top:10px;inset-inline-start:10px;background:#B78A32;color:#fff;font-weight:800;font-size:.85rem;padding:4px 10px;border-radius:20px}
+.mk-offer .go{display:block;margin-top:6px;color:#B78A32;font-weight:700;font-size:.85rem}
