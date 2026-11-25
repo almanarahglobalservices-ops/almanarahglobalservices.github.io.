@@ -773,14 +773,14 @@
   var HB = { city: "both", nMak: 5, nMed: 4, date: "", hMak: "", hMed: "", sMak: 0, sMed: 0, lMak: "", lMed: "", xMak: false, xMed: false, dist: "walk", room: "Double", rooms: 1, adults: 2, kids: 0, meals: "bb", budget: "" };
   function initNavHotels() {
     var menu = document.getElementById("menu");
-    if (menu && !menu.querySelector('[data-nav="hotels"]')) {
+    if (false && menu && !menu.querySelector('[data-nav="hotels"]')) { // marketplace menu: travel lives in the AL MANARAH TRAVELS store
       var u = menu.querySelector('[data-nav="umrah"]');
       var a = mk("a", { href: "hotels.html", "data-nav": "hotels", "data-fr": "Hôtels" }); a.textContent = "Hotels";
       if (document.body.dataset.page === "hotels") { a.className = "active"; a.setAttribute("aria-current", "page"); }
       if (u) u.parentNode.insertBefore(a, u.nextSibling); else menu.appendChild(a);
     }
     document.querySelectorAll('a[href="contact.html?service=hotels"]').forEach(function (l) { l.href = "hotels.html"; });
-    if (menu && !menu.querySelector('[data-nav="library"]')) {
+    if (false && menu && !menu.querySelector('[data-nav="library"]')) {
       var p = menu.querySelector('[data-nav="partners"]');
       var lb = mk("a", { href: "library.html", "data-nav": "library", "data-fr": "Bibliothèque" }); lb.textContent = "Library";
       if (p) p.parentNode.insertBefore(lb, p); else menu.appendChild(lb);
