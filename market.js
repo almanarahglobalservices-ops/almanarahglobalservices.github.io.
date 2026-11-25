@@ -203,6 +203,21 @@
   async function cats() { if (CATS) return CATS; var r = await sb.from("categories").select("*").order("sort_order"); CATS = r.data || []; return CATS; }
   async function plans() { if (PLANS) return PLANS; var r = await sb.from("plans").select("*").order("sort_order"); PLANS = r.data || []; return PLANS; }
   function catById(id) { return (CATS || []).filter(function (c) { return c.id === id; })[0]; }
+  /* "Create my brand" service: name, logo, visual identity + 1 month follow-up (20 000 FCFA). Goes to AL MANARAH's messages. */
+  var BRAND_PRICE = 20000;
+  function brandCard(btn) {
+    return '<div class="mk-brand"><div class="ic">🎨</div><div class="tx"><b>' + T3x("No name, logo or identity yet? We create your brand", "Pas encore de nom, de logo ou d’identité ? Nous créons votre marque", "ليس لديك اسم أو شعار أو هوية؟ نصنع لك علامتك التجارية") + '</b><span>' +
+      T3x("Business name, logo, colours and visual identity, ready for your store and social media — with 1 month of follow-up.", "Nom commercial, logo, couleurs et identité visuelle, prêts pour votre boutique et vos réseaux sociaux — avec 1 mois de suivi.", "الاسم التجاري والشعار والألوان والهوية البصرية، جاهزة لمتجرك ولشبكات التواصل — مع متابعة لمدة شهر.") +
+      '</span><em>' + money(BRAND_PRICE, "XOF") + "</em></div>" + (btn || "") + "</div>";
+  }
+  async function brandRequest(st, phone) {
+    var lines = ["🎨 Brand creation — " + money(BRAND_PRICE, "XOF") + " (name, logo, identity + 1 month follow-up)", "Store: " + (st.name || "-") + (st.slug ? " (" + storeUrl(st.slug) + ")" : ""), "Owner: " + (st.owner_name || "-"), "City: " + (st.city || "-") + " · " + (st.country || ""), "Phone: " + (phone || st.phone || "-") + (st.whatsapp ? " · WA " + st.whatsapp : "")];
+    var a = { p_name: st.owner_name || st.name || "Seller", p_phone: phone || st.phone || null, p_email: null, p_country: st.country || null, p_message: lines.join("\n") };
+    var r = await sb.rpc("submit_message", Object.assign({ p_subject: "brand" }, a));
+    if (r.error) r = await sb.rpc("submit_message", Object.assign({ p_subject: "other" }, a));
+    if (!r.error) try { localStorage.setItem("mk_brand_" + (st.slug || st.name), "1"); } catch (e) {}
+    return !r.error;
+  }
   function isHealth(id) { var c = catById(id); return !!c && c.slug === "sante"; }
   /* AI fill: the photo and a few words become title, description, category and condition.
      Runs on our own server (/api/ai-fill); the AI key never reaches the browser. */
@@ -813,6 +828,7 @@
       PAYS.map(function (p) { var cc = PAYS_ALL.NG.indexOf(p) > -1 ? "NG" : "CI"; return '<div class="pay-f" data-c="' + cc + '"><label>' + p[1] + '</label><input name="' + p[0] + '" type="text" maxlength="' + (p[0] === "pay_bank" ? 80 : 30) + '" value="' + esc(s[p[0]] || "") + '"></div>'; }).join("") +
       '<div class="full"><label>' + t("pay_name") + '</label><input name="pay_name" maxlength="80" value="' + esc(s.pay_name || "") + '"></div>' +
       '<div><label>' + t("logo") + '</label><div class="mk-imgs" id="lgBox"></div></div><div><label>' + t("cover") + '</label><div class="mk-imgs" id="cvBox"></div></div>' +
+      (s.id ? "" : '<div class="full">' + brandCard('<label class="mk-brand-ck"><input type="checkbox" name="brand"> ' + T3x("Yes, help me", "Oui, aidez-moi", "نعم، ساعدوني") + "</label>") + '<div class="hint">' + T3x("If you tick this, you can put a temporary name now; we will update it with you.", "Si vous cochez, mettez un nom provisoire pour l’instant ; nous le changerons avec vous.", "إن اخترت هذا فاكتب اسمًا مؤقتًا الآن، وسنغيّره معك لاحقًا.") + "</div></div>") +
       (s.id ? "" : '<div class="full"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:600"><input type="checkbox" name="agree" style="width:auto;margin-top:4px"> <span>' + t("agree") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + "</a> — AL MANARAH GLOBAL SERVICES.</span></label></div>") +
       '<div class="full"><button class="btn btn-primary" type="submit">' + (s.id ? t("save") : t("create_store")) + '</button><div id="stM"></div></div></form>';
   }
@@ -841,7 +857,7 @@
       if (RESERVED.indexOf(row.slug) > -1) return msg(M, "err", t("slug_taken"));
       if (!s.id) { if (!f.agree.checked) return msg(M, "err", t("agree_err")); row.owner_id = u.id; row.accepted_terms_at = new Date().toISOString(); }
       b.disabled = true; var err = await save(row); b.disabled = false;
-      if (err) msg(M, "err", /stores_slug_key|duplicate/.test(err.message || "") ? t("slug_taken") : esc(err.message)); else msg(M, "ok", t("saved"));
+      if (err) msg(M, "err", /stores_slug_key|duplicate/.test(err.message || "") ? t("slug_taken") : esc(err.message)); else { msg(M, "ok", t("saved")); if (f.brand && f.brand.checked) brandRequest(Object.assign({}, row, { name: row.name }), row.phone); }
     });
   }
 
@@ -900,10 +916,17 @@
       var totSold = data.products.reduce(function (a, p) { return a + (p.sold || 0); }, 0), low = data.products.filter(function (p) { return p.stock != null && p.stock <= 3; }).length;
       B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + totSold + "</b><span>" + T3x("items sold", "articles vendus", "قطعة مُباعة") + '</span></div><div class="mk-kpi"><b' + (low ? ' style="color:#b7791f"' : "") + ">" + low + "</b><span>" + T3x("low / out of stock", "stock faible / épuisé", "مخزون قليل / نافد") + "</span></div>" + '<div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
         '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
+        (function () { var sent = false; try { sent = localStorage.getItem("mk_brand_" + store.slug) === "1"; } catch (e) {} return '<div style="margin-top:22px">' + brandCard(sent ? '<span class="mk-status s-approved">' + T3x("Request sent ✔", "Demande envoyée ✔", "أُرسل الطلب ✔") + "</span>" : '<button type="button" class="mk-btn gold" id="brandGo">' + T3x("I want my brand", "Je veux ma marque", "أريد علامتي التجارية") + "</button>") + '<div id="brandM"></div></div>'; })() +
         '<p style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="goAdd" type="button">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" id="goEdit" type="button">' + t("t_store") + "</button></p>" +
         '<p class="mk-small">' + T3x("You can change your store details at any time: name, city, country (or both countries), phone, WhatsApp, logo, sections and payment numbers.", "Vous pouvez modifier les informations de votre boutique à tout moment : nom, ville, pays (ou les deux pays), téléphone, WhatsApp, logo, rubriques et numéros de paiement.", "يمكنك تعديل بيانات متجرك في أي وقت: الاسم، المدينة، الدولة (أو البلدين)، الهاتف، واتساب، الشعار، الأقسام وأرقام الدفع.") + "</p>";
       $("#cp").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
       $("#goAdd").addEventListener("click", function () { productModal(null); });
+      var bg = $("#brandGo"); if (bg) bg.addEventListener("click", async function () {
+        if (!confirm(T3x("Request the brand creation service (" + money(BRAND_PRICE, "XOF") + ")? AL MANARAH will contact you.", "Demander la création de votre marque (" + money(BRAND_PRICE, "XOF") + ") ? AL MANARAH vous contactera.", "طلب خدمة صناعة العلامة التجارية (" + money(BRAND_PRICE, "XOF") + ")؟ ستتواصل معك المنارة."))) return;
+        bg.disabled = true; var ok = await brandRequest(store);
+        msg($("#brandM"), ok ? "ok" : "err", ok ? T3x("Thank you! AL MANARAH will contact you soon.", "Merci ! AL MANARAH vous contactera très vite.", "شكرًا! ستتواصل معك المنارة قريبًا.") : t("fail"));
+        if (ok) bg.outerHTML = '<span class="mk-status s-approved">' + T3x("Request sent ✔", "Demande envoyée ✔", "أُرسل الطلب ✔") + "</span>"; else bg.disabled = false;
+      });
       $("#goEdit").addEventListener("click", function () { var b = document.querySelector('.mk-tabs [data-t="store"]'); if (b) b.click(); window.scrollTo(0, 0); });
       $("#ovQr").addEventListener("click", function () { qrModal(store); });
     }
@@ -1280,7 +1303,7 @@
       $$("button[data-id]", B()).forEach(function (b) { b.addEventListener("click", function () { act(sb.from("reports").update({ status: "closed" }).eq("id", b.dataset.id)); }); });
     }
     function aMsgs() {
-      var SUBJ = { question: "General question", open_store: "Open a store", plan: "Plan / payment", ads: "Advertising", problem: "Problem", other: "Other" };
+      var SUBJ = { brand: "🎨 Brand creation (20 000 FCFA)", question: "General question", open_store: "Open a store", plan: "Plan / payment", ads: "Advertising", problem: "Problem", other: "Other" };
       B().innerHTML = '<div class="mk-list">' + (D2.msgs.length ? D2.msgs.map(function (r) {
         return '<div class="mk-row"><div class="mid"><b>✉ ' + esc(r.name) + " — " + esc(SUBJ[r.subject] || r.subject) + "</b><small>" + (r.country ? cName(r.country) + " · " : "") + dateFmt(r.created_at) + "</small><small style=\"white-space:pre-wrap;color:var(--ink)\">" + esc(r.message) + "</small>" + (r.phone ? "<small>📞 " + esc(r.phone) + "</small>" : "") + (r.email ? "<small>✉ " + esc(r.email) + "</small>" : "") + "</div>" +
           '<div class="acts">' + (r.phone && wa(r.phone) ? '<a class="mk-btn" target="_blank" rel="noopener" href="' + wa(r.phone, "AL MANARAH GLOBAL SERVICES — ") + '">WhatsApp</a>' : "") + (r.email ? '<a class="mk-btn" href="mailto:' + esc(r.email) + '">E-mail</a>' : "") + (r.status === "open" ? '<button class="mk-btn ok" data-mid="' + r.id + '">Mark handled</button>' : '<span class="mk-small">✓ handled</span>') + '<button class="mk-btn no" data-mdel="' + r.id + '">Delete</button></div></div>';
