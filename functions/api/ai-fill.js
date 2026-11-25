@@ -79,3 +79,14 @@ Rules:
     condition: ["new", "used", "refurbished"].includes(out.condition) ? out.condition : "new"
   });
 }
+
+// Diagnostic (temporary): GET /api/ai-fill?check=1 tells whether the AI service answers. No secret is shown.
+export async function onRequestGet({ request, env }) {
+  if (new URL(request.url).searchParams.get("check") !== "1") return json({ error: "NO" }, 404);
+  const key = env.GEMINI_API_KEY;
+  if (!key) return json({ key: false });
+  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(key), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Reply with the word OK" }] }] }) });
+  const txt = await r.text();
+  return json({ key: true, keyLength: key.length, model, status: r.status, body: txt.slice(0, 600) });
+}
