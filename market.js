@@ -218,6 +218,10 @@
     if (!r.error) try { localStorage.setItem("mk_brand_" + (st.slug || st.name), "1"); } catch (e) {}
     return !r.error;
   }
+  /* visitor statistics for store owners (anonymous visitor id, no personal data) */
+  function vid() { try { var v = localStorage.getItem("mk_vid"); if (!v) { v = rnd() + rnd(); localStorage.setItem("mk_vid", v); } return v; } catch (e) { return ""; } }
+  function track(kind, storeId, productId) { if (!storeId) return; var v = vid(); if (v.length < 8) return; try { sb.rpc("track_event", { p_store: storeId, p_product: productId || null, p_kind: kind, p_visitor: v }).then(function () {}, function () {}); } catch (e) {} }
+  document.addEventListener("click", function (e) { var a = e.target.closest && e.target.closest('a[href^="https://wa.me/"]'); if (a && window.__mkStore) track("wa", window.__mkStore, window.__mkProduct || null); }, true);
   function isHealth(id) { var c = catById(id); return !!c && c.slug === "sante"; }
   /* AI fill: the photo and a few words become title, description, category and condition.
      Runs on our own server (/api/ai-fill); the AI key never reaches the browser. */
@@ -544,9 +548,19 @@
     var md = document.querySelector('meta[name="description"]'); if (md && s.description) md.content = s.description.slice(0, 160);
     var pr = await sb.from("products").select(PSEL).eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(1000);
     var items = pr.data || [], pm = await promoMap(items), state = { q: "", cat: 0 };
+    window.__mkStore = s.id; window.__mkProduct = null;
+    track("view", s.id); setInterval(function () { if (!document.hidden) track("view", s.id); }, 120000);
+    var waNum = s.whatsapp || s.phone;
+    if (wa(waNum) && !document.getElementById("stFab")) {
+      var fab = document.createElement("a"); fab.id = "stFab"; fab.className = "mk-wafab"; fab.target = "_blank"; fab.rel = "noopener";
+      fab.href = wa(waNum, t("wa_store") + " " + storeUrl(s.slug));
+      fab.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg><span>' + T3x("Chat with the seller", "Discuter avec le vendeur", "تحدث مع البائع") + "</span>";
+      document.body.appendChild(fab);
+    }
     /* the owner sees a "manage" bar on their own store page */
     user().then(function (u) {
       if (!u || u.id !== s.owner_id || document.getElementById("ownBar")) return;
+      var f0 = document.getElementById("stFab"); if (f0) f0.remove();
       var bar = document.createElement("div"); bar.id = "ownBar"; bar.className = "mk-ownbar";
       bar.innerHTML = "<span>" + T3x("This is your store", "C’est votre boutique", "هذا متجرك") + '</span><a class="mk-btn gold" href="/sell.html#add">＋ ' + t("add_prod") + '</a><a class="mk-btn" href="/sell.html#quick">⚡ ' + T3x("Many products", "Plusieurs produits", "منتجات كثيرة") + '</a><a class="mk-btn" href="/sell.html#prod">⚙ ' + T3x("Manage", "Gérer", "إدارة") + "</a>";
       document.body.appendChild(bar);
@@ -711,6 +725,7 @@
     var r = await sb.from("products").select("*,stores(id,name,slug,logo_url,city,country,phone,whatsapp,verified,status,pay_mtn,pay_orange,pay_moov,pay_wave,pay_opay,pay_palmpay,pay_bank,pay_name)").eq("id", id).maybeSingle(), p = r.data;
     if (!p) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
     document.title = p.title + " | AL MANARAH GLOBAL SERVICES";
+    window.__mkStore = p.store_id; window.__mkProduct = p.id; track("view", p.store_id); track("product", p.store_id, p.id);
     var s = p.stores || {}, pm = await promoMap([p]), pr = priceOf(p, pm), imgs = p.images || [], cur = 0;
     var [more, sim, st] = await Promise.all([
       sb.from("products").select(PSEL).eq("store_id", p.store_id).eq("status", "approved").neq("id", p.id).limit(8),
@@ -928,7 +943,7 @@
       var pl = plan(), link = storeUrl(store.slug), nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
       var banner = store.status === "pending" ? '<div class="mk-msg warn">' + t("store_pending") + "</div>" : store.status === "rejected" ? '<div class="mk-msg err">' + t("store_rejected") + (store.admin_note ? "<br>" + t("note_from") + " " + esc(store.admin_note) : "") + "</div>" : store.status === "suspended" ? '<div class="mk-msg err">' + t("store_suspended") + (store.admin_note ? "<br>" + esc(store.admin_note) : "") + "</div>" : "";
       var totSold = data.products.reduce(function (a, p) { return a + (p.sold || 0); }, 0), low = data.products.filter(function (p) { return p.stock != null && p.stock <= 3; }).length;
-      B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + totSold + "</b><span>" + T3x("items sold", "articles vendus", "قطعة مُباعة") + '</span></div><div class="mk-kpi"><b' + (low ? ' style="color:#b7791f"' : "") + ">" + low + "</b><span>" + T3x("low / out of stock", "stock faible / épuisé", "مخزون قليل / نافد") + "</span></div>" + '<div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
+      B().innerHTML = banner + '<div class="mk-visits" id="mkVisits"><div class="mk-skel" style="min-height:90px"></div></div>' + '<div class="mk-kpis"><div class="mk-kpi"><b>' + totSold + "</b><span>" + T3x("items sold", "articles vendus", "قطعة مُباعة") + '</span></div><div class="mk-kpi"><b' + (low ? ' style="color:#b7791f"' : "") + ">" + low + "</b><span>" + T3x("low / out of stock", "stock faible / épuisé", "مخزون قليل / نافد") + "</span></div>" + '<div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
         '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
         (function () { var sent = false; try { sent = localStorage.getItem("mk_brand_" + store.slug) === "1"; } catch (e) {} return '<div style="margin-top:22px">' + brandCard(sent ? '<span class="mk-status s-approved">' + T3x("Request sent ✔", "Demande envoyée ✔", "أُرسل الطلب ✔") + "</span>" : '<button type="button" class="mk-btn gold" id="brandGo">' + T3x("I want my brand", "Je veux ma marque", "أريد علامتي التجارية") + "</button>") + '<div id="brandM"></div></div>'; })() +
 
@@ -943,8 +958,22 @@
       });
 
       $("#ovQr").addEventListener("click", function () { qrModal(store); });
+      loadVisits();
     }
 
+    var visitTimer;
+    async function loadVisits() {
+      clearTimeout(visitTimer);
+      var box = $("#mkVisits"); if (!box) return;
+      var r = await sb.rpc("store_stats", { p_store: store.id }), v = r.data;
+      if (!$("#mkVisits")) return;
+      if (r.error || !v) { box.remove(); return; }
+      var top = (v.top || []).map(function (x) { return "<li>" + esc(x.title) + " <b>" + x.n + "</b></li>"; }).join("");
+      box.innerHTML = (v.live ? '<div class="live"><span class="dot"></span>' + T3x(v.live + " person(s) browsing your store now", v.live + " personne(s) regardent votre boutique en ce moment", v.live + " شخص يتصفح متجرك الآن") + "</div>" : "") +
+        '<div class="nums"><div><b>' + v.today + "</b><span>" + T3x("visitors today", "visiteurs aujourd’hui", "زائر اليوم") + "</span></div><div><b>" + v.week + "</b><span>" + T3x("this week", "cette semaine", "هذا الأسبوع") + "</span></div><div><b>" + v.month + "</b><span>" + T3x("this month", "ce mois", "هذا الشهر") + "</span></div><div><b>" + v.wa + "</b><span>" + T3x("WhatsApp clicks (7 days)", "clics WhatsApp (7 jours)", "ضغطة واتساب (7 أيام)") + "</span></div></div>" +
+        (top ? '<div class="top"><small>🔥 ' + T3x("Most viewed products (30 days)", "Produits les plus vus (30 jours)", "أكثر المنتجات مشاهدة (30 يومًا)") + "</small><ol>" + top + "</ol></div>" : '<p class="mk-small" style="margin:6px 0 0">' + T3x("Share your store link to get visitors.", "Partagez le lien de votre boutique pour avoir des visiteurs.", "انشر رابط متجرك ليأتيك الزوار.") + "</p>");
+      if (tab === "over") visitTimer = setTimeout(loadVisits, 60000);
+    }
     function stockLine(p) {
       var sold = p.sold || 0;
       if (p.stock == null) return '<small>📦 ' + T3x("Stock not tracked", "Stock non suivi", "المخزون غير محدد") + " · " + T3x("Sold", "Vendus", "مُباع") + ": <strong>" + sold + "</strong></small>";

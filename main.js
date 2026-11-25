@@ -1084,6 +1084,8 @@
   // Live chat (Crisp)
   function initChat() {
     if (window.$crisp) return;
+    /* inside a seller's store or product, customers talk to that seller (WhatsApp), not to AL MANARAH */
+    if (/^market-(store|product)$/.test(document.body.dataset.page || "")) return;
     window.$crisp = [];
     window.CRISP_WEBSITE_ID = "a1476e54-d54c-4a67-a647-eab01890d6a3";
     var lang = (document.documentElement.lang || "en").slice(0, 2);
