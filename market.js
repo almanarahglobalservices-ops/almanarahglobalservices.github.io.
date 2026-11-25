@@ -266,15 +266,23 @@
     });
     return map;
   }
-  function priceOf(p, pm) { var r = priceOf0(p, pm); r.cur = p.currency === "NGN" ? "NGN" : curOf((p.stores || {}).country || p.__country); return r; }
+  function priceOf(p, pm) {
+    var r = priceOf0(p, pm); r.cur = p.currency === "NGN" ? "NGN" : curOf((p.stores || {}).country || p.__country);
+    if (p.price_ngn > 0 && r.cur !== "NGN" && p.price > 0) {
+      var k = p.price_ngn / p.price, ng = { now: Math.round(r.now * k), was: r.was ? Math.round(r.was * k) : null, off: r.off, cur: "NGN" }, cc = myCountry();
+      if (cc === "NG") { ng.alt = r.now; ng.altCur = r.cur; ng.altOnly = true; return ng; }
+      if (!cc) { r.alt = ng.now; r.altCur = "NGN"; }
+    }
+    return r;
+  }
   function priceOf0(p, pm) {
     var d = (pm && (pm.p[p.id] || pm.s[p.store_id])) || 0;
     if (d) return { now: Math.round(p.price * (100 - d) / 100), was: p.price, off: d };
     return { now: p.price, was: p.compare_at_price && p.compare_at_price > p.price ? p.compare_at_price : null, off: p.compare_at_price > p.price ? Math.round(100 - p.price * 100 / p.compare_at_price) : 0 };
   }
-  function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now, pr.cur) + (pr.was ? "<s>" + money(pr.was, pr.cur) + "</s>" : "") + "</span>"; }
+  function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now, pr.cur) + (pr.was ? "<s>" + money(pr.was, pr.cur) + "</s>" : "") + (pr.alt && !pr.altOnly ? '<small class="mk-alt">' + money(pr.alt, pr.altCur) + "</small>" : "") + "</span>"; }
 
-  var PSEL = "id,title,price,currency,section,stock,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country,markets,kind)";
+  var PSEL = "id,title,price,price_ngn,currency,section,stock,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country,markets,kind)";
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
@@ -1136,8 +1144,8 @@
         '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120" value="' + esc(p.title || "") + '"></div>' +
         '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
         ((store.sections || []).length ? '<div><label>' + T3x("Section", "Rubrique", "القسم") + '</label><select name="section"><option value="">—</option>' + store.sections.map(function (x) { return '<option' + (p.section === x ? " selected" : "") + ">" + esc(x) + "</option>"; }).join("") + "</select></div>" : "") +
-        ((store.markets || []).length > 1 ? '<div><label>' + T3x("Currency", "Devise", "العملة") + '</label><select name="cur"><option value="XOF"' + (p.currency !== "NGN" ? " selected" : "") + '>FCFA (Côte d’Ivoire)</option><option value="NGN"' + (p.currency === "NGN" ? " selected" : "") + ">₦ Naira (Nigeria)</option></select></div>" : "") +
-        '<div><label>' + t("price").replace("FCFA", store.country === "NG" ? "₦" : "FCFA").replace("فرنك", store.country === "NG" ? "نيرة" : "فرنك") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.price != null ? p.price : "") + '"></div>' +
+        ((store.markets || []).length > 1 ? '<div><label>' + T3x("Price in FCFA (Côte d’Ivoire)", "Prix en FCFA (Côte d’Ivoire)", "السعر بالفرنك (ساحل العاج)") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.currency === "NGN" ? "" : p.price != null ? p.price : "") + '"></div><div><label>' + T3x("Price in Naira (Nigeria)", "Prix en Naira (Nigeria)", "السعر بالنيرة (نيجيريا)") + '</label><input name="pngn" type="number" min="0" step="1" value="' + esc(p.currency === "NGN" ? p.price : p.price_ngn || "") + '"></div>' :
+        '<div><label>' + t("price").replace("FCFA", store.country === "NG" ? "₦" : "FCFA").replace("فرنك", store.country === "NG" ? "نيرة" : "فرنك") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.price != null ? p.price : "") + '"></div>') +
         '<div><label>' + t("old_price") + '</label><input name="old" type="number" min="0" step="1" value="' + esc(p.compare_at_price || "") + '"></div>' +
         '<div><label>' + t("qty_stock") + '</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock != null ? p.stock : "") + '"></div>' +
         '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + ((p.condition || "new") === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
@@ -1181,7 +1189,8 @@
         e.preventDefault(); var f = e.target, b = f.querySelector("button[type=submit]"), M = $("#pM", m);
         var row = { title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: Math.max(0, Math.round(+f.price.value || 0)), compare_at_price: +f.old.value ? Math.round(+f.old.value) : null, stock: f.stock.value === "" ? null : Math.max(0, Math.round(+f.stock.value)), description: f.description.value.trim() || null, images: imgs, condition: f.cond.value, negotiable: f.neg.checked };
         if (f.section) row.section = f.section.value || null;
-        row.currency = f.cur ? f.cur.value : (store.country === "NG" ? "NGN" : "XOF");
+        if (f.pngn) { row.currency = "XOF"; row.price_ngn = f.pngn.value === "" ? null : Math.max(0, Math.round(+f.pngn.value)); }
+        else row.currency = store.country === "NG" ? "NGN" : "XOF";
         if (!row.title || !row.category_id) return msg(M, "err", t("required"));
         b.disabled = true;
         var r = p.id ? await sb.from("products").update(row).eq("id", p.id) : await sb.from("products").insert(Object.assign({ store_id: store.id }, row));
