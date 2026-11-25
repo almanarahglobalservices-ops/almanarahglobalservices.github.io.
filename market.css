@@ -261,7 +261,7 @@
 .mk-health{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:#f1f8f3;color:#1f5a3a;font-size:.85rem;line-height:1.5}
 .mk-feed-end{height:60px;display:flex;align-items:center;justify-content:center}
 .mk-feed-end.on::after{content:"";width:26px;height:26px;border-radius:50%;border:3px solid #e6e8f0;border-top-color:#B78A32;animation:mkSpin .8s linear infinite}
-#mkFeed .mk-card,#shopGrid .mk-card{animation:mkIn .4s ease both}
+#mkFeed .mk-store,#shopGrid .mk-card{animation:mkIn .4s ease both}
 @keyframes mkIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes mkSpin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.mk-qrow,#mkFeed .mk-card,#shopGrid .mk-card{animation:none}}
+@media (prefers-reduced-motion:reduce){.mk-qrow,#mkFeed .mk-store,#shopGrid .mk-card{animation:none}}

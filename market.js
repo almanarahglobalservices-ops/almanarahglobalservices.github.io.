@@ -406,14 +406,17 @@
     /* endless "Discover" feed: more products load by themselves as the visitor scrolls */
     var feed = $("#mkFeed"), end = $("#mkFeedEnd");
     if (feed && end) {
-      var fs = { page: 0, busy: false, done: false, items: [], pm: { p: {}, s: {} } }, per = 20;
+      var fs = { page: 0, busy: false, done: false, seen: {} }, per = 40;
       var fh = $("#mkFeedT"); if (fh) fh.textContent = T3x("Discover", "Découvrir", "اكتشف");
       async function feedMore() {
         if (fs.busy || fs.done) return; fs.busy = true; end.classList.add("on");
         try {
           var r = await PQ().order("created_at", { ascending: false }).range(fs.page * per, fs.page * per + per - 1);
           var got = r.data || []; fs.page++; fs.done = got.length < per;
-          if (got.length) { var pm = await promoMap(got); feed.insertAdjacentHTML("beforeend", got.map(function (p) { return card(p, pm); }).join("")); }
+          /* products stay inside their stores: the feed shows each store once, with its latest product as cover */
+          var gs = groupByStore(got).filter(function (g) { if (fs.seen[g.p.store_id]) return false; fs.seen[g.p.store_id] = 1; return true; });
+          if (gs.length) feed.insertAdjacentHTML("beforeend", gs.map(function (g) { return storeOffer(g, {}, "", T3x("New products", "Nouveaux produits", "منتجات جديدة")); }).join(""));
+          else if (!fs.done) { fs.busy = false; return feedMore(); }
           $("#mkFeedWrap").classList.toggle("mk-hide", !feed.children.length);
         } catch (e) {} finally { fs.busy = false; end.classList.remove("on"); if (fs.done) end.classList.add("mk-hide"); }
       }
