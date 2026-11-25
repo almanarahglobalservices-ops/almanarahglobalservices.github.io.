@@ -98,7 +98,7 @@
     share_p: ["Share", "Partager", "مشاركة"], pay_online: ["Pay online", "Payer en ligne", "الدفع أونلاين"],
     pay_sec: ["Online payment (optional)", "Paiement en ligne (facultatif)", "الدفع أونلاين (اختياري)"], pay_hint: ["Customers see these numbers when they tap “Pay online” on your store.", "Les clients voient ces numéros en touchant « Payer en ligne » sur votre boutique.", "يرى الزبائن هذه الأرقام عند الضغط على «الدفع أونلاين» في متجرك."],
     country: ["Country", "Pays", "الدولة"], all_countries: ["All countries", "Tous les pays", "كل الدول"],
-    pay_ng: ["Pay by bank transfer, OPay or PalmPay. Message us on WhatsApp +234 813 288 1718 to receive the account details.", "Payez par virement, OPay ou PalmPay. Écrivez-nous sur WhatsApp +234 813 288 1718 pour recevoir les coordonnées.", "ادفع بالتحويل البنكي أو OPay أو PalmPay، وراسلنا على واتساب ‎+234 813 288 1718 لتصلك بيانات الحساب."],
+    pay_ng: ["Pay by bank transfer to one of these accounts:", "Payez par virement sur l’un de ces comptes :", "ادفع بالتحويل إلى أحد هذه الحسابات:"],
     agree: ["I have read and accept the", "J’ai lu et j’accepte le", "قرأت وأوافق على"], agreement: ["Seller agreement", "Contrat vendeur", "عقد البائع"], agree_err: ["Please accept the seller agreement.", "Veuillez accepter le contrat vendeur.", "يرجى الموافقة على عقد البائع."],
     one_rule: ["One product per listing — no photos of a whole shop or many items.", "Un produit par annonce — pas de photo d’une boutique entière ou de plusieurs articles.", "منتج واحد لكل إعلان — لا تصوّر الدكان كله أو سلعًا كثيرة في إعلان واحد."],
     yearly: ["12 months — pay only 6", "12 mois — payez seulement 6", "12 شهرًا — ادفع 6 فقط"], per_year: ["/ year", "/ an", "/ سنة"],
@@ -200,7 +200,7 @@
     });
     return map;
   }
-  function priceOf(p, pm) { var r = priceOf0(p, pm); r.cur = curOf((p.stores || {}).country || p.__country); return r; }
+  function priceOf(p, pm) { var r = priceOf0(p, pm); r.cur = p.currency === "NGN" ? "NGN" : curOf((p.stores || {}).country || p.__country); return r; }
   function priceOf0(p, pm) {
     var d = (pm && (pm.p[p.id] || pm.s[p.store_id])) || 0;
     if (d) return { now: Math.round(p.price * (100 - d) / 100), was: p.price, off: d };
@@ -208,7 +208,7 @@
   }
   function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now, pr.cur) + (pr.was ? "<s>" + money(pr.was, pr.cur) + "</s>" : "") + "</span>"; }
 
-  var PSEL = "id,title,price,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country)";
+  var PSEL = "id,title,price,currency,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country)";
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
@@ -240,13 +240,13 @@
         if (q === last) return; last = q; var sq = q.replace(/[%,()]/g, " ");
         var [st, pr] = await Promise.all([
           sb.from("stores").select("name,slug,city,logo_url,verified").eq("status", "approved").or("name.ilike.%" + sq + "%,city.ilike.%" + sq + "%").limit(5),
-          sb.from("products").select("id,title,price,images,stores(name,country)").eq("status", "approved").ilike("title", "%" + sq + "%").limit(6)
+          sb.from("products").select("id,title,price,currency,images,stores(name,country)").eq("status", "approved").ilike("title", "%" + sq + "%").limit(6)
         ]);
         await cats(); var nq = norm(q);
         var cs = CATS.filter(function (c) { return c.active && [c.name_en, c.name_fr, c.name_ar, c.slug].some(function (n) { return norm(n).indexOf(nq) > -1; }); }).slice(0, 3);
         var html = cs.map(function (c) { return '<a href="/shop.html?cat=' + c.slug + '"><span class="i">' + esc(c.icon) + "</span><span>" + esc(catName(c)) + "</span></a>"; }).join("") +
           (st.data || []).map(function (x) { return '<a href="/' + esc(x.slug) + '"><span class="i">' + (x.logo_url ? '<img src="' + esc(x.logo_url) + '" alt="">' : "🏪") + "</span><span><b>" + esc(x.name) + "</b>" + (x.verified ? " ✔" : "") + "<small>" + esc(x.city || "") + "</small></span></a>"; }).join("") +
-          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(x.images[0]) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, curOf((x.stores || {}).country)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
+          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(x.images[0]) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, x.currency === "NGN" ? "NGN" : curOf((x.stores || {}).country)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
         box.innerHTML = html || '<div class="mk-sug-none">' + t("none") + "</div>";
         box.classList.remove("mk-hide");
       }, 250);
@@ -767,7 +767,7 @@
       var pl = plan();
       B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
       $("#addP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } productModal(null); });
@@ -866,8 +866,8 @@
       $$("[data-pl]", B()).forEach(function (b) { b.addEventListener("click", function () { payForm(b.dataset.pl); }); });
       function payForm(pid) {
         var x = PLANS.filter(function (y) { return y.id === pid; })[0], receipt = "";
-        $("#payBox").innerHTML = '<div class="mk-panel" style="margin-top:20px"><h3 style="margin-top:0">' + t("pay_t") + " — " + esc(x.name) + '</h3><p>' + (NG ? esc(t("pay_ng")) : t("pay_to") + "<br><b>MTN MoMo: " + esc(C.mtn || "+225 05 06 12 23 37") + "</b><br><b>Wave: " + esc(C.wave || "+225 05 06 12 23 37") + "</b><br>" + esc(C.name || "")) + '</p><form class="mk-form" id="pyF">' +
-          '<div><label>' + t("months") + '</label><select name="m">' + [1].map(function (n) { return '<option value="' + n + '">' + n + "</option>"; }).join("") + '</select></div><div><label>' + t("method") + '</label><select name="pm">' + (NG ? '<option value="other">Bank / OPay / PalmPay</option>' : '<option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option>') + '</select></div>' +
+        $("#payBox").innerHTML = '<div class="mk-panel" style="margin-top:20px"><h3 style="margin-top:0">' + t("pay_t") + " — " + esc(x.name) + '</h3><p>' + (NG ? esc(t("pay_ng")) + "<br><b>GTBank: 0926802497</b> — MUHAMMAD JAMIU ISMAIL<br><b>Access Bank: 0823159299</b> — MUHAMMAD-JAMIU ISMAIL<br><b>Moniepoint: 8132881718</b> — AL MANARAH GLOBAL SERVICES" : t("pay_to") + "<br><b>MTN MoMo: " + esc(C.mtn || "+225 05 06 12 23 37") + "</b><br><b>Wave: " + esc(C.wave || "+225 05 06 12 23 37") + "</b><br>" + esc(C.name || "")) + '</p><form class="mk-form" id="pyF">' +
+          '<div><label>' + t("months") + '</label><select name="m">' + [1].map(function (n) { return '<option value="' + n + '">' + n + "</option>"; }).join("") + '</select></div><div><label>' + t("method") + '</label><select name="pm">' + (NG ? '<option value="other">GTBank</option><option value="other">Access Bank</option><option value="other">Moniepoint</option>' : '<option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option>') + '</select></div>' +
           '<div class="full"><b>' + t("total") + ': <span id="pyT"></span></b></div><div><label>' + t("pay_ref") + ' *</label><input name="ref" required maxlength="80"></div><div><label>' + t("receipt") + '</label><div class="mk-imgs" id="rcBox"></div></div>' +
           '<div class="full"><button class="btn btn-primary btn-sm" type="submit">' + t("submit_pay") + '</button><div id="pyM"></div></div></form></div>';
         var f = $("#pyF"); function tot() { $("#pyT").textContent = mm(pp(x) * +f.m.value); } f.m.onchange = tot; tot();
@@ -973,7 +973,7 @@
       var now = new Date().toISOString();
       B().innerHTML = '<div class="mk-bar"><select id="fPr">' + ["pending", "approved", "rejected", "hidden", ""].map(function (s) { return '<option value="' + s + '"' + (filt.pr === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ2" type="search" placeholder="Search product or store…" value="' + esc(filt.q) + '">' + (filt.pr === "pending" && list.length ? '<button class="mk-btn ok" id="apAll">Approve all shown</button>' : "") + '</div><div class="mk-list">' +
         (list.length ? list.slice(0, 300).map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, curOf((p.stores || {}).country)) + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf((p.stores || {}).country)) + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts">' + (p.status !== "approved" ? '<button class="mk-btn ok" data-a="ok" data-id="' + p.id + '">Approve</button>' : "") + (p.status !== "rejected" ? '<button class="mk-btn no" data-a="no" data-id="' + p.id + '">Reject</button>' : "") + (p.status === "approved" ? '<button class="mk-btn" data-a="hide" data-id="' + p.id + '">Hide</button>' : "") +
             (p.featured_until > now ? '<button class="mk-btn" data-a="unfeat" data-id="' + p.id + '">Unfeature</button>' : '<button class="mk-btn gold" data-a="feat" data-id="' + p.id + '">Feature</button>') + '<a class="mk-btn" target="_blank" href="/product.html?id=' + p.id + '">View</a><button class="mk-btn no" data-a="del" data-id="' + p.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("📦", "Nothing here")) + "</div>";
