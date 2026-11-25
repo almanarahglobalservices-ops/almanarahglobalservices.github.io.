@@ -54,7 +54,7 @@
     required: ["Please fill in all required fields.", "Veuillez remplir tous les champs obligatoires.", "يرجى ملء الحقول المطلوبة."],
     // dashboard
     t_over: ["Overview", "Aperçu", "نظرة عامة"], t_prod: ["Products", "Produits", "المنتجات"], t_req: ["Requests", "Demandes", "الطلبات"], t_promo: ["Promotions", "Promotions", "العروض"],
-    t_store: ["Store settings", "Ma boutique", "إعدادات المتجر"], t_plan: ["Plan", "Abonnement", "الباقة"],
+    t_store: ["✏️ Edit my store", "✏️ Modifier ma boutique", "✏️ تعديل متجري"], t_plan: ["Plan", "Abonnement", "الباقة"],
     st_pending: ["Coming soon", "Bientôt en ligne", "قريبًا"], st_approved: ["Approved", "Validé", "مقبول"], st_rejected: ["Rejected", "Refusé", "مرفوض"],
     st_suspended: ["Suspended", "Suspendu", "موقوف"], st_hidden: ["Hidden", "Masqué", "مخفي"], st_new: ["New", "Nouveau", "جديد"], st_contacted: ["Contacted", "Contacté", "تم التواصل"],
     st_completed: ["Completed", "Terminé", "تمّ"], st_cancelled: ["Cancelled", "Annulé", "ملغى"],
@@ -830,9 +830,11 @@
       var banner = store.status === "pending" ? '<div class="mk-msg warn">' + t("store_pending") + "</div>" : store.status === "rejected" ? '<div class="mk-msg err">' + t("store_rejected") + (store.admin_note ? "<br>" + t("note_from") + " " + esc(store.admin_note) : "") + "</div>" : store.status === "suspended" ? '<div class="mk-msg err">' + t("store_suspended") + (store.admin_note ? "<br>" + esc(store.admin_note) : "") + "</div>" : "";
       B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
         '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
-        '<p style="margin-top:22px"><button class="btn btn-primary" id="goAdd" type="button">＋ ' + t("add_prod") + "</button></p>";
+        '<p style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="goAdd" type="button">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" id="goEdit" type="button">' + t("t_store") + "</button></p>" +
+        '<p class="mk-small">' + T3x("You can change your store details at any time: name, city, country (or both countries), phone, WhatsApp, logo, sections and payment numbers.", "Vous pouvez modifier les informations de votre boutique à tout moment : nom, ville, pays (ou les deux pays), téléphone, WhatsApp, logo, rubriques et numéros de paiement.", "يمكنك تعديل بيانات متجرك في أي وقت: الاسم، المدينة، الدولة (أو البلدين)، الهاتف، واتساب، الشعار، الأقسام وأرقام الدفع.") + "</p>";
       $("#cp").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
       $("#goAdd").addEventListener("click", function () { productModal(null); });
+      $("#goEdit").addEventListener("click", function () { var b = document.querySelector('.mk-tabs [data-t="store"]'); if (b) b.click(); window.scrollTo(0, 0); });
       $("#ovQr").addEventListener("click", function () { qrModal(store); });
     }
 
