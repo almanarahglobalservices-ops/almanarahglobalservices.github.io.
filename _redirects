@@ -1,2 +1,2 @@
-/store/:slug  /store.html  200
+/store/:slug  /store  200
 /s/:slug  /store/:slug  301
