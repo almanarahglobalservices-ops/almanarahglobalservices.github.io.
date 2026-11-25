@@ -24,8 +24,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Courgette&family=Montserrat:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="main.css?v=13">
-<link rel="stylesheet" href="market.css?v=13">
+<link rel="stylesheet" href="main.css?v=14">
+<link rel="stylesheet" href="market.css?v=14">
 <script>document.documentElement.classList.remove('no-js')</script>
 </head>
 <body data-page="market-shop" data-market="shop">
@@ -86,6 +86,8 @@
   <div class="mk-chips" id="shopChips"></div>
   <form class="mk-bar" id="shopForm" role="search"><input id="shopQ" type="search" aria-label="Search"><select id="shopSort" aria-label="Sort"></select><button class="btn btn-primary btn-sm" id="shopGo" type="submit">Search</button></form>
   <div class="mk-bar mk-filters" id="shopFilters"><select id="fCity" aria-label="City"></select><select id="fCond" aria-label="Condition"></select><input id="fMin" type="number" min="0" inputmode="numeric" aria-label="Min"><input id="fMax" type="number" min="0" inputmode="numeric" aria-label="Max"><button class="mk-btn" id="fApply" type="button">OK</button></div>
+  <div id="shopStoresWrap" class="mk-hide" style="margin-bottom:26px"><h2 id="shopStoresT" style="font-size:1.35rem;margin:0 0 14px">Boutiques</h2><div class="mk-stores" id="shopStores"></div></div>
+  <h2 id="shopProdT" class="mk-hide" style="font-size:1.35rem;margin:0 0 14px">Produits</h2>
   <div class="mk-grid" id="shopGrid"></div>
   <p style="text-align:center;margin-top:26px"><button class="btn btn-outline mk-hide" id="shopMore" type="button">Load more</button></p>
 </div></section>
@@ -100,9 +102,9 @@
     <div class="footbottom"><span>© <span class="year">2026</span> AL MANARAH GLOBAL SERVICES. <span data-fr="Tous droits réservés." data-ar="جميع الحقوق محفوظة.">All rights reserved.</span></span></div>
   </div>
 </footer>
-<script src="config.js?v=13"></script>
-<script src="main.js?v=13"></script>
+<script src="config.js?v=14"></script>
+<script src="main.js?v=14"></script>
 <script src="supabase.js?v=2119"></script>
-<script src="market.js?v=13"></script>
+<script src="market.js?v=14"></script>
 </body>
 </html>

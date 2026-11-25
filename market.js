@@ -314,12 +314,30 @@
       input.placeholder = t("search"); $("#shopGo").textContent = t("go"); $("#shopMore").textContent = t("more");
       sort.innerHTML = '<option value="new">' + t("newest") + '</option><option value="asc">' + t("cheap") + '</option><option value="desc">' + t("dear") + "</option>"; sort.value = state.sort;
     }
+    var storeCounts = {};
+    async function loadStores() {
+      if (state.fav || state.q) { $("#shopStoresWrap").classList.add("mk-hide"); return; }
+      var c = CATS.filter(function (x) { return x.slug === state.cat; })[0];
+      var q = sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("status", "approved");
+      if (c) q = q.eq("category_id", c.id);
+      if (state.country) q = q.eq("country", state.country);
+      if (state.city) q = q.eq("city", state.city);
+      var r = await q.order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(60);
+      var st = r.data || [];
+      $("#shopStoresWrap").classList.toggle("mk-hide", !st.length);
+      $("#shopStoresT").textContent = (L() === "ar" ? "المتاجر" : L() === "en" ? "Stores" : "Boutiques") + " (" + st.length + ")";
+      $("#shopStores").innerHTML = st.map(function (x) { return storeCard(x, null); }).join("");
+      state.hasStores = st.length > 0;
+    }
     function draw() {
+      $("#shopProdT").classList.toggle("mk-hide", !state.hasStores || state.fav || state.q);
+      $("#shopProdT").textContent = L() === "ar" ? "المنتجات" : L() === "en" ? "Products" : "Produits";
+      if (!state.items.length && state.hasStores && !state.fav) { $("#shopGrid").innerHTML = '<p class="mk-small">' + t("none") + "</p>"; $("#shopMore").classList.add("mk-hide"); return; }
       $("#shopGrid").innerHTML = state.items.length ? state.items.map(function (p) { return card(p, state.pm); }).join("") : state.fav ? emptyBox("♡", t("no_saved")) : emptyBox("🔎", t("none"), t("none_hint"), true);
       $("#shopMore").classList.toggle("mk-hide", state.done || !state.items.length);
     }
     async function load(reset) {
-      if (reset) { state.page = 0; state.items = []; state.done = false; $("#shopGrid").innerHTML = '<div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div>'; }
+      if (reset) { await loadStores(); state.page = 0; state.items = []; state.done = false; $("#shopGrid").innerHTML = '<div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div>'; }
       var per = 24, q = sb.from("products").select(state.city || state.country ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved");
       if (state.country) q = q.eq("stores.country", state.country);
       if (state.fav) { var fv = lsGet("mk_fav"); if (!fv.length) { state.items = []; state.done = true; return draw(); } q = q.in("id", fv.slice(0, 200)); }
