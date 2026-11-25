@@ -256,7 +256,32 @@
   }
 
   /* =============== HOME =============== */
+  /* first visit: guide the visitor (buy / sell / video) */
+  function welcome(force) {
+    var seen; try { seen = localStorage.getItem("mk_welcome"); } catch (e) {}
+    if (seen && !force) return;
+    var L2 = L(), T = function (en, fr, ar) { return L2 === "fr" ? fr : L2 === "ar" ? ar : en; };
+    function done() { try { localStorage.setItem("mk_welcome", "1"); } catch (e) {} }
+    var m = document.createElement("div"); m.className = "mk-modal mk-wel";
+    m.innerHTML = '<div class="box"><button class="x" type="button" aria-label="close">✕</button>' +
+      '<img src="/logo-wide.png" alt="AL MANARAH GLOBAL SERVICES" class="wl-logo">' +
+      '<h2>' + T("Welcome 👋", "Bienvenue 👋", "مرحبًا بك 👋") + '</h2><p class="wl-sub">' + T("The marketplace of Côte d’Ivoire and Nigeria. What would you like to do?", "La marketplace de Côte d’Ivoire et du Nigeria. Que voulez-vous faire ?", "سوق ساحل العاج ونيجيريا. ماذا تريد أن تفعل؟") + "</p>" +
+      '<div class="wl-ch"><a href="/shop.html" data-go class="wl-b"><span>🛍️</span><b>' + T("I want to buy", "Je veux acheter", "أريد الشراء") + "</b><small>" + T("Find stores near you", "Trouvez des boutiques près de chez vous", "اعثر على متاجر قريبة منك") + '</small></a>' +
+      '<a href="/sell.html" data-go class="wl-b gold"><span>🏪</span><b>' + T("I want to sell", "Je veux vendre", "أريد البيع") + "</b><small>" + T("Open your store — free", "Ouvrez votre boutique — gratuit", "افتح متجرك مجانًا") + "</small></a></div>" +
+      '<button type="button" class="wl-vid" data-vid><img src="/lancement.jpg" alt=""><span class="pl">▶</span><span class="lb">' + T("Discover in 45 seconds", "Découvrir en 45 secondes", "اكتشف في 45 ثانية") + "</span></button>" +
+      '<button type="button" class="wl-skip">' + T("Just browse", "Visiter le site", "تصفح الموقع") + " →</button></div>";
+    document.body.appendChild(m);
+    function close() { done(); m.remove(); }
+    $(".x", m).onclick = close; $(".wl-skip", m).onclick = close;
+    m.addEventListener("click", function (e) { if (e.target === m) close(); });
+    $$("[data-go]", m).forEach(function (a) { a.addEventListener("click", done); });
+    $("[data-vid]", m).onclick = function () { var b = this; b.outerHTML = '<video class="wl-video" src="/lancement.mp4" poster="/lancement.jpg" controls autoplay playsinline></video>'; done(); };
+  }
+  window.AMG_WELCOME = welcome;
+
   async function pageHome() {
+    setTimeout(function () { welcome(false); }, 900);
+    var wv = $("#mkVideo"); if (wv) wv.addEventListener("click", function () { welcome(true); });
     await cats();
     var CC = myCountry();
     var hc = $("#mkCountry"); if (hc) { hc.innerHTML = ["", "CI", "NG"].map(function (c) { return '<button type="button" class="mk-chip' + (CC === c ? " on" : "") + '" data-cc="' + c + '">' + (c ? cName(c) : "🌍 " + t("all_countries")) + "</button>"; }).join(""); hc.addEventListener("click", function (e) { var b = e.target.closest("[data-cc]"); if (!b) return; setCountry(b.dataset.cc); location.reload(); }); }
