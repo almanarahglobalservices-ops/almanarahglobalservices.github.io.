@@ -20,7 +20,12 @@
       var tx = document.createElement("span"); tx.className = "t";
       if (inn) { tx.textContent = "My store"; tx.setAttribute("data-fr", "Ma boutique"); tx.setAttribute("data-ar", "متجري"); }
       else { tx.textContent = "Sign in"; tx.setAttribute("data-fr", "Se connecter"); tx.setAttribute("data-ar", "تسجيل الدخول"); }
-      var ic = document.createElement("span"); ic.className = "i"; ic.setAttribute("aria-hidden", "true"); ic.textContent = inn ? "🏪" : "👤";
+      var ic = document.createElement("span"); ic.className = "i"; ic.setAttribute("aria-hidden", "true");
+      /* drawn icons (not emoji) so they look the same on every phone */
+      ic.innerHTML = inn
+        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v7h14v-7"/><path d="M10 20v-4h4v4"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>';
+      a.setAttribute("aria-label", inn ? "My store / Ma boutique" : "Sign in / Se connecter"); a.title = inn ? "Ma boutique" : "Se connecter";
       a.appendChild(ic); a.appendChild(tx);
       var pb = na.querySelector('.btn[href="sell.html"]'); if (pb && inn) pb.style.display = "none";
       na.insertBefore(a, na.querySelector(".burger"));

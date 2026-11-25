@@ -1103,3 +1103,4 @@ img,video,iframe,table{max-width:100%}
 /* site share button removed from the header (it is under the home search) */
 .nav-actions .share-btn{display:none!important}
 @media (max-width:340px){.nav .brand{max-width:92px;overflow:hidden}.lang button{padding:3px 4px}}
+.acct-btn .i{display:inline-grid;place-items:center;line-height:0}.acct-btn .i svg{display:block}
