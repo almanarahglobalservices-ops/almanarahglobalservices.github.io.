@@ -610,7 +610,12 @@
       ]);
       data = { products: p.data || [], orders: o.data || [], promos: pr.data || [], preqs: rq.data || [] }; if (st.data) store = st.data;
     }
-    function plan() { return (PLANS || []).filter(function (x) { return x.id === store.plan_id; })[0] || { id: "free", name: "Free", product_limit: 15, price_xof: 0 }; }
+    function plan() {
+      var p = Object.assign({}, (PLANS || []).filter(function (x) { return x.id === store.plan_id; })[0] || { id: "free", name: "Free", product_limit: 15, price_xof: 0 });
+      if (store.custom_product_limit) { p.product_limit = store.custom_product_limit; p.name = p.name + " ★"; }
+      return p;
+    }
+    var maxImg = store.custom_image_limit || MAX_IMAGES;
     function shell() {
       var nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
       var tabs = [["over", t("t_over")], ["prod", t("t_prod"), data.products.length], ["req", t("t_req"), nNew], ["promo", t("t_promo")], ["store", t("t_store")], ["plan", t("t_plan")]];
@@ -627,7 +632,7 @@
     function tOver() {
       var pl = plan(), link = storeUrl(store.slug), nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
       var banner = store.status === "pending" ? '<div class="mk-msg warn">' + t("store_pending") + "</div>" : store.status === "rejected" ? '<div class="mk-msg err">' + t("store_rejected") + (store.admin_note ? "<br>" + t("note_from") + " " + esc(store.admin_note) : "") + "</div>" : store.status === "suspended" ? '<div class="mk-msg err">' + t("store_suspended") + (store.admin_note ? "<br>" + esc(store.admin_note) : "") + "</div>" : "";
-      B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + data.products.length + " / " + pl.product_limit + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
+      B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
         '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
         '<p style="margin-top:22px"><button class="btn btn-primary" id="goAdd" type="button">＋ ' + t("add_prod") + "</button></p>";
       $("#cp").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
@@ -637,7 +642,7 @@
 
     function tProd() {
       var pl = plan();
-      B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + pl.product_limit + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
+      B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
           return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
@@ -666,17 +671,17 @@
         '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + ((p.condition || "new") === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
         '<div><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" name="neg" style="width:auto"' + (p.negotiable ? " checked" : "") + "> " + t("negotiable") + "</label></div>" +
         '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="3000">' + esc(p.description || "") + "</textarea></div>" +
-        '<div class="full"><label>' + t("photos") + '</label><div class="mk-imgs" id="pImgs"></div></div>' +
+        '<div class="full"><label>' + t("photos").replace("6", maxImg) + '</label><div class="mk-imgs" id="pImgs"></div></div>' +
         '<div class="full"><div class="mk-msg warn" style="margin:0 0 10px">⚠ ' + t("one_rule") + '</div><p class="mk-small">' + t("review_note") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + '</a></p><button class="btn btn-primary" type="submit">' + t("save") + '</button><div id="pM"></div></div></form></div>';
       document.body.appendChild(m);
       function close() { m.remove(); }
       $(".x", m).onclick = close; m.addEventListener("click", function (e) { if (e.target === m) close(); });
       function drawImgs() {
         var b = $("#pImgs", m);
-        b.innerHTML = imgs.map(function (u, i) { return '<div class="im"><img src="' + esc(u) + '" alt=""><button type="button" data-x="' + i + '">✕</button></div>'; }).join("") + (imgs.length < MAX_IMAGES ? '<label class="add">＋ ' + t("add_photo") + '<input type="file" accept="image/*" multiple hidden></label>' : "");
+        b.innerHTML = imgs.map(function (u, i) { return '<div class="im"><img src="' + esc(u) + '" alt=""><button type="button" data-x="' + i + '">✕</button></div>'; }).join("") + (imgs.length < maxImg ? '<label class="add">＋ ' + t("add_photo") + '<input type="file" accept="image/*" multiple hidden></label>' : "");
         $$("[data-x]", b).forEach(function (x) { x.onclick = function () { imgs.splice(+x.dataset.x, 1); drawImgs(); }; });
         var inp = $("input[type=file]", b); if (inp) inp.onchange = async function () {
-          var files = Array.prototype.slice.call(inp.files, 0, MAX_IMAGES - imgs.length); var add = $(".add", b); if (add) add.textContent = t("uploading");
+          var files = Array.prototype.slice.call(inp.files, 0, maxImg - imgs.length); var add = $(".add", b); if (add) add.textContent = t("uploading");
           for (var i = 0; i < files.length; i++) { try { imgs.push(await upload(files[i], "p")); } catch (e) { msg($("#pM", m), "err", t("fail")); } }
           drawImgs();
         };
@@ -798,7 +803,7 @@
       B().innerHTML = '<p><button class="btn btn-primary btn-sm" id="newSt" type="button">＋ Create a store for a seller</button></p><div class="mk-bar"><select id="fSt">' + ["", "pending", "approved", "suspended", "rejected"].map(function (s) { return '<option value="' + s + '"' + (filt.st === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ" type="search" placeholder="Search name, phone, city…" value="' + esc(filt.q) + '"></div><div class="mk-list">' +
         (list.length ? list.map(function (s) {
           var pl = PLANS.filter(function (x) { return x.id === s.plan_id; })[0] || {};
-          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + esc((s.profiles || {}).email || "") + "</small><small>" + cName(s.country || "CI") + " · 📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
+          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + esc((s.profiles || {}).email || "") + "</small><small>" + cName(s.country || "CI") + " · 📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.custom_product_limit ? " ★ " + (s.custom_product_limit >= 100000 ? "unlimited" : s.custom_product_limit) + " products" : "") + (s.custom_image_limit ? " · " + s.custom_image_limit + " photos" : "") + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
             '<div class="acts">' + (s.status !== "approved" ? '<button class="mk-btn ok" data-a="approve" data-id="' + s.id + '">Approve</button>' : "") + (s.status === "pending" ? '<button class="mk-btn no" data-a="reject" data-id="' + s.id + '">Reject</button>' : "") + (s.status === "approved" ? '<button class="mk-btn no" data-a="suspend" data-id="' + s.id + '">Suspend</button>' : "") +
             '<button class="mk-btn" data-a="verify" data-id="' + s.id + '">' + (s.verified ? "Unverify" : "Verify ✔") + '</button><button class="mk-btn gold" data-a="plan" data-id="' + s.id + '">Plan</button><a class="mk-btn" target="_blank" href="/' + esc(s.slug) + '">View</a><a class="mk-btn dark" href="/sell.html?store=' + s.id + '">Manage</a><button class="mk-btn" data-a="owner" data-id="' + s.id + '">Give to seller</button><a class="mk-btn" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, "AL MANARAH GLOBAL SERVICES — " + s.name) + '">WA</a><button class="mk-btn no" data-a="delete" data-id="' + s.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("🏪", "No stores")) + "</div>";
@@ -830,9 +835,13 @@
     }
     function planModal(s) {
       var m = document.createElement("div"); m.className = "mk-modal";
-      m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h3 style="margin-top:0">Plan — ' + esc(s.name) + '</h3><form class="mk-form" id="plF"><div><label>Plan</label><select name="p">' + PLANS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === s.plan_id ? " selected" : "") + ">" + esc(x.name) + " (" + x.product_limit + ")</option>"; }).join("") + '</select></div><div><label>Expires on (empty = no end)</label><input type="date" name="d" value="' + (s.plan_expires_at ? s.plan_expires_at.slice(0, 10) : "") + '"></div><div class="full"><button class="btn btn-primary btn-sm">Save</button></div></form></div>';
+      m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h3 style="margin-top:0">Plan — ' + esc(s.name) + '</h3><form class="mk-form" id="plF"><div><label>Plan</label><select name="p">' + PLANS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === s.plan_id ? " selected" : "") + ">" + esc(x.name) + " (" + x.product_limit + ")</option>"; }).join("") + '</select></div><div><label>Expires on (empty = never ends)</label><input type="date" name="d" value="' + (s.plan_expires_at ? s.plan_expires_at.slice(0, 10) : "") + '"></div>' +
+        '<div class="full" style="margin-top:6px"><b>Special plan for this store</b><div class="hint">Leave empty to use the normal plan limits.</div></div>' +
+        '<div><label>Max products</label><input type="number" min="1" name="cp" value="' + (s.custom_product_limit && s.custom_product_limit < 100000 ? s.custom_product_limit : "") + '"><label style="display:flex;gap:6px;align-items:center;font-weight:600;margin-top:6px"><input type="checkbox" name="cpu" style="width:auto"' + (s.custom_product_limit >= 100000 ? " checked" : "") + '> Unlimited</label></div>' +
+        '<div><label>Max photos per product</label><input type="number" min="1" max="30" name="ci" value="' + (s.custom_image_limit || "") + '" placeholder="6"></div>' +
+        '<div class="full"><button class="btn btn-primary btn-sm">Save</button></div></form></div>';
       document.body.appendChild(m); $(".x", m).onclick = function () { m.remove(); };
-      $("#plF", m).onsubmit = function (e) { e.preventDefault(); var f = e.target; m.remove(); act(sb.from("stores").update({ plan_id: f.p.value, plan_expires_at: f.d.value ? new Date(f.d.value + "T23:59:59").toISOString() : null }).eq("id", s.id)); };
+      $("#plF", m).onsubmit = function (e) { e.preventDefault(); var f = e.target; m.remove(); act(sb.from("stores").update({ plan_id: f.p.value, plan_expires_at: f.d.value ? new Date(f.d.value + "T23:59:59").toISOString() : null, custom_product_limit: f.cpu.checked ? 100000 : (+f.cp.value || null), custom_image_limit: +f.ci.value || null }).eq("id", s.id)); };
     }
 
     function aProducts() {
