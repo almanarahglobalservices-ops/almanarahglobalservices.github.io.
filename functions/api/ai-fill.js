@@ -1,7 +1,7 @@
 // AI product filling for merchants: photo + a few words -> title, description, category, condition.
 // Needs a secret named GEMINI_API_KEY in Cloudflare Pages > Settings > Variables and Secrets.
 // Optional: GEMINI_MODEL. Otherwise the newest Flash model is tried first, with fallbacks
-// (Google retires old model names: a 404 moves on to the next name).
+// (a retired model (404) or a busy one (429/5xx) moves on to the next name).
 // Only signed-in users can call it; images are accepted only from our own Supabase storage.
 
 const SB_URL = "https://rcioefzhysholnfogljy.supabase.co";
@@ -18,7 +18,7 @@ async function gemini(env, payload) {
   let last;
   for (const model of list) {
     last = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(env.GEMINI_API_KEY), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-    if (last.status !== 404) return { r: last, model };
+    if (![404, 429, 500, 503].includes(last.status)) return { r: last, model };
   }
   return { r: last, model: list[list.length - 1] };
 }
