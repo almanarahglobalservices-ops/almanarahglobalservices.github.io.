@@ -273,7 +273,7 @@
       '<button type="button" class="wl-skip">' + T("Just browse", "Visiter le site", "تصفح الموقع") + " →</button></div>";
     document.body.appendChild(m);
     function close() { done(); m.remove(); }
-    $(".x", m).onclick = close; $(".wl-skip", m).onclick = close;
+    $(".x", m).onclick = close; $$(".wl-skip", m).forEach(function (b) { b.addEventListener("click", close); });
     m.addEventListener("click", function (e) { if (e.target === m) close(); });
     $$("[data-go]", m).forEach(function (a) { a.addEventListener("click", done); });
     $("[data-vid]", m).onclick = function () { var b = this; b.outerHTML = '<video class="wl-video" src="/lancement.mp4?v=2" poster="/lancement.jpg" controls autoplay playsinline></video>'; done(); };
