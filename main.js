@@ -537,51 +537,51 @@
     });
   }
 
-  // 3. Search
-  var PAGES = [
-    ["index.html", "Home", "Accueil", "home accueil al manarah global services umrah hajj travel voyage"],
-    ["umrah.html", "Umrah packages", "Forfaits Omra", "umrah omra package forfait essential essentiel comfort confort premium makkah madinah price prix"],
-    ["hajj.html", "Hajj packages", "Forfaits Hajj", "hajj package forfait quotation devis year année"],
-    ["library.html", "Islamic library: Quran, Adhkar, Hadith", "Bibliothèque islamique : Coran, adhkar, hadiths", "library bibliothèque quran coran adhkar azkar dua hadith books livres"],
-    ["visas.html", "Saudi visas", "Visas saoudiens", "visa saudi saoudien umrah tourist touristique family business evisa documents passport passeport"],
-    ["services.html", "All services", "Tous les services", "services flights vols hotels hôtels transfer transfert transport train haramain ziyarah import export trade commerce"],
-    ["services.html#travel", "Flight reservations", "Réservation de vols", "flight flights vol vols plane avion ticket billet jeddah médine"],
-    ["hotels.html", "Hotels in Makkah / Madinah", "Hôtels La Mecque / Médine", "hotel hotels hôtel makkah madinah mecque médine room chambre"],
-    ["contact.html?service=transfer", "Transfers & ground transport", "Transferts et transport", "transfer transport car voiture bus airport aéroport"],
-    ["contact.html?service=train", "Haramain train", "Train Haramain", "train haramain railway"],
-    ["contact.html?service=ziyarah", "Ziyarah", "Ziyarah", "ziyarah visit visite tour"],
-    ["partners.html", "Agency partnership", "Partenariat agences", "partner partenaire agency agence representative représentant commission"],
-    ["experiences.html", "Pilgrim experiences & photos", "Expériences et photos", "photos gallery galerie experiences témoignages testimonials pilgrims pèlerins"],
-    ["about.html", "About us", "À propos", "about propos company société abidjan marketplace"],
-    ["contact.html", "Contact & quotation", "Contact et devis", "contact quotation devis enquiry demande phone téléphone whatsapp email address adresse"],
-    ["track.html", "Track my booking", "Suivre mon dossier", "track suivi reference référence booking réservation status statut"],
-    ["terms.html", "Terms, cancellation & refunds", "Conditions, annulation et remboursement", "terms conditions cancellation annulation refund remboursement"],
-    ["privacy.html", "Privacy policy", "Confidentialité", "privacy confidentialité data données"]
-  ];
-  function norm(s) { return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  // 3. Search — marketplace only: stores, products and categories (live from the database)
+  var SB_URL = "https://rcioefzhysholnfogljy.supabase.co", SB_KEY = "sb_publishable_ziTls2YuI4JKUqno8BQyQg_-We_mL49";
+  function norm(s) { return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+  function sbGet(path) { return fetch(SB_URL + "/rest/v1/" + path, { headers: { apikey: SB_KEY, authorization: "Bearer " + SB_KEY } }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }); }
+  function esc2(x) { return String(x == null ? "" : x).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function money2(n, cur) { if (!+n) return tx("Price on request", "Prix sur demande"); return cur === "NGN" ? "₦" + Number(n).toLocaleString("en-US") : Number(n).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") + " FCFA"; }
+  var CATS2 = null;
   function initSearch(actions) {
     var btn = mk("button", { type: "button", "class": "icon-btn", "aria-label": "Search / Rechercher" }, SVG_SEARCH);
     actions.insertBefore(btn, actions.firstChild);
     var ov = mk("div", { "class": "search-ov", role: "dialog", "aria-modal": "true", hidden: "" });
     ov.innerHTML = '<div class="search-box"><div class="search-row">' + SVG_SEARCH + '<input type="search" autocomplete="off"><button type="button" class="search-x" aria-label="Close">✕</button></div><div class="search-res"></div></div>';
     document.body.appendChild(ov);
-    var inp = ov.querySelector("input"), res = ov.querySelector(".search-res");
+    var inp = ov.querySelector("input"), res = ov.querySelector(".search-res"), timer, seq = 0;
+    function hint(t) { res.innerHTML = '<p class="search-none">' + esc2(t) + "</p>"; }
     function draw() {
-      var q = norm(inp.value.trim()), words = q.split(/\s+/).filter(Boolean);
-      var hits = PAGES.filter(function (p) { var hay = norm(p[1] + " " + p[2] + " " + p[3]); return words.every(function (w) { return hay.indexOf(w) > -1; }); });
-      if (!words.length) hits = PAGES.slice(0, 8);
-      res.innerHTML = "";
-      if (!hits.length) { res.appendChild(mk("p", { "class": "search-none" })).textContent = tx("No result. Try “Umrah”, “visa”, “hotel”…", "Aucun résultat. Essayez « Omra », « visa », « hôtel »…"); return; }
-      hits.forEach(function (p) { var a = mk("a", { href: p[0] }); a.textContent = tx(p[1], p[2]); res.appendChild(a); });
+      clearTimeout(timer);
+      var q = inp.value.trim();
+      if (q.length < 2) { hint(tx("Type a product or a store name… e.g. “phone”, “shoes”, “perfume”", "Tapez un produit ou le nom d’une boutique… ex. « téléphone », « chaussures », « parfum »")); return; }
+      timer = setTimeout(async function () {
+        var my = ++seq, sq = encodeURIComponent("%" + q.replace(/[%,()*]/g, " ") + "%");
+        if (!CATS2) CATS2 = sbGet("categories?select=slug,icon,name_en,name_fr,active&active=eq.true");
+        var r = await Promise.all([
+          sbGet("stores?select=name,slug,city,logo_url,verified&status=eq.approved&or=(name.ilike." + sq + ",city.ilike." + sq + ",description.ilike." + sq + ")&limit=6"),
+          sbGet("products?select=id,title,price,currency,images,stores(name,slug,country)&status=eq.approved&or=(title.ilike." + sq + ",description.ilike." + sq + ")&order=created_at.desc&limit=8"),
+          CATS2
+        ]);
+        if (my !== seq) return;
+        var nq = norm(q), cats = (r[2] || []).filter(function (c) { return norm(c.name_en + " " + c.name_fr + " " + c.slug).indexOf(nq) > -1; }).slice(0, 3);
+        var html = cats.map(function (c) { return '<a class="sr" href="/shop.html?cat=' + esc2(c.slug) + '"><span class="ic">' + esc2(c.icon || "🛍️") + "</span><span><b>" + esc2(tx(c.name_en, c.name_fr)) + "</b><small>" + tx("Category", "Catégorie") + "</small></span></a>"; }).join("") +
+          (r[0] || []).map(function (x) { return '<a class="sr" href="/' + esc2(x.slug) + '"><span class="ic">' + (x.logo_url ? '<img src="' + esc2(x.logo_url) + '" alt="">' : "🏪") + "</span><span><b>" + esc2(x.name) + (x.verified ? " ✔" : "") + "</b><small>" + tx("Store", "Boutique") + (x.city ? " · " + esc2(x.city) : "") + "</small></span></a>"; }).join("") +
+          (r[1] || []).map(function (x) { var st = x.stores || {}; return '<a class="sr" href="/product.html?id=' + esc2(x.id) + '"><span class="ic">' + ((x.images || [])[0] ? '<img src="' + esc2(x.images[0]) + '" alt="">' : "🛍️") + "</span><span><b>" + esc2(x.title) + "</b><small>" + money2(x.price, x.currency === "NGN" ? "NGN" : st.country === "NG" ? "NGN" : "XOF") + (st.name ? " · " + esc2(st.name) : "") + "</small></span></a>"; }).join("");
+        if (!html) return hint(tx("No store or product found. Try another word.", "Aucune boutique ni produit trouvé. Essayez un autre mot."));
+        res.innerHTML = html + '<a class="sr all" href="/shop.html?q=' + encodeURIComponent(q) + '">' + tx("See all results →", "Voir tous les résultats →") + "</a>";
+      }, 250);
     }
-    function open() { ov.hidden = false; inp.placeholder = tx("Search the site…", "Rechercher sur le site…"); inp.value = ""; draw(); setTimeout(function () { inp.focus(); }, 30); }
+    function open() { ov.hidden = false; inp.placeholder = tx("Search products or stores…", "Rechercher un produit ou une boutique…"); inp.value = ""; draw(); setTimeout(function () { inp.focus(); }, 30); }
     function close() { ov.hidden = true; }
     btn.addEventListener("click", open);
     ov.querySelector(".search-x").addEventListener("click", close);
     ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
     inp.addEventListener("input", draw);
-    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { var a = res.querySelector("a"); if (a) location.href = a.href; } if (e.key === "Escape") close(); });
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { var q = inp.value.trim(); if (q) location.href = "/shop.html?q=" + encodeURIComponent(q); } if (e.key === "Escape") close(); });
   }
+
 
   // 4. Day / night mode
   function initTheme(actions) {

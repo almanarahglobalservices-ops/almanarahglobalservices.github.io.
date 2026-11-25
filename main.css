@@ -1076,3 +1076,17 @@ html[lang="ar"] .l-en::before{content:"هذا النص القانوني متاح
 @media (max-width:560px){.acct-btn{width:36px;height:36px;padding:0;justify-content:center;flex:none}.acct-btn .t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
 /* phones: keep the header on one line with the account button */
 @media (max-width:560px){.nav-actions{gap:4px}.nav-actions .icon-btn,.acct-btn{width:34px;height:34px}.nav-actions .theme-btn{display:none}.lang button{padding:4px 6px;font-size:.72rem}}
+/* the travel basket is no longer shown in the site header (stores have their own request basket) */
+.nav-actions .bk-btn{display:none!important}
+@media (max-width:560px){.nav-actions .theme-btn{display:inline-grid}}
+/* marketplace search results (stores, products, categories) */
+.search-res a.sr{display:flex;gap:12px;align-items:center}
+.search-res a.sr .ic{width:44px;height:44px;flex:none;border-radius:10px;background:#f4f6fb;display:grid;place-items:center;font-size:1.3rem;overflow:hidden}
+.search-res a.sr .ic img{width:100%;height:100%;object-fit:cover}
+.search-res a.sr>span:last-child{display:grid;gap:2px;min-width:0}
+.search-res a.sr b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-res a.sr small{color:#6b7189;font-size:.8rem}
+.search-res a.sr.all{justify-content:center;font-weight:700;color:#B78A32}
+/* phones: never wider than the screen */
+html,body{max-width:100%;overflow-x:clip}
+img,video,iframe,table{max-width:100%}
