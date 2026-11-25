@@ -100,6 +100,21 @@
     country: ["Country", "Pays", "الدولة"], all_countries: ["All countries", "Tous les pays", "كل الدول"],
     pay_ng: ["Pay by bank transfer to one of these accounts:", "Payez par virement sur l’un de ces comptes :", "ادفع بالتحويل إلى أحد هذه الحسابات:"],
     agree: ["I have read and accept the", "J’ai lu et j’accepte le", "قرأت وأوافق على"], agreement: ["Seller agreement", "Contrat vendeur", "عقد البائع"], agree_err: ["Please accept the seller agreement.", "Veuillez accepter le contrat vendeur.", "يرجى الموافقة على عقد البائع."],
+    ai_box: ["✨ Fill automatically: add a photo and/or a few words (e.g. “Samsung A15 phone, blue”), then tap the button. You can correct everything before saving.", "✨ Remplissage automatique : ajoutez une photo et/ou quelques mots (ex. « téléphone Samsung A15, bleu »), puis appuyez sur le bouton. Vous pouvez tout corriger avant d’enregistrer.", "✨ تعبئة تلقائية: أضف صورة و/أو كلمات قليلة (مثل «هاتف سامسونج A15 أزرق») ثم اضغط الزر، ويمكنك تصحيح كل شيء قبل الحفظ."],
+    ai_hint: ["A few words about the product (optional)", "Quelques mots sur le produit (facultatif)", "كلمات قليلة عن المنتج (اختياري)"],
+    ai_btn: ["✨ Fill with AI", "✨ Remplir avec l’IA", "✨ املأ بالذكاء الاصطناعي"], ai_wait: ["AI is writing…", "L’IA écrit…", "الذكاء الاصطناعي يكتب…"],
+    ai_need: ["Add a photo or a few words first.", "Ajoutez d’abord une photo ou quelques mots.", "أضف صورة أو كلمات أولًا."],
+    ai_done: ["Done ✔ Check the text, correct it if needed, then save.", "C’est fait ✔ Vérifiez le texte, corrigez si besoin, puis enregistrez.", "تم ✔ راجع النص وصحّحه إن لزم ثم احفظ."],
+    ai_fail: ["Automatic filling is not available right now — please type the details.", "Le remplissage automatique n’est pas disponible pour le moment — saisissez les informations.", "التعبئة التلقائية غير متاحة الآن — اكتب البيانات يدويًا."],
+    quick: ["⚡ Quick add (many products)", "⚡ Ajout rapide (plusieurs produits)", "⚡ إضافة سريعة (منتجات كثيرة)"],
+    quick_t: ["Quick add — many products at once", "Ajout rapide — plusieurs produits d’un coup", "إضافة سريعة — منتجات كثيرة دفعة واحدة"],
+    quick_how: ["1. Choose many photos at once (one photo = one product). 2. Tap “Fill all with AI” or type the names. 3. Enter the prices. 4. Publish all. You can add more photos to each product later with “Edit”.", "1. Choisissez plusieurs photos d’un coup (une photo = un produit). 2. Appuyez sur « Tout remplir avec l’IA » ou tapez les noms. 3. Mettez les prix. 4. Publiez tout. Vous pourrez ajouter d’autres photos à chaque produit avec « Modifier ».", "١. اختر صورًا كثيرة دفعة واحدة (كل صورة = منتج). ٢. اضغط «املأ الكل بالذكاء الاصطناعي» أو اكتب الأسماء. ٣. ضع الأسعار. ٤. انشر الكل. ويمكنك إضافة صور أخرى لكل منتج لاحقًا من «تعديل»."],
+    quick_pick: ["＋ Choose photos", "＋ Choisir des photos", "＋ اختر الصور"], quick_left: ["products left in your plan", "produits restants dans votre offre", "منتجًا متبقيًا في باقتك"],
+    quick_ai: ["✨ Fill all with AI", "✨ Tout remplir avec l’IA", "✨ املأ الكل بالذكاء الاصطناعي"], quick_pub: ["Publish all", "Tout publier", "انشر الكل"],
+    quick_done: ["products sent for approval ✔", "produits envoyés pour validation ✔", "منتجًا أُرسلت للمراجعة ✔"],
+    quick_name: ["Product name", "Nom du produit", "اسم المنتج"], quick_price0: ["0 = price on request", "0 = prix sur demande", "0 = السعر عند الطلب"],
+    health_note: ["Food supplements and natural products are not medicines. Ask a health professional before use, especially if you are pregnant, breastfeeding, ill or taking treatment.", "Les compléments alimentaires et produits naturels ne sont pas des médicaments. Demandez l’avis d’un professionnel de santé avant utilisation, surtout en cas de grossesse, d’allaitement, de maladie ou de traitement.", "المكملات الغذائية والمنتجات الطبيعية ليست أدوية. استشر مختصًا صحيًا قبل الاستعمال، خاصة للحامل والمرضع والمريض ومن يتناول علاجًا."],
+    health_rule: ["Health products: no prescription medicines and no promise to cure an illness. Supplements must be registered where required (e.g. NAFDAC in Nigeria).", "Produits de santé : pas de médicaments sur ordonnance et aucune promesse de guérir une maladie. Les compléments doivent être enregistrés lorsque c’est exigé (ex. NAFDAC au Nigeria).", "منتجات الصحة: لا أدوية بوصفة طبية، ولا وعد بشفاء أي مرض، ويجب أن تكون المكملات مسجلة حيث يُشترط ذلك (مثل NAFDAC في نيجيريا)."],
     one_rule: ["One product per listing — no photos of a whole shop or many items.", "Un produit par annonce — pas de photo d’une boutique entière ou de plusieurs articles.", "منتج واحد لكل إعلان — لا تصوّر الدكان كله أو سلعًا كثيرة في إعلان واحد."],
     yearly: ["12 months — pay only 6", "12 mois — payez seulement 6", "12 شهرًا — ادفع 6 فقط"], per_year: ["/ year", "/ an", "/ سنة"],
     qr: ["QR code", "Code QR", "رمز QR"], qr_dl: ["Download QR code", "Télécharger le code QR", "تحميل رمز QR"], qr_hint: ["Print it or send it: customers scan it to open your store.", "Imprimez-le ou envoyez-le : les clients le scannent pour ouvrir votre boutique.", "اطبعه أو أرسله: يمسحه الزبائن فيفتح متجرك مباشرة."], scan_me: ["Scan to see all our products", "Scannez pour voir tous nos produits", "امسح الرمز لترى كل منتجاتنا"],
@@ -188,6 +203,19 @@
   async function cats() { if (CATS) return CATS; var r = await sb.from("categories").select("*").order("sort_order"); CATS = r.data || []; return CATS; }
   async function plans() { if (PLANS) return PLANS; var r = await sb.from("plans").select("*").order("sort_order"); PLANS = r.data || []; return PLANS; }
   function catById(id) { return (CATS || []).filter(function (c) { return c.id === id; })[0]; }
+  function isHealth(id) { var c = catById(id); return !!c && c.slug === "sante"; }
+  /* AI fill: the photo and a few words become title, description, category and condition.
+     Runs on our own server (/api/ai-fill); the AI key never reaches the browser. */
+  async function aiFill(imgUrl, hint) {
+    var ss = await sb.auth.getSession(), tok = ss.data.session && ss.data.session.access_token;
+    if (!tok) throw new Error("auth");
+    var r = await fetch("/api/ai-fill", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + tok },
+      body: JSON.stringify({ image: imgUrl || "", hint: hint || "", lang: L(), cats: (CATS || []).filter(function (c) { return c.active; }).map(function (c) { return { slug: c.slug, name: c.name_en + " / " + c.name_fr }; }) }) });
+    var j = await r.json().catch(function () { return {}; });
+    if (!r.ok || j.error) throw new Error(j.error || "AI");
+    var c = (CATS || []).filter(function (x) { return x.slug === j.category; })[0];
+    return { title: String(j.title || "").slice(0, 120), description: String(j.description || "").slice(0, 3000), category_id: c ? c.id : null, condition: ["new", "used", "refurbished"].indexOf(j.condition) > -1 ? j.condition : null };
+  }
 
   /* promotions: returns map productId -> discount%, and storeId -> discount% */
   async function promoMap(products) {
@@ -375,6 +403,23 @@
     liveSearch($("#mkSearchForm input[name=q]"));
     var shb = $("#mkShareSite"); if (shb) shb.addEventListener("click", function () { shareModal({ name: "AL MANARAH GLOBAL SERVICES", url: location.origin + "/", file: "almanarah" }); });
     var f = $("#mkSearchForm"); if (f) f.addEventListener("submit", function (e) { e.preventDefault(); var q = f.q.value.trim(); location.href = "/shop.html" + (q ? "?q=" + encodeURIComponent(q) : ""); });
+    /* endless "Discover" feed: more products load by themselves as the visitor scrolls */
+    var feed = $("#mkFeed"), end = $("#mkFeedEnd");
+    if (feed && end) {
+      var fs = { page: 0, busy: false, done: false, items: [], pm: { p: {}, s: {} } }, per = 20;
+      var fh = $("#mkFeedT"); if (fh) fh.textContent = T3x("Discover", "Découvrir", "اكتشف");
+      async function feedMore() {
+        if (fs.busy || fs.done) return; fs.busy = true; end.classList.add("on");
+        try {
+          var r = await PQ().order("created_at", { ascending: false }).range(fs.page * per, fs.page * per + per - 1);
+          var got = r.data || []; fs.page++; fs.done = got.length < per;
+          if (got.length) { var pm = await promoMap(got); feed.insertAdjacentHTML("beforeend", got.map(function (p) { return card(p, pm); }).join("")); }
+          $("#mkFeedWrap").classList.toggle("mk-hide", !feed.children.length);
+        } catch (e) {} finally { fs.busy = false; end.classList.remove("on"); if (fs.done) end.classList.add("mk-hide"); }
+      }
+      if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { if (es[0].isIntersecting) feedMore(); }, { rootMargin: "900px 0px" }).observe(end);
+      else feedMore();
+    }
   }
 
   /* =============== SHOP =============== */
@@ -461,7 +506,10 @@
       var a = e.target.closest("[data-cat]"); if (!a) return; e.preventDefault(); state.fav = false; state.cat = a.dataset.cat; history.replaceState(null, "", "/shop.html" + (state.cat ? "?cat=" + state.cat : "")); chips(); load(true); });
     $("#shopForm").addEventListener("submit", function (e) { e.preventDefault(); state.q = input.value.trim(); load(true); chips(); });
     sort.addEventListener("change", function () { state.sort = sort.value; load(true); });
-    $("#shopMore").addEventListener("click", function () { load(false); });
+    var moreBusy = false;
+    function loadMore() { if (moreBusy || state.done) return; moreBusy = true; load(false).finally(function () { moreBusy = false; }); }
+    $("#shopMore").addEventListener("click", loadMore);
+    if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { if (es[0].isIntersecting && !$("#shopMore").classList.contains("mk-hide")) loadMore(); }, { rootMargin: "700px 0px" }).observe($("#shopMore"));
     rerender = function () { chips(); draw(); };
     chips(); load(true);
   }
@@ -659,6 +707,7 @@
         '<div class="pd-cta" style="margin-top:18px">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + (hasPay(s) ? '<button type="button" class="btn btn-gold" id="pdPay">💳 ' + t("pay_online") + "</button>" : "") + "</div>" +
         '<div class="mk-inline" style="margin-top:12px"><button type="button" class="mk-btn" data-fav="' + p.id + '">' + (isFav(p.id) ? "♥" : "♡") + " " + t("saved") + '</button><a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(p.title + " — " + money(pr.now, pr.cur) + "\n" + link) + '">' + t("share_p") + ' (WhatsApp)</a><button type="button" class="mk-btn" id="pdCopy">' + t("copy") + '</button><button type="button" class="mk-btn" id="pdShare">📤 ' + t("share_p") + " / " + t("qr") + "</button></div>" +
         (p.description ? '<div class="pd-desc">' + esc(p.description) + "</div>" : "") +
+        (isHealth(p.category_id) ? '<p class="mk-health">🌿 ' + t("health_note") + "</p>" : "") +
         '<div class="mk-safe"><b>🛡 ' + t("safety_t") + "</b><ul>" + t("safety").map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><p style="margin:8px 0 0"><button type="button" class="mk-link" id="pdReport">⚑ ' + t("report") + "</button></p></div>" +
         '<a class="pd-seller" href="/' + esc(s.slug) + '">' + (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name) + "</span>") +
         '<span><span class="mk-small">' + t("seller") + "</span><br><b>" + esc(s.name) + "</b>" + (s.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + "<br><span class=\"mk-small\">" + esc(s.city || "") + '</span></span><span class="mk-more" style="margin-inline-start:auto">' + t("view_store") + " →</span></a>" +
@@ -855,11 +904,13 @@
     function tProd() {
       var pl = plan();
       B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
+        '<p style="margin:-4px 0 16px"><button class="btn btn-outline btn-sm" id="quickP" type="button">' + t("quick") + "</button></p>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
           return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn ok" data-sell="' + p.id + '">' + T3x("＋1 sold", "＋1 vendu", "＋1 مُباع") + '</button><button class="mk-btn" data-stk="' + p.id + '">📦 ' + T3x("Stock", "Stock", "المخزون") + '</button><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
       $("#addP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } productModal(null); });
+      $("#quickP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } quickModal(); });
       B().addEventListener("click", async function (e) {
         var b = e.target.closest("button"); if (!b) return;
         var find = function (id) { return data.products.filter(function (p) { return p.id === id; })[0]; };
@@ -877,6 +928,8 @@
       var m = document.createElement("div"); m.className = "mk-modal";
       var catOpts = CATS.filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + ((p.category_id || store.category_id) === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
       m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + (p.id ? t("edit") : t("add_prod")) + '</h2><form class="mk-form" id="pF">' +
+        '<div class="full"><label>' + t("photos").replace("6", maxImg) + '</label><div class="mk-imgs" id="pImgs"></div></div>' +
+        '<div class="full mk-ai"><p>' + t("ai_box") + '</p><div class="mk-ai-row"><input name="aihint" maxlength="200" placeholder="' + esc(t("ai_hint")) + '"><button type="button" class="mk-btn gold" id="aiGo">' + t("ai_btn") + '</button></div><div id="aiM"></div></div>' +
         '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120" value="' + esc(p.title || "") + '"></div>' +
         '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
         ((store.sections || []).length ? '<div><label>' + T3x("Section", "Rubrique", "القسم") + '</label><select name="section"><option value="">—</option>' + store.sections.map(function (x) { return '<option' + (p.section === x ? " selected" : "") + ">" + esc(x) + "</option>"; }).join("") + "</select></div>" : "") +
@@ -887,8 +940,7 @@
         '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + ((p.condition || "new") === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
         '<div><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" name="neg" style="width:auto"' + (p.negotiable ? " checked" : "") + "> " + t("negotiable") + "</label></div>" +
         '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="3000">' + esc(p.description || "") + "</textarea></div>" +
-        '<div class="full"><label>' + t("photos").replace("6", maxImg) + '</label><div class="mk-imgs" id="pImgs"></div></div>' +
-        '<div class="full"><div class="mk-msg warn" style="margin:0 0 10px">⚠ ' + t("one_rule") + '</div><p class="mk-small">' + t("review_note") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + '</a></p><button class="btn btn-primary" type="submit">' + t("save") + '</button><div id="pM"></div></div></form></div>';
+        '<div class="full"><div class="mk-msg warn" style="margin:0 0 10px">⚠ ' + t("one_rule") + '<span id="hRule"></span></div><p class="mk-small">' + t("review_note") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + '</a></p><button class="btn btn-primary" type="submit">' + t("save") + '</button><div id="pM"></div></div></form></div>';
       document.body.appendChild(m);
       function close() { m.remove(); }
       $(".x", m).onclick = close; m.addEventListener("click", function (e) { if (e.target === m) close(); });
@@ -903,6 +955,24 @@
         };
       }
       drawImgs();
+      var pf = $("#pF", m);
+      function hRule() { $("#hRule", m).innerHTML = isHealth(+pf.category_id.value) ? "<br>🌿 " + t("health_rule") : ""; }
+      pf.category_id.addEventListener("change", hRule); hRule();
+      pf.aihint.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("#aiGo", m).click(); } });
+      $("#aiGo", m).addEventListener("click", async function () {
+        var b = this, A = $("#aiM", m), hint = pf.aihint.value.trim();
+        if (!imgs.length && !hint) return msg(A, "err", t("ai_need"));
+        b.disabled = true; b.textContent = t("ai_wait"); msg(A, "", "");
+        try {
+          var r = await aiFill(imgs[0], hint);
+          if (r.title) pf.ptitle.value = r.title;
+          if (r.description) pf.description.value = r.description;
+          if (r.category_id) pf.category_id.value = r.category_id;
+          if (r.condition) pf.cond.value = r.condition;
+          hRule(); msg(A, "ok", t("ai_done"));
+        } catch (e) { msg(A, "err", t("ai_fail")); }
+        b.disabled = false; b.textContent = t("ai_btn");
+      });
       $("#pF", m).addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button[type=submit]"), M = $("#pM", m);
         var row = { title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: Math.max(0, Math.round(+f.price.value || 0)), compare_at_price: +f.old.value ? Math.round(+f.old.value) : null, stock: f.stock.value === "" ? null : Math.max(0, Math.round(+f.stock.value)), description: f.description.value.trim() || null, images: imgs, condition: f.cond.value, negotiable: f.neg.checked };
@@ -915,6 +985,61 @@
         if (r.error) return msg(M, "err", /PLAN_LIMIT/.test(r.error.message) ? t("limit") : esc(r.error.message));
         close(); tab = "prod"; await loadAll(); shell();
       });
+    }
+
+    function quickModal() {
+      var pl = plan(), admin = me && me.role === "admin", left = admin ? 500 : Math.max(0, pl.product_limit - data.products.length);
+      var rows = [], cur = store.country === "NG" ? "NGN" : "XOF", m = document.createElement("div"); m.className = "mk-modal";
+      var catOpts = function (sel) { return CATS.filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + (sel === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join(""); };
+      m.innerHTML = '<div class="box wide"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + t("quick_t") + '</h2><p class="mk-small">' + t("quick_how") + '</p><div class="mk-msg warn" style="margin:0 0 12px">⚠ ' + t("one_rule") + '</div>' +
+        '<div class="mk-inline" style="margin-bottom:12px"><label class="btn btn-primary btn-sm" style="cursor:pointer">' + t("quick_pick") + '<input type="file" id="qF" accept="image/*" multiple hidden></label><button type="button" class="mk-btn gold" id="qAi">' + t("quick_ai") + '</button><span class="mk-small" id="qLeft"></span></div><div id="qM"></div><div class="mk-qlist" id="qL"></div>' +
+        '<div style="margin-top:14px"><button class="btn btn-primary" type="button" id="qPub">' + t("quick_pub") + '</button> <span class="mk-small">' + t("review_note") + '</span><div id="qM2"></div></div></div>';
+      document.body.appendChild(m);
+      var M = $("#qM", m), L2 = $("#qL", m);
+      function close() { m.remove(); }
+      $(".x", m).onclick = close;
+      function sync() { $$("[data-qi]", L2).forEach(function (el) { var r = rows[+el.dataset.qi]; if (!r) return; r.title = $("[name=qt]", el).value; r.price = $("[name=qp]", el).value; r.cat = +$("[name=qc]", el).value; }); }
+      function draw() {
+        $("#qLeft", m).textContent = (left - rows.length) + " " + t("quick_left");
+        L2.innerHTML = rows.map(function (r, i) {
+          return '<div class="mk-qrow" data-qi="' + i + '"><img src="' + esc(r.img) + '" alt=""><div class="f"><input name="qt" maxlength="120" placeholder="' + esc(t("quick_name")) + '" value="' + esc(r.title) + '"><div class="two"><input name="qp" type="number" min="0" step="1" placeholder="' + (cur === "NGN" ? "₦" : "FCFA") + '" value="' + esc(r.price) + '"><select name="qc">' + catOpts(r.cat) + "</select></div>" + (r.busy ? '<small class="mk-small">' + t("ai_wait") + "</small>" : r.description ? '<small class="mk-small">' + esc(r.description.slice(0, 90)) + "…</small>" : "") + '</div><button type="button" class="mk-btn no" data-qx="' + i + '">✕</button></div>';
+        }).join("");
+        $$("[data-qx]", L2).forEach(function (b) { b.onclick = function () { sync(); var r = rows.splice(+b.dataset.qx, 1)[0]; if (r) removeImg(r.img); draw(); }; });
+      }
+      $("#qF", m).onchange = async function () {
+        sync(); var files = Array.prototype.slice.call(this.files, 0, Math.max(0, left - rows.length)); this.value = "";
+        if (!files.length) return msg(M, "err", t("limit"));
+        for (var i = 0; i < files.length; i++) {
+          msg(M, "info", t("uploading") + " " + (i + 1) + " / " + files.length);
+          try { rows.push({ img: await upload(files[i], "p"), title: "", price: "", cat: store.category_id, description: "", cond: "new" }); draw(); } catch (e) { msg(M, "err", t("fail")); }
+        }
+        msg(M, "", "");
+      };
+      $("#qAi", m).onclick = async function () {
+        sync(); var b = this, todo = rows.filter(function (r) { return !r.description; });
+        if (!todo.length) return msg(M, "err", t("ai_need"));
+        b.disabled = true; var bad = 0;
+        for (var i = 0; i < todo.length; i++) {
+          var r = todo[i]; r.busy = true; draw(); msg(M, "info", t("ai_wait") + " " + (i + 1) + " / " + todo.length);
+          try { var a = await aiFill(r.img, r.title); if (a.title) r.title = a.title; r.description = a.description || ""; if (a.category_id) r.cat = a.category_id; if (a.condition) r.cond = a.condition; } catch (e) { bad++; if (i === 0) { r.busy = false; break; } }
+          r.busy = false; sync(); draw();
+        }
+        rows.forEach(function (r) { r.busy = false; }); draw();
+        msg(M, bad ? "err" : "ok", bad ? t("ai_fail") : t("ai_done")); b.disabled = false;
+      };
+      $("#qPub", m).onclick = async function () {
+        sync(); var b = this, M2 = $("#qM2", m);
+        if (!rows.length) return msg(M2, "err", t("ai_need"));
+        if (rows.some(function (r) { return !r.title.trim() || !r.cat; })) return msg(M2, "err", t("required"));
+        var ins = rows.map(function (r) { var o = { store_id: store.id, title: r.title.trim(), category_id: r.cat, price: Math.max(0, Math.round(+r.price || 0)), description: r.description || null, images: [r.img], condition: r.cond || "new", negotiable: false, currency: cur }; return o; });
+        b.disabled = true; msg(M2, "info", t("uploading"));
+        var res = await sb.from("products").insert(ins);
+        b.disabled = false;
+        if (res.error) return msg(M2, "err", /PLAN_LIMIT/.test(res.error.message) ? t("limit") : esc(res.error.message));
+        msg(M2, "ok", ins.length + " " + t("quick_done"));
+        setTimeout(async function () { close(); tab = "prod"; await loadAll(); shell(); }, 1200);
+      };
+      draw();
     }
 
     function tReq() {
@@ -991,6 +1116,14 @@
     if (!me || me.role !== "admin") { app.innerHTML = '<div class="mk-msg err">Access denied.</div>'; return; }
     await Promise.all([cats(), plans()]);
     try { await sb.rpc("expire_plans"); } catch (e) {}
+    /* one-time: add the "Health & Wellness" category if it is not there yet (placed next to Beauty) */
+    try {
+      if (!CATS.some(function (c) { return c.slug === "sante"; })) {
+        var bt = CATS.filter(function (c) { return /beaut/.test(c.slug); })[0];
+        var hr = await sb.from("categories").insert({ icon: "🌿", slug: "sante", name_en: "Health & Wellness", name_fr: "Santé & Bien-être", name_ar: "الصحة والعافية", sort_order: bt ? bt.sort_order : CATS.length + 1, active: true });
+        if (!hr.error) { CATS = null; await cats(); }
+      }
+    } catch (e) {}
     var tab = (location.hash || "#over").slice(1), D2 = {}, filt = { st: "pending", pr: "pending", q: "" };
     async function load() {
       var [s, p, pr, rq, o, rv, rp, bn, ms] = await Promise.all([
