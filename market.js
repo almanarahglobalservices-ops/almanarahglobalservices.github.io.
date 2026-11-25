@@ -93,7 +93,9 @@
     details: ["Details", "Détails", "التفاصيل"], your_contact: ["Your phone or email (optional)", "Votre téléphone ou e-mail (facultatif)", "هاتفك أو بريدك (اختياري)"], thanks_report: ["Thank you. AL MANARAH will review this.", "Merci. AL MANARAH va vérifier.", "شكرًا لك، ستراجعه المنارة."],
     reviews: ["Reviews", "Avis", "التقييمات"], no_reviews: ["No reviews yet.", "Pas encore d’avis.", "لا توجد تقييمات بعد."], write_review: ["Rate this seller", "Noter ce vendeur", "قيّم هذا البائع"],
     your_name: ["Your name", "Votre nom", "اسمك"], comment: ["Comment", "Commentaire", "تعليق"], review_sent: ["Thank you! Your review will appear after checking.", "Merci ! Votre avis apparaîtra après vérification.", "شكرًا! سيظهر تقييمك بعد المراجعة."],
-    share_p: ["Share", "Partager", "مشاركة"], deals: ["Deals", "Bonnes affaires", "عروض"]
+    share_p: ["Share", "Partager", "مشاركة"], pay_online: ["Pay online", "Payer en ligne", "الدفع أونلاين"],
+    pay_sec: ["Online payment (optional)", "Paiement en ligne (facultatif)", "الدفع أونلاين (اختياري)"], pay_hint: ["Customers see these numbers when they tap “Pay online” on your store.", "Les clients voient ces numéros en touchant « Payer en ligne » sur votre boutique.", "يرى الزبائن هذه الأرقام عند الضغط على «الدفع أونلاين» في متجرك."],
+    pay_name: ["Account name", "Nom du compte", "اسم صاحب الحساب"], pay_after: ["After paying, send your receipt to the seller on WhatsApp.", "Après le paiement, envoyez votre reçu au vendeur sur WhatsApp.", "بعد الدفع، أرسل الإيصال إلى البائع عبر الواتساب."], send_receipt: ["Send receipt on WhatsApp", "Envoyer le reçu sur WhatsApp", "أرسل الإيصال عبر الواتساب"], deals: ["Deals", "Bonnes affaires", "عروض"]
   };
   function t(k) { var r = D[k]; if (!r) return k; var l = L(); return l === "fr" ? r[1] : l === "ar" ? (r[2] || r[0]) : r[0]; }
 
@@ -347,7 +349,7 @@
       box.innerHTML = '<div class="st-cover"' + (s.cover_url ? ' style="background-image:url(\'' + esc(s.cover_url) + '\')"' : "") + '></div><div class="container"><div class="st-head">' +
         (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="' + esc(s.name) + '">' : '<span class="logo">' + initials(s.name) + "</span>") +
         '<div class="t"><h1>' + esc(s.name) + "</h1>" + '<div class="meta">' + (s.verified ? '<span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + "<span>" + esc(catName(catById(s.category_id))) + "</span>" + (s.city ? "<span>📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + "</span>" : "") + "<span>" + items.length + " " + t("products") + "</span>" + (revs.length ? "<span>" + stars(avg) + " " + avg.toFixed(1) + " (" + revs.length + ")</span>" : "") + "<span>" + t("member") + " " + dateFmt(s.created_at) + "</span></div></div>" +
-        '<div class="st-actions">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2 btn-sm" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, t("wa_store") + " " + link) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline btn-sm" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + "</div></div>" +
+        '<div class="st-actions">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2 btn-sm" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, t("wa_store") + " " + link) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline btn-sm" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + (hasPay(s) ? '<button type="button" class="btn btn-gold btn-sm" id="stPay">💳 ' + t("pay_online") + "</button>" : "") + "</div></div>" +
         (s.status !== "approved" ? '<div class="mk-msg warn" style="margin-top:16px">' + t("preview") + "</div>" : "") +
         (s.description ? '<p class="st-desc">' + esc(s.description) + "</p>" : "") +
         '<div class="st-share"><b>' + t("share") + ':</b> <code>' + esc(link) + '</code> <button class="mk-btn" id="stCopy" type="button">' + t("copy") + '</button> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(s.name + " — " + link) + '">' + t("wa") + "</a></div>" +
@@ -364,9 +366,21 @@
       $$("#rvStars button").forEach(function (b) { b.addEventListener("click", function () { rate = +b.dataset.n; $$("#rvStars button").forEach(function (x) { x.classList.toggle("on", +x.dataset.n <= rate); }); }); });
       $("#rvF").addEventListener("submit", async function (e) { e.preventDefault(); var f = e.target; if (!rate) return msg($("#rvM"), "err", t("required")); var r = await sb.rpc("submit_review", { p_store: s.id, p_name: f.rn.value.trim(), p_rating: rate, p_comment: f.rc.value.trim() || null }); if (r.error) return msg($("#rvM"), "err", t("fail")); msg($("#rvM"), "ok", t("review_sent")); f.reset(); });
       $("#stReport").addEventListener("click", function () { reportModal(s.id, null); });
+      var sp = $("#stPay"); if (sp) sp.addEventListener("click", function () { payModal(s, ""); });
       $("#stCopy").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
     };
     rerender();
+  }
+
+  var PAYS = [["pay_mtn", "MTN Mobile Money"], ["pay_orange", "Orange Money"], ["pay_moov", "Moov Money"], ["pay_wave", "Wave"]];
+  function hasPay(s) { return PAYS.some(function (p) { return s && s[p[0]]; }); }
+  function payModal(s, what) {
+    var m = document.createElement("div"); m.className = "mk-modal";
+    m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h3 style="margin-top:0">💳 ' + t("pay_online") + " — " + esc(s.name) + "</h3>" + (what ? "<p><b>" + esc(what) + "</b></p>" : "") +
+      '<div class="mk-list">' + PAYS.filter(function (p) { return s[p[0]]; }).map(function (p) { return '<div class="mk-row"><div class="mid"><b>' + p[1] + '</b><small style="font-size:1.05rem;color:var(--ink)">' + esc(s[p[0]]) + "</small></div></div>"; }).join("") + "</div>" +
+      (s.pay_name ? '<p style="margin-top:12px">' + t("pay_name") + ": <b>" + esc(s.pay_name) + "</b></p>" : "") + '<p class="mk-small">' + t("pay_after") + "</p>" +
+      (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2 btn-sm" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, t("pay_online") + (what ? " — " + what : "")) + '">' + t("send_receipt") + "</a>" : "") + "</div>";
+    document.body.appendChild(m); $(".x", m).onclick = function () { m.remove(); }; m.addEventListener("click", function (e) { if (e.target === m) m.remove(); });
   }
 
   function reportModal(storeId, productId) {
@@ -381,7 +395,7 @@
     await cats();
     var id = qs("id"), box = $("#pdApp");
     if (!id) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
-    var r = await sb.from("products").select("*,stores(id,name,slug,logo_url,city,phone,whatsapp,verified,status)").eq("id", id).maybeSingle(), p = r.data;
+    var r = await sb.from("products").select("*,stores(id,name,slug,logo_url,city,phone,whatsapp,verified,status,pay_mtn,pay_orange,pay_moov,pay_wave,pay_name)").eq("id", id).maybeSingle(), p = r.data;
     if (!p) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
     document.title = p.title + " | AL MANARAH GLOBAL SERVICES";
     var s = p.stores || {}, pm = await promoMap([p]), pr = priceOf(p, pm), imgs = p.images || [], cur = 0;
@@ -402,7 +416,7 @@
         (imgs.length > 1 ? '<div class="pd-thumbs">' + imgs.map(function (u, i) { return '<button type="button" data-i="' + i + '"' + (i === cur ? ' class="on"' : "") + '><img src="' + esc(u) + '" alt=""></button>'; }).join("") + "</div>" : "") + "</div>" +
         "<div><h1>" + esc(p.title) + "</h1>" + priceHtml(pr) + (pr.off ? ' <span class="mk-status s-new">-' + pr.off + "%</span>" : "") +
         '<div class="mk-tags"><span class="mk-tag">' + t("c_" + (p.condition || "new")) + "</span>" + (p.negotiable ? '<span class="mk-tag">🤝 ' + t("negotiable") + "</span>" : "") + (p.stock != null ? '<span class="mk-tag">' + (p.stock > 0 ? t("stock") + " (" + p.stock + ")" : t("out")) + "</span>" : "") + '<span class="mk-tag">👁 ' + views + " " + t("views") + '</span><span class="mk-tag">' + t("posted") + " " + dateFmt(p.created_at) + "</span></div>" +
-        '<div class="pd-cta" style="margin-top:18px">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + "</div>" +
+        '<div class="pd-cta" style="margin-top:18px">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + (hasPay(s) ? '<button type="button" class="btn btn-gold" id="pdPay">💳 ' + t("pay_online") + "</button>" : "") + "</div>" +
         '<div class="mk-inline" style="margin-top:12px"><button type="button" class="mk-btn" data-fav="' + p.id + '">' + (isFav(p.id) ? "♥" : "♡") + " " + t("saved") + '</button><a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(p.title + " — " + money(pr.now) + "\n" + link) + '">' + t("share_p") + ' (WhatsApp)</a><button type="button" class="mk-btn" id="pdCopy">' + t("copy") + "</button></div>" +
         (p.description ? '<div class="pd-desc">' + esc(p.description) + "</div>" : "") +
         '<div class="mk-safe"><b>🛡 ' + t("safety_t") + "</b><ul>" + t("safety").map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><p style="margin:8px 0 0"><button type="button" class="mk-link" id="pdReport">⚑ ' + t("report") + "</button></p></div>" +
@@ -417,6 +431,7 @@
         '<div class="mk-sticky">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-primary" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + "</div>";
       $("#pdCopy").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
       $("#pdReport").addEventListener("click", function () { reportModal(p.store_id, p.id); });
+      var pp = $("#pdPay"); if (pp) pp.addEventListener("click", function () { payModal(s, p.title + " — " + money(pr.now)); });
       var th = $(".pd-thumbs"); if (th) th.addEventListener("click", function (e) { var b = e.target.closest("[data-i]"); if (!b) return; cur = +b.dataset.i; $("#pdImg").src = imgs[cur]; $$("button", th).forEach(function (x) { x.classList.toggle("on", x === b); }); });
       $("#reqForm").addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button"); b.disabled = true;
@@ -498,6 +513,9 @@
       '<div><label>' + t("store_phone") + ' *</label><input name="phone" type="tel" required maxlength="30" value="' + esc(s.phone || (me && me.phone) || "") + '"><div class="hint">' + t("phone_hint") + "</div></div>" +
       '<div><label>' + t("store_wa") + '</label><input name="whatsapp" type="tel" maxlength="30" value="' + esc(s.whatsapp || "") + '"></div>' +
       '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="1200">' + esc(s.description || "") + "</textarea></div>" +
+      '<div class="full" style="margin-top:8px"><b>💳 ' + t("pay_sec") + '</b><div class="hint">' + t("pay_hint") + "</div></div>" +
+      PAYS.map(function (p) { return '<div><label>' + p[1] + '</label><input name="' + p[0] + '" type="text" inputmode="tel" maxlength="30" value="' + esc(s[p[0]] || "") + '"></div>'; }).join("") +
+      '<div class="full"><label>' + t("pay_name") + '</label><input name="pay_name" maxlength="80" value="' + esc(s.pay_name || "") + '"></div>' +
       '<div><label>' + t("logo") + '</label><div class="mk-imgs" id="lgBox"></div></div><div><label>' + t("cover") + '</label><div class="mk-imgs" id="cvBox"></div></div>' +
       '<div class="full"><button class="btn btn-primary" type="submit">' + (s.id ? t("save") : t("create_store")) + '</button><div id="stM"></div></div></form>';
   }
@@ -514,7 +532,8 @@
     f.slug.addEventListener("input", function () { f.slug.dataset.touched = 1; f.slug.value = slugify(f.slug.value); });
     f.addEventListener("submit", async function (e) {
       e.preventDefault(); var M = $("#stM"), b = f.querySelector("button[type=submit]");
-      var row = { owner_name: f.owner_name.value.trim(), name: f.bname.value.trim(), slug: slugify(f.slug.value), category_id: +f.category_id.value || null, city: f.city.value.trim(), address: f.address.value.trim() || null, phone: f.phone.value.trim(), whatsapp: f.whatsapp.value.trim() || null, description: f.description.value.trim() || null, logo_url: draft.logo || null, cover_url: draft.cover || null };
+      var row = { owner_name: f.owner_name.value.trim(), name: f.bname.value.trim(), slug: slugify(f.slug.value), category_id: +f.category_id.value || null, city: f.city.value.trim(), address: f.address.value.trim() || null, phone: f.phone.value.trim(), whatsapp: f.whatsapp.value.trim() || null, description: f.description.value.trim() || null, logo_url: draft.logo || null, cover_url: draft.cover || null, pay_name: f.pay_name.value.trim() || null };
+      PAYS.forEach(function (p) { row[p[0]] = f[p[0]].value.trim() || null; });
       if (!row.owner_name || !row.name || !row.slug || row.slug.length < 3 || !row.category_id || !row.city || !row.phone) return msg(M, "err", t("required"));
       if (!s.id) row.owner_id = u.id;
       b.disabled = true; var err = await save(row); b.disabled = false;

@@ -1461,6 +1461,7 @@
   }
   /* Pay buttons on the December offer and the Visas page */
   function initPayLinks() {
+    return; // payments are shown inside each store (marketplace)
     var items = payItems(), page = document.body.dataset.page;
     var menu = document.getElementById("menu");
     if (menu && !menu.querySelector('[data-nav="pay"]')) {
