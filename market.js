@@ -210,13 +210,13 @@
   }
   function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now, pr.cur) + (pr.was ? "<s>" + money(pr.was, pr.cur) + "</s>" : "") + "</span>"; }
 
-  var PSEL = "id,title,price,currency,section,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country,markets)";
+  var PSEL = "id,title,price,currency,section,stock,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country,markets)";
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
     return '<a class="mk-card" href="/product.html?id=' + p.id + '"><div class="img">' +
       (img ? '<img src="' + esc(img) + '" alt="' + esc(p.title) + '" loading="lazy">' : '<span class="noimg">' + esc((catById(p.category_id) || {}).icon || "🛍️") + "</span>") +
-      (feat ? '<span class="mk-badge top">' + t("top") + "</span>" : pr.off ? '<span class="mk-badge">-' + pr.off + "%</span>" : "") +
+      (p.stock === 0 ? '<span class="mk-badge" style="background:#6b7280">' + T3x("Out of stock", "Épuisé", "نفد") + "</span>" : feat ? '<span class="mk-badge top">' + t("top") + "</span>" : pr.off ? '<span class="mk-badge">-' + pr.off + "%</span>" : "") +
       '<button type="button" class="mk-fav" data-fav="' + p.id + '" aria-label="' + t("saved") + '">' + (isFav(p.id) ? "♥" : "♡") + "</button>" +
       (p.condition && p.condition !== "new" ? '<span class="mk-cond">' + t("c_" + p.condition) + "</span>" : "") +
       '</div><div class="body"><h3>' + esc(p.title) + "</h3>" + priceHtml(pr) +
@@ -828,7 +828,8 @@
     function tOver() {
       var pl = plan(), link = storeUrl(store.slug), nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
       var banner = store.status === "pending" ? '<div class="mk-msg warn">' + t("store_pending") + "</div>" : store.status === "rejected" ? '<div class="mk-msg err">' + t("store_rejected") + (store.admin_note ? "<br>" + t("note_from") + " " + esc(store.admin_note) : "") + "</div>" : store.status === "suspended" ? '<div class="mk-msg err">' + t("store_suspended") + (store.admin_note ? "<br>" + esc(store.admin_note) : "") + "</div>" : "";
-      B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
+      var totSold = data.products.reduce(function (a, p) { return a + (p.sold || 0); }, 0), low = data.products.filter(function (p) { return p.stock != null && p.stock <= 3; }).length;
+      B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + totSold + "</b><span>" + T3x("items sold", "articles vendus", "قطعة مُباعة") + '</span></div><div class="mk-kpi"><b' + (low ? ' style="color:#b7791f"' : "") + ">" + low + "</b><span>" + T3x("low / out of stock", "stock faible / épuisé", "مخزون قليل / نافد") + "</span></div>" + '<div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
         '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
         '<p style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="goAdd" type="button">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" id="goEdit" type="button">' + t("t_store") + "</button></p>" +
         '<p class="mk-small">' + T3x("You can change your store details at any time: name, city, country (or both countries), phone, WhatsApp, logo, sections and payment numbers.", "Vous pouvez modifier les informations de votre boutique à tout moment : nom, ville, pays (ou les deux pays), téléphone, WhatsApp, logo, rubriques et numéros de paiement.", "يمكنك تعديل بيانات متجرك في أي وقت: الاسم، المدينة، الدولة (أو البلدين)، الهاتف، واتساب، الشعار، الأقسام وأرقام الدفع.") + "</p>";
@@ -838,18 +839,33 @@
       $("#ovQr").addEventListener("click", function () { qrModal(store); });
     }
 
+    function stockLine(p) {
+      var sold = p.sold || 0;
+      if (p.stock == null) return '<small>📦 ' + T3x("Stock not tracked", "Stock non suivi", "المخزون غير محدد") + " · " + T3x("Sold", "Vendus", "مُباع") + ": <strong>" + sold + "</strong></small>";
+      var c = p.stock === 0 ? "#b42318" : p.stock <= 3 ? "#b7791f" : "#1f7a4d";
+      return '<small>📦 ' + T3x("In stock", "En stock", "المتوفر") + ': <strong style="color:' + c + '">' + p.stock + "</strong>" + (p.stock === 0 ? " — " + T3x("Out of stock", "Épuisé", "نفد") : p.stock <= 3 ? " — " + T3x("Low", "Bientôt épuisé", "قارب على النفاد") : "") + " · " + T3x("Sold", "Vendus", "مُباع") + ": <strong>" + sold + "</strong></small>";
+    }
+    async function adjustStock(p, soldDelta, newStock) {
+      var row = { sold: Math.max(0, (p.sold || 0) + soldDelta) };
+      if (newStock !== undefined) row.stock = newStock; else if (p.stock != null) row.stock = Math.max(0, p.stock - soldDelta);
+      var r = await sb.from("products").update(row).eq("id", p.id).select().single();
+      if (r.error) { alert(t("fail")); return false; }
+      Object.assign(p, r.data); return true;
+    }
     function tProd() {
       var pl = plan();
       B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
-            '<div class="acts"><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+            '<div class="acts"><button class="mk-btn ok" data-sell="' + p.id + '">' + T3x("＋1 sold", "＋1 vendu", "＋1 مُباع") + '</button><button class="mk-btn" data-stk="' + p.id + '">📦 ' + T3x("Stock", "Stock", "المخزون") + '</button><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
       $("#addP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } productModal(null); });
       B().addEventListener("click", async function (e) {
         var b = e.target.closest("button"); if (!b) return;
         var find = function (id) { return data.products.filter(function (p) { return p.id === id; })[0]; };
         if (b.dataset.e) productModal(find(b.dataset.e));
+        if (b.dataset.sell) { var ps = find(b.dataset.sell); if (ps.stock === 0 && !confirm(T3x("Stock is 0. Record a sale anyway?", "Le stock est à 0. Enregistrer quand même une vente ?", "المخزون صفر. تسجيل بيع رغم ذلك؟"))) return; if (await adjustStock(ps, 1)) shell(); return; }
+        if (b.dataset.stk) { var pk = find(b.dataset.stk); var v = prompt(T3x("How many do you have in stock now? (leave empty = not tracked)", "Combien en avez-vous en stock maintenant ? (vide = non suivi)", "كم عندك في المخزن الآن؟ (اتركه فارغًا = غير محدد)"), pk.stock == null ? "" : pk.stock); if (v === null) return; v = v.trim(); if (v !== "" && (isNaN(+v) || +v < 0)) return alert(t("required")); if (await adjustStock(pk, 0, v === "" ? null : Math.round(+v))) shell(); return; }
         if (b.dataset.h) { await sb.from("products").update({ status: "hidden" }).eq("id", b.dataset.h); await loadAll(); shell(); }
         if (b.dataset.s) { await sb.from("products").update({ status: "pending" }).eq("id", b.dataset.s); await loadAll(); shell(); }
         if (b.dataset.d && confirm(t("sure"))) { var p = find(b.dataset.d); await sb.from("products").delete().eq("id", b.dataset.d); (p.images || []).forEach(removeImg); await loadAll(); shell(); }
@@ -907,7 +923,14 @@
         return '<div class="mk-row"><div class="mid"><b>' + esc(o.customer_name) + ' <span class="mk-small">' + esc(o.ref) + "</span></b><small>" + esc(o.product_title || (o.products || {}).title || "") + (o.unit_price ? " · " + money(o.unit_price, curOf(store.country)) : "") + " · " + t("qty") + ": " + o.quantity + "</small><small>📞 " + esc(o.customer_phone) + (o.customer_city ? " · " + esc(o.customer_city) : "") + " · " + dateFmt(o.created_at) + "</small>" + (o.note ? "<small>💬 " + esc(o.note) + "</small>" : "") + "</div>" +
           '<div class="acts"><a class="mk-btn ok" target="_blank" rel="noopener" href="' + wa(o.customer_phone, waT) + '">' + t("reply_wa") + '</a><a class="mk-btn" href="' + tel(o.customer_phone) + '">' + t("call") + '</a><select class="mk-btn" data-o="' + o.id + '">' + ["new", "contacted", "completed", "cancelled"].map(function (s) { return '<option value="' + s + '"' + (o.status === s ? " selected" : "") + ">" + t("st_" + s) + "</option>"; }).join("") + "</select></div></div>";
       }).join("") : emptyBox("📭", t("no_req"))) + "</div>";
-      $$("select[data-o]", B()).forEach(function (s) { s.addEventListener("change", async function () { await sb.from("orders").update({ status: s.value }).eq("id", s.dataset.o); var o = data.orders.filter(function (x) { return x.id === s.dataset.o; })[0]; if (o) o.status = s.value; }); });
+      $$("select[data-o]", B()).forEach(function (s) { s.addEventListener("change", async function () {
+        var o = data.orders.filter(function (x) { return x.id === s.dataset.o; })[0], before = o ? o.status : "";
+        await sb.from("orders").update({ status: s.value }).eq("id", s.dataset.o); if (o) o.status = s.value;
+        /* a completed request counts as a sale: stock goes down, sold goes up (and back if un-completed) */
+        var p = o && data.products.filter(function (x) { return x.id === o.product_id; })[0], q = o ? Math.max(1, o.quantity || 1) : 0;
+        if (p && before !== "completed" && s.value === "completed") await adjustStock(p, q);
+        if (p && before === "completed" && s.value !== "completed") await adjustStock(p, -q, p.stock == null ? undefined : p.stock + q);
+      }); });
     }
 
     function tPromo() {
