@@ -95,6 +95,8 @@
     your_name: ["Your name", "Votre nom", "اسمك"], comment: ["Comment", "Commentaire", "تعليق"], review_sent: ["Thank you! Your review will appear shortly.", "Merci ! Votre avis apparaîtra sous peu.", "شكرًا! سيظهر تقييمك قريبًا."],
     share_p: ["Share", "Partager", "مشاركة"], pay_online: ["Pay online", "Payer en ligne", "الدفع أونلاين"],
     pay_sec: ["Online payment (optional)", "Paiement en ligne (facultatif)", "الدفع أونلاين (اختياري)"], pay_hint: ["Customers see these numbers when they tap “Pay online” on your store.", "Les clients voient ces numéros en touchant « Payer en ligne » sur votre boutique.", "يرى الزبائن هذه الأرقام عند الضغط على «الدفع أونلاين» في متجرك."],
+    country: ["Country", "Pays", "الدولة"], all_countries: ["All countries", "Tous les pays", "كل الدول"],
+    pay_ng: ["Pay by bank transfer, OPay or PalmPay. Message us on WhatsApp +234 813 288 1718 to receive the account details.", "Payez par virement, OPay ou PalmPay. Écrivez-nous sur WhatsApp +234 813 288 1718 pour recevoir les coordonnées.", "ادفع بالتحويل البنكي أو OPay أو PalmPay، وراسلنا على واتساب ‎+234 813 288 1718 لتصلك بيانات الحساب."],
     agree: ["I have read and accept the", "J’ai lu et j’accepte le", "قرأت وأوافق على"], agreement: ["Seller agreement", "Contrat vendeur", "عقد البائع"], agree_err: ["Please accept the seller agreement.", "Veuillez accepter le contrat vendeur.", "يرجى الموافقة على عقد البائع."],
     one_rule: ["One product per listing — no photos of a whole shop or many items.", "Un produit par annonce — pas de photo d’une boutique entière ou de plusieurs articles.", "منتج واحد لكل إعلان — لا تصوّر الدكان كله أو سلعًا كثيرة في إعلان واحد."],
     yearly: ["12 months — pay only 6", "12 mois — payez seulement 6", "12 شهرًا — ادفع 6 فقط"], per_year: ["/ year", "/ an", "/ سنة"],
@@ -107,10 +109,15 @@
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function money(n) { if (n == null || n === "") return ""; return Number(n).toLocaleString("fr-FR").replace(/ | /g, " ") + " FCFA"; }
+  function money(n, cur) { if (n == null || n === "") return ""; if (cur === "NGN") return "₦" + Number(n).toLocaleString("en-US"); return Number(n).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") + " FCFA"; }
+  var COUNTRIES = { CI: { flag: "🇨🇮", en: "Côte d’Ivoire", fr: "Côte d’Ivoire", ar: "ساحل العاج", cur: "XOF", code: "225" }, NG: { flag: "🇳🇬", en: "Nigeria", fr: "Nigeria", ar: "نيجيريا", cur: "NGN", code: "234" } };
+  function curOf(country) { return (COUNTRIES[country] || COUNTRIES.CI).cur; }
+  function cName(c) { var x = COUNTRIES[c]; if (!x) return ""; var l = L(); return x.flag + " " + (l === "fr" ? x.fr : l === "ar" ? x.ar : x.en); }
+  function myCountry() { try { return localStorage.getItem("mk_country") || ""; } catch (e) { return ""; } }
+  function setCountry(c) { try { localStorage.setItem("mk_country", c || ""); } catch (e) {} }
   function qs(k) { return new URLSearchParams(location.search).get(k); }
   function digits(s) { return String(s || "").replace(/\D/g, ""); }
-  function intl(s) { var d = digits(s); if (!d) return ""; if (d.length === 10 && d[0] === "0") d = "225" + d; if (d.indexOf("00") === 0) d = d.slice(2); return d; }
+  function intl(s) { var d = digits(s); if (!d) return ""; if (d.length === 10 && d[0] === "0") d = "225" + d; else if (d.length === 11 && d[0] === "0") d = "234" + d.slice(1); if (d.indexOf("00") === 0) d = d.slice(2); return d; }
   function wa(num, text) { var d = intl(num); return d ? "https://wa.me/" + d + (text ? "?text=" + encodeURIComponent(text) : "") : ""; }
   function tel(num) { var d = intl(num); return d ? "tel:+" + d : ""; }
   function storeUrl(slug) { return location.origin + "/" + slug; }
@@ -186,14 +193,15 @@
     });
     return map;
   }
-  function priceOf(p, pm) {
+  function priceOf(p, pm) { var r = priceOf0(p, pm); r.cur = curOf((p.stores || {}).country || p.__country); return r; }
+  function priceOf0(p, pm) {
     var d = (pm && (pm.p[p.id] || pm.s[p.store_id])) || 0;
     if (d) return { now: Math.round(p.price * (100 - d) / 100), was: p.price, off: d };
     return { now: p.price, was: p.compare_at_price && p.compare_at_price > p.price ? p.compare_at_price : null, off: p.compare_at_price > p.price ? Math.round(100 - p.price * 100 / p.compare_at_price) : 0 };
   }
-  function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now) + (pr.was ? "<s>" + money(pr.was) + "</s>" : "") + "</span>"; }
+  function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now, pr.cur) + (pr.was ? "<s>" + money(pr.was, pr.cur) + "</s>" : "") + "</span>"; }
 
-  var PSEL = "id,title,price,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city)";
+  var PSEL = "id,title,price,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country)";
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
@@ -215,11 +223,14 @@
   /* =============== HOME =============== */
   async function pageHome() {
     await cats();
+    var CC = myCountry();
+    var hc = $("#mkCountry"); if (hc) { hc.innerHTML = ["", "CI", "NG"].map(function (c) { return '<button type="button" class="mk-chip' + (CC === c ? " on" : "") + '" data-cc="' + c + '">' + (c ? cName(c) : "🌍 " + t("all_countries")) + "</button>"; }).join(""); hc.addEventListener("click", function (e) { var b = e.target.closest("[data-cc]"); if (!b) return; setCountry(b.dataset.cc); location.reload(); }); }
+    function PQ() { var q = sb.from("products").select(CC ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved"); return CC ? q.eq("stores.country", CC) : q; }
     var [cnt, recent, feat, stores] = await Promise.all([
       sb.from("products").select("category_id,store_id").eq("status", "approved").limit(5000),
-      sb.from("products").select(PSEL).eq("status", "approved").order("created_at", { ascending: false }).limit(12),
-      sb.from("products").select(PSEL).eq("status", "approved").gt("featured_until", new Date().toISOString()).limit(8),
-      sb.from("stores").select("id,name,slug,logo_url,cover_url,city,category_id,verified").eq("status", "approved").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
+      PQ().order("created_at", { ascending: false }).limit(12),
+      PQ().gt("featured_until", new Date().toISOString()).limit(8),
+      (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("country", CC) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
     ]);
     var byCat = {}, byStore = {};
     (cnt.data || []).forEach(function (r) { byCat[r.category_id] = (byCat[r.category_id] || 0) + 1; byStore[r.store_id] = (byStore[r.store_id] || 0) + 1; });
@@ -227,7 +238,7 @@
     var [ban, prm, disc] = await Promise.all([
       sb.from("banners").select("*").eq("active", true).order("sort_order"),
       sb.from("promotions").select("product_id,store_id").eq("status", "approved").lte("starts_at", now).or("ends_at.is.null,ends_at.gt." + now).limit(100),
-      sb.from("products").select(PSEL).eq("status", "approved").not("compare_at_price", "is", null).order("created_at", { ascending: false }).limit(24)
+      PQ().not("compare_at_price", "is", null).order("created_at", { ascending: false }).limit(24)
     ]);
     var pids = (prm.data || []).map(function (x) { return x.product_id; }).filter(Boolean), sids = (prm.data || []).filter(function (x) { return !x.product_id; }).map(function (x) { return x.store_id; });
     var dealQ = [];
@@ -235,6 +246,7 @@
     if (sids.length) dealQ.push(sb.from("products").select(PSEL).eq("status", "approved").in("store_id", sids.slice(0, 20)).limit(24));
     var dealRes = await Promise.all(dealQ), dealPool = (disc.data || []);
     dealRes.forEach(function (r) { dealPool = dealPool.concat(r.data || []); });
+    if (CC) dealPool = dealPool.filter(function (p) { return (p.stores || {}).country === CC; });
     var rec = lsGet("mk_recent"), recRes = rec.length ? await sb.from("products").select(PSEL).eq("status", "approved").in("id", rec) : { data: [] };
     var recentList = rec.map(function (id) { return (recRes.data || []).filter(function (p) { return p.id === id; })[0]; }).filter(Boolean);
     var all = (recent.data || []).concat(feat.data || [], dealPool, recentList), pm = await promoMap(all);
@@ -276,11 +288,13 @@
   /* =============== SHOP =============== */
   async function pageShop() {
     await cats();
-    var state = { cat: qs("cat") || "", q: qs("q") || "", sort: "new", page: 0, items: [], done: false, pm: { p: {}, s: {} }, city: "", cond: "", min: "", max: "", fav: qs("fav") === "1" };
+    var state = { cat: qs("cat") || "", q: qs("q") || "", sort: "new", page: 0, items: [], done: false, pm: { p: {}, s: {} }, country: myCountry(), city: "", cond: "", min: "", max: "", fav: qs("fav") === "1" };
     var input = $("#shopQ"), sort = $("#shopSort"); input.value = state.q;
     var cityRes = await sb.from("stores").select("city").eq("status", "approved").limit(2000);
     var cities = Array.from(new Set((cityRes.data || []).map(function (x) { return (x.city || "").trim(); }).filter(Boolean))).sort();
     function filtersUI() {
+      var fc = $("#fCountry"); if (!fc) { fc = document.createElement("select"); fc.id = "fCountry"; $("#shopFilters").prepend(fc); fc.addEventListener("change", function () { state.country = fc.value; setCountry(fc.value); load(true); }); }
+      fc.innerHTML = '<option value="">🌍 ' + t("all_countries") + "</option>" + ["CI", "NG"].map(function (c) { return '<option value="' + c + '"' + (state.country === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("");
       $("#fCity").innerHTML = '<option value="">' + t("any_city") + "</option>" + cities.map(function (c) { return '<option' + (state.city === c ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("");
       $("#fCond").innerHTML = '<option value="">' + t("any_cond") + "</option>" + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + (state.cond === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("");
       $("#fMin").placeholder = t("pmin"); $("#fMax").placeholder = t("pmax");
@@ -306,7 +320,8 @@
     }
     async function load(reset) {
       if (reset) { state.page = 0; state.items = []; state.done = false; $("#shopGrid").innerHTML = '<div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div>'; }
-      var per = 24, q = sb.from("products").select(state.city ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved");
+      var per = 24, q = sb.from("products").select(state.city || state.country ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved");
+      if (state.country) q = q.eq("stores.country", state.country);
       if (state.fav) { var fv = lsGet("mk_fav"); if (!fv.length) { state.items = []; state.done = true; return draw(); } q = q.in("id", fv.slice(0, 200)); }
       if (state.city) q = q.eq("stores.city", state.city);
       if (state.cond) q = q.eq("condition", state.cond);
@@ -407,7 +422,8 @@
   }
 
   var RESERVED = ["index","shop","store","product","sell","manage","about","contact","travel","umrah","hajj","hotels","visas","services","partners","track","pay","privacy","terms","experiences","library","admin","seller-terms","s","api","www","mail","help","support","login","account","almanarah"];
-  var PAYS = [["pay_mtn", "MTN Mobile Money"], ["pay_orange", "Orange Money"], ["pay_moov", "Moov Money"], ["pay_wave", "Wave"]];
+  var PAYS_ALL = { CI: [["pay_mtn", "MTN Mobile Money"], ["pay_orange", "Orange Money"], ["pay_moov", "Moov Money"], ["pay_wave", "Wave"]], NG: [["pay_opay", "OPay"], ["pay_palmpay", "PalmPay"], ["pay_bank", "Bank transfer (bank – account no.)"]] };
+  var PAYS = PAYS_ALL.CI.concat(PAYS_ALL.NG);
   function hasPay(s) { return PAYS.some(function (p) { return s && s[p[0]]; }); }
   function payModal(s, what) {
     var m = document.createElement("div"); m.className = "mk-modal";
@@ -430,7 +446,7 @@
     await cats();
     var id = qs("id"), box = $("#pdApp");
     if (!id) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
-    var r = await sb.from("products").select("*,stores(id,name,slug,logo_url,city,phone,whatsapp,verified,status,pay_mtn,pay_orange,pay_moov,pay_wave,pay_name)").eq("id", id).maybeSingle(), p = r.data;
+    var r = await sb.from("products").select("*,stores(id,name,slug,logo_url,city,country,phone,whatsapp,verified,status,pay_mtn,pay_orange,pay_moov,pay_wave,pay_opay,pay_palmpay,pay_bank,pay_name)").eq("id", id).maybeSingle(), p = r.data;
     if (!p) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
     document.title = p.title + " | AL MANARAH GLOBAL SERVICES";
     var s = p.stores || {}, pm = await promoMap([p]), pr = priceOf(p, pm), imgs = p.images || [], cur = 0;
@@ -444,7 +460,7 @@
     var morePm = await promoMap((more.data || []).concat(sim.data || []));
     var link = productUrl(p.id);
     rerender = function () {
-      var c = catById(p.category_id), waText = t("wa_msg") + "\n" + p.title + " — " + money(pr.now) + "\n" + link;
+      var c = catById(p.category_id), waText = t("wa_msg") + "\n" + p.title + " — " + money(pr.now, pr.cur) + "\n" + link;
       box.innerHTML = '<div class="crumb"><a href="/">AL MANARAH</a> / ' + (c ? '<a href="/shop.html?cat=' + c.slug + '">' + esc(catName(c)) + "</a> / " : "") + "<span>" + esc(p.title) + "</span></div>" +
         (p.status !== "approved" ? '<div class="mk-msg warn">' + stLabel(p.status) + " " + t("review_note") + "</div>" : "") +
         '<div class="pd" style="margin-top:18px"><div><div class="pd-main">' + (imgs.length ? '<img id="pdImg" src="' + esc(imgs[cur]) + '" alt="' + esc(p.title) + '">' : '<div class="mk-empty" style="height:100%;border:0"><span class="e">' + esc((c || {}).icon || "🛍️") + "</span></div>") + "</div>" +
@@ -452,7 +468,7 @@
         "<div><h1>" + esc(p.title) + "</h1>" + priceHtml(pr) + (pr.off ? ' <span class="mk-status s-new">-' + pr.off + "%</span>" : "") +
         '<div class="mk-tags"><span class="mk-tag">' + t("c_" + (p.condition || "new")) + "</span>" + (p.negotiable ? '<span class="mk-tag">🤝 ' + t("negotiable") + "</span>" : "") + (p.stock != null ? '<span class="mk-tag">' + (p.stock > 0 ? t("stock") + " (" + p.stock + ")" : t("out")) + "</span>" : "") + '<span class="mk-tag">👁 ' + views + " " + t("views") + '</span><span class="mk-tag">' + t("posted") + " " + dateFmt(p.created_at) + "</span></div>" +
         '<div class="pd-cta" style="margin-top:18px">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + (hasPay(s) ? '<button type="button" class="btn btn-gold" id="pdPay">💳 ' + t("pay_online") + "</button>" : "") + "</div>" +
-        '<div class="mk-inline" style="margin-top:12px"><button type="button" class="mk-btn" data-fav="' + p.id + '">' + (isFav(p.id) ? "♥" : "♡") + " " + t("saved") + '</button><a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(p.title + " — " + money(pr.now) + "\n" + link) + '">' + t("share_p") + ' (WhatsApp)</a><button type="button" class="mk-btn" id="pdCopy">' + t("copy") + "</button></div>" +
+        '<div class="mk-inline" style="margin-top:12px"><button type="button" class="mk-btn" data-fav="' + p.id + '">' + (isFav(p.id) ? "♥" : "♡") + " " + t("saved") + '</button><a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(p.title + " — " + money(pr.now, pr.cur) + "\n" + link) + '">' + t("share_p") + ' (WhatsApp)</a><button type="button" class="mk-btn" id="pdCopy">' + t("copy") + "</button></div>" +
         (p.description ? '<div class="pd-desc">' + esc(p.description) + "</div>" : "") +
         '<div class="mk-safe"><b>🛡 ' + t("safety_t") + "</b><ul>" + t("safety").map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><p style="margin:8px 0 0"><button type="button" class="mk-link" id="pdReport">⚑ ' + t("report") + "</button></p></div>" +
         '<a class="pd-seller" href="/' + esc(s.slug) + '">' + (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name) + "</span>") +
@@ -466,7 +482,7 @@
         '<div class="mk-sticky">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, waText) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-primary" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + "</div>";
       $("#pdCopy").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
       $("#pdReport").addEventListener("click", function () { reportModal(p.store_id, p.id); });
-      var pp = $("#pdPay"); if (pp) pp.addEventListener("click", function () { payModal(s, p.title + " — " + money(pr.now)); });
+      var pp = $("#pdPay"); if (pp) pp.addEventListener("click", function () { payModal(s, p.title + " — " + money(pr.now, pr.cur)); });
       var th = $(".pd-thumbs"); if (th) th.addEventListener("click", function (e) { var b = e.target.closest("[data-i]"); if (!b) return; cur = +b.dataset.i; $("#pdImg").src = imgs[cur]; $$("button", th).forEach(function (x) { x.classList.toggle("on", x === b); }); });
       $("#reqForm").addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button"); b.disabled = true;
@@ -543,13 +559,14 @@
       '<div><label>' + t("bname") + ' *</label><input name="bname" required maxlength="80" value="' + esc(s.name || "") + '"></div>' +
       '<div class="full"><label>' + t("slug") + ' *</label><div class="mk-inline"><span class="mk-small">' + esc(location.host) + '/</span><input name="slug" required pattern="[a-z0-9][a-z0-9-]{2,40}" style="flex:1;min-width:160px" value="' + esc(s.slug || "") + '"' + (locked ? " readonly" : "") + '></div><div class="hint">' + t("slug_hint") + "</div></div>" +
       '<div><label>' + t("main_cat") + ' *</label><select name="category_id" required><option value="">' + t("choose") + "</option>" + catOpts + "</select></div>" +
+      '<div><label>' + t("country") + ' *</label><select name="country" required>' + Object.keys(COUNTRIES).map(function (c) { return '<option value="' + c + '"' + ((s.country || myCountry() || "CI") === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("") + "</select></div>" +
       '<div><label>' + t("city") + ' *</label><input name="city" required maxlength="60" value="' + esc(s.city || "") + '"></div>' +
       '<div class="full"><label>' + t("address") + '</label><input name="address" maxlength="160" value="' + esc(s.address || "") + '"></div>' +
       '<div><label>' + t("store_phone") + ' *</label><input name="phone" type="tel" required maxlength="30" value="' + esc(s.phone || (me && me.phone) || "") + '"><div class="hint">' + t("phone_hint") + "</div></div>" +
       '<div><label>' + t("store_wa") + '</label><input name="whatsapp" type="tel" maxlength="30" value="' + esc(s.whatsapp || "") + '"></div>' +
       '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="1200">' + esc(s.description || "") + "</textarea></div>" +
       '<div class="full" style="margin-top:8px"><b>💳 ' + t("pay_sec") + '</b><div class="hint">' + t("pay_hint") + "</div></div>" +
-      PAYS.map(function (p) { return '<div><label>' + p[1] + '</label><input name="' + p[0] + '" type="text" inputmode="tel" maxlength="30" value="' + esc(s[p[0]] || "") + '"></div>'; }).join("") +
+      PAYS.map(function (p) { var cc = PAYS_ALL.NG.indexOf(p) > -1 ? "NG" : "CI"; return '<div class="pay-f" data-c="' + cc + '"><label>' + p[1] + '</label><input name="' + p[0] + '" type="text" maxlength="' + (p[0] === "pay_bank" ? 80 : 30) + '" value="' + esc(s[p[0]] || "") + '"></div>'; }).join("") +
       '<div class="full"><label>' + t("pay_name") + '</label><input name="pay_name" maxlength="80" value="' + esc(s.pay_name || "") + '"></div>' +
       '<div><label>' + t("logo") + '</label><div class="mk-imgs" id="lgBox"></div></div><div><label>' + t("cover") + '</label><div class="mk-imgs" id="cvBox"></div></div>' +
       (s.id ? "" : '<div class="full"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:600"><input type="checkbox" name="agree" style="width:auto;margin-top:4px"> <span>' + t("agree") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + "</a> — AL MANARAH GLOBAL SERVICES.</span></label></div>") +
@@ -564,11 +581,13 @@
       var inp = $("input", b); if (inp) inp.onchange = async function () { if (!inp.files[0]) return; b.innerHTML = '<div class="add">' + t("uploading") + "</div>"; try { draft[key] = await upload(inp.files[0], "s"); } catch (e) { msg($("#stM"), "err", t("fail")); } imgBox(boxId, key); };
     }
     imgBox("lgBox", "logo"); imgBox("cvBox", "cover");
+    function payVis() { var c = f.country.value; $$(".pay-f", f).forEach(function (d) { d.classList.toggle("mk-hide", d.dataset.c !== c); }); }
+    f.country.addEventListener("change", payVis); payVis();
     if (!s.id) f.bname.addEventListener("input", function () { if (!f.slug.dataset.touched) f.slug.value = slugify(f.bname.value); });
     f.slug.addEventListener("input", function () { f.slug.dataset.touched = 1; f.slug.value = slugify(f.slug.value); });
     f.addEventListener("submit", async function (e) {
       e.preventDefault(); var M = $("#stM"), b = f.querySelector("button[type=submit]");
-      var row = { owner_name: f.owner_name.value.trim(), name: f.bname.value.trim(), slug: slugify(f.slug.value), category_id: +f.category_id.value || null, city: f.city.value.trim(), address: f.address.value.trim() || null, phone: f.phone.value.trim(), whatsapp: f.whatsapp.value.trim() || null, description: f.description.value.trim() || null, logo_url: draft.logo || null, cover_url: draft.cover || null, pay_name: f.pay_name.value.trim() || null };
+      var row = { owner_name: f.owner_name.value.trim(), name: f.bname.value.trim(), slug: slugify(f.slug.value), category_id: +f.category_id.value || null, city: f.city.value.trim(), address: f.address.value.trim() || null, phone: f.phone.value.trim(), whatsapp: f.whatsapp.value.trim() || null, description: f.description.value.trim() || null, logo_url: draft.logo || null, cover_url: draft.cover || null, pay_name: f.pay_name.value.trim() || null, country: f.country.value };
       PAYS.forEach(function (p) { row[p[0]] = f[p[0]].value.trim() || null; });
       if (!row.owner_name || !row.name || !row.slug || row.slug.length < 3 || !row.category_id || !row.city || !row.phone) return msg(M, "err", t("required"));
       if (RESERVED.indexOf(row.slug) > -1) return msg(M, "err", t("slug_taken"));
@@ -620,7 +639,7 @@
       var pl = plan();
       B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + pl.product_limit + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price) + " · " + esc(catName(catById(p.category_id))) + "</small>" + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
       $("#addP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } productModal(null); });
@@ -641,7 +660,7 @@
       m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + (p.id ? t("edit") : t("add_prod")) + '</h2><form class="mk-form" id="pF">' +
         '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120" value="' + esc(p.title || "") + '"></div>' +
         '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
-        '<div><label>' + t("price") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.price != null ? p.price : "") + '"></div>' +
+        '<div><label>' + t("price").replace("FCFA", store.country === "NG" ? "₦" : "FCFA").replace("فرنك", store.country === "NG" ? "نيرة" : "فرنك") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.price != null ? p.price : "") + '"></div>' +
         '<div><label>' + t("old_price") + '</label><input name="old" type="number" min="0" step="1" value="' + esc(p.compare_at_price || "") + '"></div>' +
         '<div><label>' + t("qty_stock") + '</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock != null ? p.stock : "") + '"></div>' +
         '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + ((p.condition || "new") === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
@@ -678,7 +697,7 @@
     function tReq() {
       B().innerHTML = '<div class="mk-list">' + (data.orders.length ? data.orders.map(function (o) {
         var waT = (L() === "fr" ? "Bonjour " : L() === "ar" ? "السلام عليكم " : "Hello ") + o.customer_name + " — " + store.name + " (" + o.ref + ")";
-        return '<div class="mk-row"><div class="mid"><b>' + esc(o.customer_name) + ' <span class="mk-small">' + esc(o.ref) + "</span></b><small>" + esc(o.product_title || (o.products || {}).title || "") + (o.unit_price ? " · " + money(o.unit_price) : "") + " · " + t("qty") + ": " + o.quantity + "</small><small>📞 " + esc(o.customer_phone) + (o.customer_city ? " · " + esc(o.customer_city) : "") + " · " + dateFmt(o.created_at) + "</small>" + (o.note ? "<small>💬 " + esc(o.note) + "</small>" : "") + "</div>" +
+        return '<div class="mk-row"><div class="mid"><b>' + esc(o.customer_name) + ' <span class="mk-small">' + esc(o.ref) + "</span></b><small>" + esc(o.product_title || (o.products || {}).title || "") + (o.unit_price ? " · " + money(o.unit_price, curOf(store.country)) : "") + " · " + t("qty") + ": " + o.quantity + "</small><small>📞 " + esc(o.customer_phone) + (o.customer_city ? " · " + esc(o.customer_city) : "") + " · " + dateFmt(o.created_at) + "</small>" + (o.note ? "<small>💬 " + esc(o.note) + "</small>" : "") + "</div>" +
           '<div class="acts"><a class="mk-btn ok" target="_blank" rel="noopener" href="' + wa(o.customer_phone, waT) + '">' + t("reply_wa") + '</a><a class="mk-btn" href="' + tel(o.customer_phone) + '">' + t("call") + '</a><select class="mk-btn" data-o="' + o.id + '">' + ["new", "contacted", "completed", "cancelled"].map(function (s) { return '<option value="' + s + '"' + (o.status === s ? " selected" : "") + ">" + t("st_" + s) + "</option>"; }).join("") + "</select></div></div>";
       }).join("") : emptyBox("📭", t("no_req"))) + "</div>";
       $$("select[data-o]", B()).forEach(function (s) { s.addEventListener("change", async function () { await sb.from("orders").update({ status: s.value }).eq("id", s.dataset.o); var o = data.orders.filter(function (x) { return x.id === s.dataset.o; })[0]; if (o) o.status = s.value; }); });
@@ -708,20 +727,22 @@
     }
 
     function tPlan() {
-      var pl = plan(), C = window.SITE_CONFIG && window.SITE_CONFIG.payments || {};
+      var pl = plan(), C = window.SITE_CONFIG && window.SITE_CONFIG.payments || {}, NG = store.country === "NG";
+      function pp(x) { return NG ? (x.price_ngn || 0) : x.price_xof; }
+      function mm(n) { return money(n, NG ? "NGN" : "XOF"); }
       B().innerHTML = '<div class="mk-plans">' + PLANS.filter(function (x) { return x.active; }).map(function (x) {
-        return '<div class="mk-plan' + (x.id === pl.id ? " cur" : "") + '"><h3>' + esc(x.name) + '</h3><div class="p">' + (x.price_xof ? money(x.price_xof) + " <small>" + t("per_month") + "</small>" : t("free")) + "</div><ul><li>" + t("upto") + " " + x.product_limit + " " + t("products") + "</li>" + (x.featured ? "<li>✔ " + t("verified") + "</li>" : "") + "</ul>" +
-          (x.id === pl.id ? '<span class="mk-status s-approved">' + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span>" : x.price_xof ? '<button class="mk-btn gold" data-pl="' + x.id + '">' + t("choose_plan") + "</button>" : "") + "</div>";
+        return '<div class="mk-plan' + (x.id === pl.id ? " cur" : "") + '"><h3>' + esc(x.name) + '</h3><div class="p">' + (pp(x) ? mm(pp(x)) + " <small>" + t("per_month") + "</small>" : t("free")) + "</div><ul><li>" + t("upto") + " " + x.product_limit + " " + t("products") + "</li>" + (x.featured ? "<li>✔ " + t("verified") + "</li>" : "") + "</ul>" +
+          (x.id === pl.id ? '<span class="mk-status s-approved">' + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span>" : pp(x) ? '<button class="mk-btn gold" data-pl="' + x.id + '">' + t("choose_plan") + "</button>" : "") + "</div>";
       }).join("") + '</div><div id="payBox"></div>' +
         (data.preqs.length ? '<h3 style="margin-top:28px">' + t("my_reqs") + '</h3><div class="mk-list">' + data.preqs.map(function (r) { return '<div class="mk-row"><div class="mid"><b>' + esc(r.plan_id) + " × " + r.months + "</b><small>" + dateFmt(r.created_at) + " · " + esc(r.payment_ref || "") + "</small>" + (r.admin_note ? "<small>" + esc(r.admin_note) + "</small>" : "") + "</div>" + stLabel(r.status) + "</div>"; }).join("") + "</div>" : "");
       $$("[data-pl]", B()).forEach(function (b) { b.addEventListener("click", function () { payForm(b.dataset.pl); }); });
       function payForm(pid) {
         var x = PLANS.filter(function (y) { return y.id === pid; })[0], receipt = "";
-        $("#payBox").innerHTML = '<div class="mk-panel" style="margin-top:20px"><h3 style="margin-top:0">' + t("pay_t") + " — " + esc(x.name) + '</h3><p>' + t("pay_to") + "<br><b>MTN MoMo: " + esc(C.mtn || "+225 05 06 12 23 37") + "</b><br><b>Wave: " + esc(C.wave || "+225 05 06 12 23 37") + "</b><br>" + esc(C.name || "") + '</p><form class="mk-form" id="pyF">' +
-          '<div><label>' + t("months") + '</label><select name="m">' + [1].map(function (n) { return '<option value="' + n + '">' + n + "</option>"; }).join("") + '</select></div><div><label>' + t("method") + '</label><select name="pm"><option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option></select></div>' +
+        $("#payBox").innerHTML = '<div class="mk-panel" style="margin-top:20px"><h3 style="margin-top:0">' + t("pay_t") + " — " + esc(x.name) + '</h3><p>' + (NG ? esc(t("pay_ng")) : t("pay_to") + "<br><b>MTN MoMo: " + esc(C.mtn || "+225 05 06 12 23 37") + "</b><br><b>Wave: " + esc(C.wave || "+225 05 06 12 23 37") + "</b><br>" + esc(C.name || "")) + '</p><form class="mk-form" id="pyF">' +
+          '<div><label>' + t("months") + '</label><select name="m">' + [1].map(function (n) { return '<option value="' + n + '">' + n + "</option>"; }).join("") + '</select></div><div><label>' + t("method") + '</label><select name="pm">' + (NG ? '<option value="other">Bank / OPay / PalmPay</option>' : '<option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option>') + '</select></div>' +
           '<div class="full"><b>' + t("total") + ': <span id="pyT"></span></b></div><div><label>' + t("pay_ref") + ' *</label><input name="ref" required maxlength="80"></div><div><label>' + t("receipt") + '</label><div class="mk-imgs" id="rcBox"></div></div>' +
           '<div class="full"><button class="btn btn-primary btn-sm" type="submit">' + t("submit_pay") + '</button><div id="pyM"></div></div></form></div>';
-        var f = $("#pyF"); function tot() { $("#pyT").textContent = money(x.price_xof * +f.m.value); } f.m.onchange = tot; tot();
+        var f = $("#pyF"); function tot() { $("#pyT").textContent = mm(pp(x) * +f.m.value); } f.m.onchange = tot; tot();
         function rc() { var b = $("#rcBox"); b.innerHTML = receipt ? '<div class="im"><img src="' + esc(receipt) + '" alt=""><button type="button">✕</button></div>' : '<label class="add">＋<input type="file" accept="image/*" hidden></label>'; var xb = $("button", b); if (xb) xb.onclick = function () { receipt = ""; rc(); }; var i = $("input", b); if (i) i.onchange = async function () { b.innerHTML = '<div class="add">' + t("uploading") + "</div>"; try { receipt = await upload(i.files[0], "r"); } catch (e) {} rc(); }; }
         rc();
         f.addEventListener("submit", async function (e) { e.preventDefault(); var r = await sb.from("plan_requests").insert({ store_id: store.id, plan_id: pid, months: +f.m.value, payment_method: f.pm.value, payment_ref: f.ref.value.trim(), receipt_url: receipt || null }); if (r.error) return msg($("#pyM"), "err", esc(r.error.message)); msg($("#pyM"), "ok", t("pay_sent")); await loadAll(); setTimeout(shell, 1500); });
@@ -744,9 +765,9 @@
     async function load() {
       var [s, p, pr, rq, o, rv, rp, bn] = await Promise.all([
         sb.from("stores").select("*,profiles(email)").order("created_at", { ascending: false }),
-        sb.from("products").select("*,stores(name,slug)").order("updated_at", { ascending: false }).limit(2000),
+        sb.from("products").select("*,stores(name,slug,country)").order("updated_at", { ascending: false }).limit(2000),
         sb.from("promotions").select("*,stores(name,slug),products(title)").order("created_at", { ascending: false }),
-        sb.from("plan_requests").select("*,stores(name,slug)").order("created_at", { ascending: false }),
+        sb.from("plan_requests").select("*,stores(name,slug,country)").order("created_at", { ascending: false }),
         sb.from("orders").select("*,stores(name,slug)").order("created_at", { ascending: false }).limit(500),
         sb.from("reviews").select("*,stores(name,slug)").order("created_at", { ascending: false }).limit(500),
         sb.from("reports").select("*,stores(name,slug),products(title)").order("created_at", { ascending: false }).limit(500),
@@ -774,14 +795,15 @@
 
     function aStores() {
       var list = D2.stores.filter(function (s) { return (!filt.st || s.status === filt.st) && (!filt.q || (s.name + " " + s.owner_name + " " + s.phone + " " + s.city + " " + s.slug).toLowerCase().indexOf(filt.q) > -1); });
-      B().innerHTML = '<div class="mk-bar"><select id="fSt">' + ["", "pending", "approved", "suspended", "rejected"].map(function (s) { return '<option value="' + s + '"' + (filt.st === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ" type="search" placeholder="Search name, phone, city…" value="' + esc(filt.q) + '"></div><div class="mk-list">' +
+      B().innerHTML = '<p><button class="btn btn-primary btn-sm" id="newSt" type="button">＋ Create a store for a seller</button></p><div class="mk-bar"><select id="fSt">' + ["", "pending", "approved", "suspended", "rejected"].map(function (s) { return '<option value="' + s + '"' + (filt.st === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ" type="search" placeholder="Search name, phone, city…" value="' + esc(filt.q) + '"></div><div class="mk-list">' +
         (list.length ? list.map(function (s) {
           var pl = PLANS.filter(function (x) { return x.id === s.plan_id; })[0] || {};
-          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + esc((s.profiles || {}).email || "") + "</small><small>📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
+          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + esc((s.profiles || {}).email || "") + "</small><small>" + cName(s.country || "CI") + " · 📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
             '<div class="acts">' + (s.status !== "approved" ? '<button class="mk-btn ok" data-a="approve" data-id="' + s.id + '">Approve</button>' : "") + (s.status === "pending" ? '<button class="mk-btn no" data-a="reject" data-id="' + s.id + '">Reject</button>' : "") + (s.status === "approved" ? '<button class="mk-btn no" data-a="suspend" data-id="' + s.id + '">Suspend</button>' : "") +
-            '<button class="mk-btn" data-a="verify" data-id="' + s.id + '">' + (s.verified ? "Unverify" : "Verify ✔") + '</button><button class="mk-btn gold" data-a="plan" data-id="' + s.id + '">Plan</button><a class="mk-btn" target="_blank" href="/' + esc(s.slug) + '">View</a><a class="mk-btn dark" href="/sell.html?store=' + s.id + '">Manage</a><a class="mk-btn" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, "AL MANARAH GLOBAL SERVICES — " + s.name) + '">WA</a><button class="mk-btn no" data-a="delete" data-id="' + s.id + '">Delete</button></div></div>';
+            '<button class="mk-btn" data-a="verify" data-id="' + s.id + '">' + (s.verified ? "Unverify" : "Verify ✔") + '</button><button class="mk-btn gold" data-a="plan" data-id="' + s.id + '">Plan</button><a class="mk-btn" target="_blank" href="/' + esc(s.slug) + '">View</a><a class="mk-btn dark" href="/sell.html?store=' + s.id + '">Manage</a><button class="mk-btn" data-a="owner" data-id="' + s.id + '">Give to seller</button><a class="mk-btn" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, "AL MANARAH GLOBAL SERVICES — " + s.name) + '">WA</a><button class="mk-btn no" data-a="delete" data-id="' + s.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("🏪", "No stores")) + "</div>";
       $("#fSt").onchange = function () { filt.st = this.value; aStores(); };
+      $("#newSt").onclick = function () { adminStoreModal(); };
       $("#fQ").oninput = function () { filt.q = this.value.toLowerCase(); var p = this.selectionStart; aStores(); var i = $("#fQ"); i.focus(); i.setSelectionRange(p, p); };
       $$("[data-a]", B()).forEach(function (b) {
         b.addEventListener("click", function () {
@@ -792,8 +814,19 @@
           if (b.dataset.a === "verify") act(q.update({ verified: !s.verified }).eq("id", id));
           if (b.dataset.a === "delete" && confirm("Delete the store \"" + s.name + "\" and ALL its products permanently? This cannot be undone.")) act(q.delete().eq("id", id));
           if (b.dataset.a === "plan") planModal(s);
+          if (b.dataset.a === "owner") {
+            var em = prompt("Seller's email (the seller must first create an account on /sell):"); if (!em) return;
+            sb.from("profiles").select("id,email").ilike("email", em.trim()).maybeSingle().then(function (r) { if (!r.data) return alert("No account with this email yet. Ask the seller to create an account on /sell first."); act(sb.from("stores").update({ owner_id: r.data.id }).eq("id", id)); alert("Done. The store now belongs to " + r.data.email + "."); });
+          }
         });
       });
+    }
+    async function adminStoreModal() {
+      var m = document.createElement("div"); m.className = "mk-modal"; var u = await user();
+      m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h3 style="margin-top:0">Create a store for a seller</h3><p class="mk-small">You manage it yourself (add products with “Manage”). Later, use “Give to seller” to hand it to the seller’s own account.</p>' + storeForm({}, null).replace('<div class="full"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:600"><input type="checkbox" name="agree"', '<div class="full mk-hide"><label><input type="checkbox" name="agree" checked') + "</div>";
+      document.body.appendChild(m); $(".x", m).onclick = function () { m.remove(); };
+      var draft = { logo: "", cover: "" };
+      wireStoreForm(draft, {}, u, async function (row) { row.status = "approved"; row.owner_id = u.id; var r = await sb.from("stores").insert(row).select().single(); if (r.error) return r.error; m.remove(); await load(); shell(); });
     }
     function planModal(s) {
       var m = document.createElement("div"); m.className = "mk-modal";
@@ -807,7 +840,7 @@
       var now = new Date().toISOString();
       B().innerHTML = '<div class="mk-bar"><select id="fPr">' + ["pending", "approved", "rejected", "hidden", ""].map(function (s) { return '<option value="' + s + '"' + (filt.pr === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ2" type="search" placeholder="Search product or store…" value="' + esc(filt.q) + '">' + (filt.pr === "pending" && list.length ? '<button class="mk-btn ok" id="apAll">Approve all shown</button>' : "") + '</div><div class="mk-list">' +
         (list.length ? list.slice(0, 300).map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price) + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, curOf((p.stores || {}).country)) + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts">' + (p.status !== "approved" ? '<button class="mk-btn ok" data-a="ok" data-id="' + p.id + '">Approve</button>' : "") + (p.status !== "rejected" ? '<button class="mk-btn no" data-a="no" data-id="' + p.id + '">Reject</button>' : "") + (p.status === "approved" ? '<button class="mk-btn" data-a="hide" data-id="' + p.id + '">Hide</button>' : "") +
             (p.featured_until > now ? '<button class="mk-btn" data-a="unfeat" data-id="' + p.id + '">Unfeature</button>' : '<button class="mk-btn gold" data-a="feat" data-id="' + p.id + '">Feature</button>') + '<a class="mk-btn" target="_blank" href="/product.html?id=' + p.id + '">View</a><button class="mk-btn no" data-a="del" data-id="' + p.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("📦", "Nothing here")) + "</div>";
@@ -838,7 +871,7 @@
     function aPay() {
       B().innerHTML = '<div class="mk-list">' + (D2.preqs.length ? D2.preqs.map(function (r) {
         var pl = PLANS.filter(function (x) { return x.id === r.plan_id; })[0] || {};
-        return '<div class="mk-row">' + (r.receipt_url ? '<a href="' + esc(r.receipt_url) + '" target="_blank"><img class="th" src="' + esc(r.receipt_url) + '" alt="receipt"></a>' : '<span class="th">🧾</span>') + '<div class="mid"><b>' + esc((r.stores || {}).name || "") + " → " + esc(pl.name || r.plan_id) + " × " + r.months + " month(s)</b><small>Expected: <b>" + money((pl.price_xof || 0) * r.months) + "</b> · " + esc(r.payment_method || "") + " · Ref: " + esc(r.payment_ref || "—") + " · " + dateFmt(r.created_at) + "</small></div>" + stLabel(r.status) +
+        return '<div class="mk-row">' + (r.receipt_url ? '<a href="' + esc(r.receipt_url) + '" target="_blank"><img class="th" src="' + esc(r.receipt_url) + '" alt="receipt"></a>' : '<span class="th">🧾</span>') + '<div class="mid"><b>' + esc((r.stores || {}).name || "") + " → " + esc(pl.name || r.plan_id) + " × " + r.months + " month(s)</b><small>Expected: <b>" + ((r.stores || {}).country === "NG" ? money((pl.price_ngn || 0) * r.months, "NGN") : money((pl.price_xof || 0) * r.months)) + "</b> · " + esc(r.payment_method || "") + " · Ref: " + esc(r.payment_ref || "—") + " · " + dateFmt(r.created_at) + "</small></div>" + stLabel(r.status) +
           (r.status === "pending" ? '<div class="acts"><button class="mk-btn ok" data-a="ok" data-id="' + r.id + '">Confirm payment</button><button class="mk-btn no" data-a="no" data-id="' + r.id + '">Reject</button></div>' : "") + "</div>";
       }).join("") : emptyBox("🧾", "No payment requests")) + "</div>";
       $$("[data-a]", B()).forEach(function (b) { b.addEventListener("click", function () { var id = b.dataset.id, q = sb.from("plan_requests"); if (b.dataset.a === "ok" && confirm("Payment received? The plan will be activated.")) act(q.update({ status: "approved" }).eq("id", id)); if (b.dataset.a === "no") { var n = prompt("Reason:"); if (n !== null) act(q.update({ status: "rejected", admin_note: n }).eq("id", id)); } }); });
@@ -885,8 +918,8 @@
     }
 
     function aPlans() {
-      B().innerHTML = '<table class="mk-table"><thead><tr><th>Plan</th><th>Name</th><th>Max products</th><th>Price / month (FCFA)</th><th>Active</th><th></th></tr></thead><tbody>' + PLANS.map(function (x) {
-        return '<tr data-id="' + x.id + '"><td>' + esc(x.id) + '</td><td><input value="' + esc(x.name) + '" data-f="name"></td><td><input type="number" value="' + x.product_limit + '" data-f="product_limit" style="width:100px"></td><td><input type="number" value="' + x.price_xof + '" data-f="price_xof" style="width:120px"></td><td><input type="checkbox" data-f="active"' + (x.active ? " checked" : "") + '></td><td><button class="mk-btn ok" data-save>Save</button></td></tr>';
+      B().innerHTML = '<table class="mk-table"><thead><tr><th>Plan</th><th>Name</th><th>Max products</th><th>Price / month (FCFA)</th><th>Price / month (₦ Nigeria)</th><th>Active</th><th></th></tr></thead><tbody>' + PLANS.map(function (x) {
+        return '<tr data-id="' + x.id + '"><td>' + esc(x.id) + '</td><td><input value="' + esc(x.name) + '" data-f="name"></td><td><input type="number" value="' + x.product_limit + '" data-f="product_limit" style="width:100px"></td><td><input type="number" value="' + x.price_xof + '" data-f="price_xof" style="width:120px"></td><td><input type="number" value="' + (x.price_ngn || 0) + '" data-f="price_ngn" style="width:120px"></td><td><input type="checkbox" data-f="active"' + (x.active ? " checked" : "") + '></td><td><button class="mk-btn ok" data-save>Save</button></td></tr>';
       }).join("") + "</tbody></table>";
       $$("[data-save]", B()).forEach(function (b) { b.onclick = async function () { var tr = b.closest("tr"), row = {}; $$("[data-f]", tr).forEach(function (i) { row[i.dataset.f] = i.type === "checkbox" ? i.checked : i.type === "number" ? +i.value : i.value; }); var r = await sb.from("plans").update(row).eq("id", tr.dataset.id); if (r.error) alert(r.error.message); PLANS = null; await plans(); b.textContent = "✔"; }; });
     }

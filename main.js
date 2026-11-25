@@ -1162,7 +1162,7 @@
   }
   function initPrayer() {
     var header = document.querySelector(".header"); if (!header) return;
-    var open = false; try { open = localStorage.getItem("ptOpen") === "1"; } catch (e) {}
+    var open = false; // prayer times start as a small icon; tap to open
     var bar = mk("section", { "class": "pt-bar" + (open ? " open" : ""), "aria-label": "Prayer times" });
     bar.innerHTML = '<div class="container"><button type="button" class="pt-head" aria-expanded="' + open + '"><span class="pt-ico">🕌</span><span class="pt-sum"></span><span class="pt-clock" aria-live="off"><b></b><small></small></span><span class="pt-tog" aria-hidden="true"></span></button><div class="pt-body"><div class="pt-in"><div class="pt-loc"><span class="pt-where"></span><span class="pt-btns"><button type="button" class="pt-gps"></button><button type="button" class="pt-chg"></button></span></div><div class="pt-search" hidden><input type="search" class="pt-q" autocomplete="off"><ul class="pt-res"></ul></div><div class="pt-grid"></div><p class="pt-note"></p></div></div></div>';
     header.parentNode.insertBefore(bar, header.nextSibling);
@@ -1643,7 +1643,7 @@
     document.querySelectorAll(".year").forEach(function (y) { y.textContent = new Date().getFullYear(); });
     var q = new URLSearchParams(location.search).get("lang");
     var nl = (navigator.language || "").toLowerCase();
-    var initial = q || store.get("langUser") || (nl.indexOf("ar") === 0 ? "ar" : "fr"); // French is the main language
+    var initial = q || store.get("langUser") || (store.get("mk_country") === "NG" ? "en" : nl.indexOf("ar") === 0 ? "ar" : "fr"); // French main; English for Nigeria
     document.querySelectorAll(".lang").forEach(function (g) { if (!g.querySelector('[data-setlang="ar"]')) { var b = mk("button", { type: "button", "data-setlang": "ar", "aria-pressed": "false", lang: "ar", title: "العربية" }); b.textContent = "ع"; g.appendChild(b); } });
     cmsMark(); cmsInit(); badalOption();
     document.querySelectorAll("[data-setlang]").forEach(function (b) { b.addEventListener("click", function () { store.set("langUser", b.dataset.setlang); applyLang(b.dataset.setlang); }); });
