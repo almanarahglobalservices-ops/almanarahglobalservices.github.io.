@@ -1180,7 +1180,7 @@
         if (!hr.error) { CATS = null; await cats(); }
       }
     } catch (e) {}
-    var tab = (location.hash || "#over").slice(1), D2 = {}, filt = { st: "pending", pr: "pending", q: "" };
+    var tab = (location.hash || "#over").slice(1), D2 = {}, filt = { st: "", pr: "", q: "" };
     async function load() {
       var [s, p, pr, rq, o, rv, rp, bn, ms] = await Promise.all([
         sb.from("stores").select("*,profiles(email)").order("created_at", { ascending: false }),
@@ -1262,7 +1262,7 @@
     function aProducts() {
       var list = D2.products.filter(function (p) { return (!filt.pr || p.status === filt.pr) && (!filt.q || (p.title + " " + ((p.stores || {}).name || "")).toLowerCase().indexOf(filt.q) > -1); });
       var now = new Date().toISOString();
-      B().innerHTML = '<div class="mk-bar"><select id="fPr">' + ["pending", "approved", "rejected", "hidden", ""].map(function (s) { return '<option value="' + s + '"' + (filt.pr === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ2" type="search" placeholder="Search product or store…" value="' + esc(filt.q) + '">' + (filt.pr === "pending" && list.length ? '<button class="mk-btn ok" id="apAll">Approve all shown</button>' : "") + '</div><div class="mk-list">' +
+      B().innerHTML = '<div class="mk-bar"><select id="fPr">' + ["", "pending", "approved", "rejected", "hidden"].map(function (s) { return '<option value="' + s + '"' + (filt.pr === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ2" type="search" placeholder="Search product or store…" value="' + esc(filt.q) + '">' + (filt.pr === "pending" && list.length ? '<button class="mk-btn ok" id="apAll">Approve all shown</button>' : "") + '</div><div class="mk-list">' +
         (list.length ? list.slice(0, 300).map(function (p) {
           return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf((p.stores || {}).country)) + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts">' + (p.status !== "approved" ? '<button class="mk-btn ok" data-a="ok" data-id="' + p.id + '">Approve</button>' : "") + (p.status !== "rejected" ? '<button class="mk-btn no" data-a="no" data-id="' + p.id + '">Reject</button>' : "") + (p.status === "approved" ? '<button class="mk-btn" data-a="hide" data-id="' + p.id + '">Hide</button>' : "") +
