@@ -7,7 +7,9 @@
   var ADMIN_WA = "2250506122337";
   var MAX_IMAGES = 6;
   if (!window.supabase) return;
-  var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  // retry on weak mobile networks (a request that fails is tried again up to 3 times)
+  function rfetch(u, o) { var n = 0; function go() { return fetch(u, o).catch(function (e) { if (++n > 3) throw e; return new Promise(function (r) { setTimeout(r, 500 * n); }).then(go); }); } return go(); }
+  var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }, global: { fetch: rfetch } });
   window.AMG_MARKET = sb;
 
   /* ---------------- i18n ---------------- */
