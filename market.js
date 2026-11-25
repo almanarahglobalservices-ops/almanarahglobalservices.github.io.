@@ -85,7 +85,7 @@
     to_admin: ["Admin panel", "Panneau admin", "لوحة المدير"], note_from: ["Note from AL MANARAH:", "Note d’AL MANARAH :", "ملاحظة من المنارة:"],
     loading: ["Loading…", "Chargement…", "جارٍ التحميل…"],
     c_new: ["New", "Neuf", "جديد"], c_used: ["Used", "Occasion", "مستعمل"], c_refurbished: ["Refurbished", "Reconditionné", "مُجدَّد"], condition: ["Condition", "État", "الحالة"],
-    any_cond: ["Any condition", "Tout état", "كل الحالات"], any_city: ["All cities", "Toutes les villes", "كل المدن"], pmin: ["Min price", "Prix min", "أقل سعر"], pmax: ["Max price", "Prix max", "أعلى سعر"],
+    any_cond: ["Any condition", "Tout état", "كل الحالات"], any_city: ["All cities", "Toutes les villes", "كل المدن"], on_quote: ["Price on request", "Prix sur devis", "السعر عند الطلب"], pmin: ["Min price", "Prix min", "أقل سعر"], pmax: ["Max price", "Prix max", "أعلى سعر"],
     negotiable: ["Negotiable", "Négociable", "قابل للتفاوض"], top: ["TOP", "TOP", "مميز"], saved: ["Saved", "Favoris", "المحفوظات"], no_saved: ["No saved products yet. Tap ♥ on a product to save it.", "Aucun favori. Touchez ♥ sur un produit pour l’enregistrer.", "لا توجد محفوظات. اضغط ♥ على المنتج لحفظه."],
     views: ["views", "vues", "مشاهدة"], posted: ["Posted", "Publié", "نُشر"], member: ["Member since", "Membre depuis", "عضو منذ"], similar: ["Similar products", "Produits similaires", "منتجات مشابهة"],
     safety_t: ["Safety tips", "Conseils de sécurité", "نصائح الأمان"],
@@ -111,7 +111,7 @@
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function money(n, cur) { if (n == null || n === "") return ""; if (cur === "NGN") return "₦" + Number(n).toLocaleString("en-US"); return Number(n).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") + " FCFA"; }
+  function money(n, cur) { if (n == null || n === "") return ""; if (Number(n) === 0) return t("on_quote"); if (cur === "NGN") return "₦" + Number(n).toLocaleString("en-US"); return Number(n).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") + " FCFA"; }
   var COUNTRIES = { CI: { flag: "🇨🇮", en: "Côte d’Ivoire", fr: "Côte d’Ivoire", ar: "ساحل العاج", cur: "XOF", code: "225" }, NG: { flag: "🇳🇬", en: "Nigeria", fr: "Nigeria", ar: "نيجيريا", cur: "NGN", code: "234" } };
   var CITIES = {
     CI: ["Abidjan", "Bouaké", "Yamoussoukro", "San-Pédro", "Daloa", "Korhogo", "Man", "Divo", "Gagnoa", "Abengourou", "Soubré", "Anyama", "Grand-Bassam", "Bingerville", "Séguéla", "Odienné", "Bondoukou", "Agboville", "Dimbokro", "Sassandra", "Ferkessédougou", "Issia", "Bouaflé", "Toumodi", "Dabou"],
