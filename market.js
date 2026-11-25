@@ -100,7 +100,7 @@
     country: ["Country", "Pays", "الدولة"], all_countries: ["All countries", "Tous les pays", "كل الدول"],
     pay_ng: ["Pay by bank transfer to one of these accounts:", "Payez par virement sur l’un de ces comptes :", "ادفع بالتحويل إلى أحد هذه الحسابات:"],
     agree: ["I have read and accept the", "J’ai lu et j’accepte le", "قرأت وأوافق على"], agreement: ["Seller agreement", "Contrat vendeur", "عقد البائع"], agree_err: ["Please accept the seller agreement.", "Veuillez accepter le contrat vendeur.", "يرجى الموافقة على عقد البائع."],
-    ai_box: ["✨ Fill automatically: add a photo and/or a few words (e.g. “Samsung A15 phone, blue”), then tap the button. You can correct everything before saving.", "✨ Remplissage automatique : ajoutez une photo et/ou quelques mots (ex. « téléphone Samsung A15, bleu »), puis appuyez sur le bouton. Vous pouvez tout corriger avant d’enregistrer.", "✨ تعبئة تلقائية: أضف صورة و/أو كلمات قليلة (مثل «هاتف سامسونج A15 أزرق») ثم اضغط الزر، ويمكنك تصحيح كل شيء قبل الحفظ."],
+    ai_box: ["✨ Fill automatically: add a photo and/or a few words — type them or tap 🎤 Speak (e.g. “Samsung A15 phone, blue”), then tap the button. You can correct everything before saving.", "✨ Remplissage automatique : ajoutez une photo et/ou quelques mots — tapez-les ou appuyez sur 🎤 Parler (ex. « téléphone Samsung A15, bleu »), puis appuyez sur le bouton. Vous pouvez tout corriger avant d’enregistrer.", "✨ تعبئة تلقائية: أضف صورة و/أو كلمات قليلة (مثل «هاتف سامسونج A15 أزرق») ثم اضغط الزر، ويمكنك تصحيح كل شيء قبل الحفظ."],
     ai_hint: ["A few words about the product (optional)", "Quelques mots sur le produit (facultatif)", "كلمات قليلة عن المنتج (اختياري)"],
     ai_btn: ["✨ Fill with AI", "✨ Remplir avec l’IA", "✨ املأ بالذكاء الاصطناعي"], ai_wait: ["AI is writing…", "L’IA écrit…", "الذكاء الاصطناعي يكتب…"],
     ai_need: ["Add a photo or a few words first.", "Ajoutez d’abord une photo ou quelques mots.", "أضف صورة أو كلمات أولًا."],
@@ -222,6 +222,23 @@
   function vid() { try { var v = localStorage.getItem("mk_vid"); if (!v) { v = rnd() + rnd(); localStorage.setItem("mk_vid", v); } return v; } catch (e) { return ""; } }
   function track(kind, storeId, productId) { if (!storeId) return; var v = vid(); if (v.length < 8) return; try { sb.rpc("track_event", { p_store: storeId, p_product: productId || null, p_kind: kind, p_visitor: v }).then(function () {}, function () {}); } catch (e) {} }
   document.addEventListener("click", function (e) { var a = e.target.closest && e.target.closest('a[href^="https://wa.me/"]'); if (a && window.__mkStore) track("wa", window.__mkStore, window.__mkProduct || null); }, true);
+  /* voice: the seller speaks (French or English), the words go into the field, then the AI fills the rest */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function micBtn(id) { return SR ? '<button type="button" class="mk-btn mk-mic" id="' + id + '" title="' + esc(T3x("Speak", "Parler", "تحدث")) + '">🎤 ' + T3x("Speak", "Parler", "تحدث") + "</button>" : ""; }
+  function wireMic(btn, input, after) {
+    if (!btn || !SR) return;
+    var rec = null;
+    btn.addEventListener("click", function () {
+      if (rec) { rec.stop(); return; }
+      rec = new SR(); rec.lang = L() === "en" ? "en-US" : "fr-FR"; rec.interimResults = true; rec.maxAlternatives = 1;
+      var base = input.value ? input.value + " " : "", finalTxt = "";
+      btn.classList.add("on"); btn.textContent = "⏺ " + T3x("Listening… tap to stop", "J’écoute… appuyez pour arrêter", "أستمع… اضغط للإيقاف");
+      rec.onresult = function (e) { var t2 = ""; for (var i = 0; i < e.results.length; i++) { if (e.results[i].isFinal) finalTxt = Array.prototype.map.call(e.results, function (r) { return r[0].transcript; }).join(" "); t2 += e.results[i][0].transcript; } input.value = (base + t2).trim(); };
+      rec.onerror = function () {};
+      rec.onend = function () { btn.classList.remove("on"); btn.textContent = "🎤 " + T3x("Speak", "Parler", "تحدث"); rec = null; if (input.value.trim() && after) after(); };
+      try { rec.start(); } catch (e) { rec = null; btn.classList.remove("on"); }
+    });
+  }
   function isHealth(id) { var c = catById(id); return !!c && c.slug === "sante"; }
   /* AI fill: the photo and a few words become title, description, category and condition.
      Runs on our own server (/api/ai-fill); the AI key never reaches the browser. */
@@ -854,7 +871,7 @@
     var catOpts = '<option value="">' + t("choose") + "</option>" + CATS.filter(function (c) { return c.active && c.slug !== "travel" && c.slug !== "services"; }).map(function (c) { return '<option value="' + c.id + '">' + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
     app.innerHTML = '<div class="mk-panel"><p style="margin:0 0 6px"><a href="/sell.html" class="mk-small">← ' + T3x("Back", "Retour", "رجوع") + '</a></p><h2 style="margin-top:0">📢 ' + T3x("Sell one item", "Vendre un seul article", "بيع قطعة واحدة") + '</h2><p class="mk-small">' + T3x("Fill in, pay, and your ad goes online as soon as AL MANARAH confirms your payment.", "Remplissez, payez, et votre annonce est en ligne dès qu’AL MANARAH confirme votre paiement.", "املأ البيانات وادفع، ويُنشر إعلانك فور تأكيد المنارة للدفع.") + '</p><form class="mk-form" id="adF">' +
       '<div class="full"><label>' + t("photos").replace("6", 6) + ' *</label><div class="mk-imgs" id="adImgs"></div></div>' +
-      '<div class="full mk-ai"><p>' + t("ai_box") + '</p><div class="mk-ai-row"><input name="aihint" maxlength="200" placeholder="' + esc(t("ai_hint")) + '"><button type="button" class="mk-btn gold" id="adAi">' + t("ai_btn") + '</button></div><div id="adAiM"></div></div>' +
+      '<div class="full mk-ai"><p>' + t("ai_box") + '</p><div class="mk-ai-row"><input name="aihint" maxlength="200" placeholder="' + esc(t("ai_hint")) + '">' + micBtn("adMic") + '<button type="button" class="mk-btn gold" id="adAi">' + t("ai_btn") + '</button></div><div id="adAiM"></div></div>' +
       '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120"></div>' +
       '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
       '<div><label>' + T3x("Price", "Prix", "السعر") + ' *</label><input name="price" type="number" min="0" step="1" required></div>' +
@@ -887,6 +904,7 @@
     drawImgs();
     function rc() { var b = $("#adRc"); b.innerHTML = receipt ? '<div class="im"><img src="' + esc(receipt) + '" alt=""><button type="button">✕</button></div>' : '<label class="add">＋<input type="file" accept="image/*" hidden></label>'; var xb = $("button", b); if (xb) xb.onclick = function () { receipt = ""; rc(); }; var i = $("input", b); if (i) i.onchange = async function () { b.innerHTML = '<div class="add">' + t("uploading") + "</div>"; try { receipt = await upload(i.files[0], "r"); } catch (e) {} rc(); }; }
     rc();
+    wireMic($("#adMic"), f.aihint, function () { $("#adAi").click(); });
     $("#adAi").addEventListener("click", async function () {
       var b = this, A = $("#adAiM"), hint = f.aihint.value.trim();
       if (!imgs.length && !hint) return msg(A, "err", t("ai_need"));
@@ -1114,7 +1132,7 @@
       var catOpts = CATS.filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + ((p.category_id || store.category_id) === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
       m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + (p.id ? t("edit") : t("add_prod")) + '</h2><form class="mk-form" id="pF">' +
         '<div class="full"><label>' + t("photos").replace("6", maxImg) + '</label><div class="mk-imgs" id="pImgs"></div></div>' +
-        '<div class="full mk-ai"><p>' + t("ai_box") + '</p><div class="mk-ai-row"><input name="aihint" maxlength="200" placeholder="' + esc(t("ai_hint")) + '"><button type="button" class="mk-btn gold" id="aiGo">' + t("ai_btn") + '</button></div><div id="aiM"></div></div>' +
+        '<div class="full mk-ai"><p>' + t("ai_box") + '</p><div class="mk-ai-row"><input name="aihint" maxlength="200" placeholder="' + esc(t("ai_hint")) + '">' + micBtn("aiMic") + '<button type="button" class="mk-btn gold" id="aiGo">' + t("ai_btn") + '</button></div><div id="aiM"></div></div>' +
         '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120" value="' + esc(p.title || "") + '"></div>' +
         '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
         ((store.sections || []).length ? '<div><label>' + T3x("Section", "Rubrique", "القسم") + '</label><select name="section"><option value="">—</option>' + store.sections.map(function (x) { return '<option' + (p.section === x ? " selected" : "") + ">" + esc(x) + "</option>"; }).join("") + "</select></div>" : "") +
@@ -1143,6 +1161,7 @@
       var pf = $("#pF", m);
       function hRule() { $("#hRule", m).innerHTML = isHealth(+pf.category_id.value) ? "<br>🌿 " + t("health_rule") : ""; }
       pf.category_id.addEventListener("change", hRule); hRule();
+      wireMic($("#aiMic", m), pf.aihint, function () { $("#aiGo", m).click(); });
       pf.aihint.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("#aiGo", m).click(); } });
       $("#aiGo", m).addEventListener("click", async function () {
         var b = this, A = $("#aiM", m), hint = pf.aihint.value.trim();
