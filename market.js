@@ -118,6 +118,8 @@
     NG: ["Lagos", "Abuja", "Kano", "Ibadan", "Port Harcourt", "Benin City", "Kaduna", "Ilorin", "Abeokuta", "Onitsha", "Enugu", "Jos", "Owerri", "Uyo", "Warri", "Calabar", "Aba", "Akure", "Osogbo", "Ogbomoso", "Zaria", "Sokoto", "Maiduguri", "Ado-Ekiti", "Asaba", "Minna", "Bauchi", "Yola", "Makurdi", "Lokoja"]
   };
   function citiesOf(country, extra) { var base = country ? (CITIES[country] || []) : [].concat(CITIES.CI, CITIES.NG); var all = base.concat((extra || []).filter(function (c) { return base.map(function (x) { return x.toLowerCase(); }).indexOf(c.toLowerCase()) < 0; })); return all; }
+  function T3x(en, fr, ar) { return L() === "fr" ? fr : L() === "ar" ? ar : en; }
+  function mkOr(cc) { return "country.eq." + cc + ",markets.cs.{" + cc + "}"; }
   function curOf(country) { return (COUNTRIES[country] || COUNTRIES.CI).cur; }
   function cName(c) { var x = COUNTRIES[c]; if (!x) return ""; var l = L(); return x.flag + " " + (l === "fr" ? x.fr : l === "ar" ? x.ar : x.en); }
   function myCountry() { try { return localStorage.getItem("mk_country") || ""; } catch (e) { return ""; } }
@@ -208,7 +210,7 @@
   }
   function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now, pr.cur) + (pr.was ? "<s>" + money(pr.was, pr.cur) + "</s>" : "") + "</span>"; }
 
-  var PSEL = "id,title,price,currency,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country)";
+  var PSEL = "id,title,price,currency,section,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country,markets)";
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
@@ -309,13 +311,13 @@
     await cats();
     var CC = myCountry();
     var hc = $("#mkCountry"); if (hc) { hc.innerHTML = ["", "CI", "NG"].map(function (c) { return '<button type="button" class="mk-chip' + (CC === c ? " on" : "") + '" data-cc="' + c + '">' + (c ? cName(c) : "🌍 " + t("all_countries")) + "</button>"; }).join(""); hc.addEventListener("click", function (e) { var b = e.target.closest("[data-cc]"); if (!b) return; setCountry(b.dataset.cc); location.reload(); }); }
-    function PQ() { var q = sb.from("products").select(CC ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved"); return CC ? q.eq("stores.country", CC) : q; }
+    function PQ() { var q = sb.from("products").select(CC ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved"); return CC ? q.or(mkOr(CC), { referencedTable: "stores" }) : q; }
     var [cnt, stc, recent, feat, stores] = await Promise.all([
       sb.from("products").select("category_id,store_id").eq("status", "approved").limit(5000),
       sb.from("stores").select("category_id").eq("status", "approved").limit(5000),
       PQ().order("created_at", { ascending: false }).limit(80),
       PQ().gt("featured_until", new Date().toISOString()).limit(8),
-      (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("country", CC) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
+      (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").or(mkOr(CC)) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
     ]);
     var byCat = {}, byStore = {}, stCat = {};
     (stc.data || []).forEach(function (r) { stCat[r.category_id] = (stCat[r.category_id] || 0) + 1; });
@@ -411,7 +413,7 @@
       var c = CATS.filter(function (x) { return x.slug === state.cat; })[0];
       var q = sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("status", "approved");
       if (c) q = q.eq("category_id", c.id);
-      if (state.country) q = q.eq("country", state.country);
+      if (state.country) q = q.or(mkOr(state.country));
       if (state.city) q = q.eq("city", state.city);
       if (state.q) {
         var sq = state.q.replace(/[%,()]/g, " ");
@@ -441,7 +443,7 @@
       $("#shopStoresWrap").classList.add("mk-hide");
       if (reset) { await loadStores(); state.page = 0; state.items = []; state.done = false; $("#shopGrid").innerHTML = '<div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div>'; }
       var per = 24, q = sb.from("products").select(state.city || state.country ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved");
-      if (state.country) q = q.eq("stores.country", state.country);
+      if (state.country) q = q.or(mkOr(state.country), { referencedTable: "stores" });
       if (state.fav) { var fv = lsGet("mk_fav"); if (!fv.length) { state.items = []; state.done = true; return draw(); } q = q.in("id", fv.slice(0, 200)); }
       if (state.city) q = q.eq("stores.city", state.city);
       if (state.cond) q = q.eq("condition", state.cond);
@@ -517,13 +519,14 @@
       if (e.target.closest && e.target.closest("[data-preq]")) multiModal();
     }, true);
     function grid() {
-      var list = items.filter(function (p) { return (!state.cat || p.category_id === state.cat) && (!state.q || (p.title + " " + (p.description || "")).toLowerCase().indexOf(state.q) > -1); });
+      var list = items.filter(function (p) { return (!state.sec || p.section === state.sec) && (!state.cat || p.category_id === state.cat) && (!state.q || (p.title + " " + (p.description || "")).toLowerCase().indexOf(state.q) > -1); });
       $("#stGrid").innerHTML = list.length ? list.map(function (p) { return card(p, pm).replace('<div class="img">', '<div class="img"><button type="button" class="mk-pick" data-pick="' + p.id + '" aria-label="select">+</button>'); }).join("") : emptyBox("🛍️", t("none"));
       markPicks(); pickBar();
       if (list.length > 1 && !$("#stPickHint")) { var h = document.createElement("p"); h.id = "stPickHint"; h.className = "mk-small"; h.style.margin = "0 0 10px"; h.textContent = T3("Tip: tap + on several products to request them together.", "Astuce : touchez + sur plusieurs produits pour les demander ensemble.", "نصيحة: اضغط + على عدة منتجات لتطلبها معًا."); $("#stGrid").before(h); }
     }
     rerender = function () {
       var used = Array.from(new Set(items.map(function (p) { return p.category_id; })));
+      var secs = (s.sections || []).filter(function (x) { return items.some(function (p) { return p.section === x; }); });
       box.innerHTML = '<div class="st-cover"' + (s.cover_url ? ' style="background-image:url(\'' + esc(s.cover_url) + '\')"' : "") + '></div><div class="container"><div class="st-head">' +
         (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="' + esc(s.name) + '">' : '<span class="logo">' + initials(s.name) + "</span>") +
         '<div class="t"><h1>' + esc(s.name) + "</h1>" + '<div class="meta">' + (s.verified ? '<span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + "<span>" + esc(catName(catById(s.category_id))) + "</span>" + (s.city ? "<span>📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + "</span>" : "") + "<span>" + items.length + " " + t("products") + "</span>" + (revs.length ? "<span>" + stars(avg) + " " + avg.toFixed(1) + " (" + revs.length + ")</span>" : "") + "<span>" + t("member") + " " + dateFmt(s.created_at) + "</span></div></div>" +
@@ -532,13 +535,15 @@
         (s.description ? '<p class="st-desc">' + esc(s.description) + "</p>" : "") +
         '<div class="st-share"><b>' + t("share") + ':</b> <code>' + esc(link) + '</code> <button class="mk-btn" id="stCopy" type="button">' + t("copy") + '</button> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(s.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn" id="stQr" type="button">▦ ' + t("qr") + "</button></div>" +
         '<section class="section" style="padding-top:34px"><div class="mk-bar"><input id="stQ" type="search" placeholder="' + t("in_store") + '"></div>' +
-        (used.length > 1 ? '<div class="mk-chips" id="stChips"><a class="mk-chip on" data-c="0">' + t("all") + "</a>" + used.map(function (id) { var c = catById(id); return c ? '<a class="mk-chip" data-c="' + id + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>" : ""; }).join("") + "</div>" : "") +
+        (secs.length ? '<div class="mk-chips" id="stSecs"><a class="mk-chip on" data-sec="">' + t("all") + "</a>" + secs.map(function (x) { return '<a class="mk-chip" data-sec="' + esc(x) + '">' + esc(x) + "</a>"; }).join("") + "</div>" :
+        used.length > 1 ? '<div class="mk-chips" id="stChips"><a class="mk-chip on" data-c="0">' + t("all") + "</a>" + used.map(function (id) { var c = catById(id); return c ? '<a class="mk-chip" data-c="' + id + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>" : ""; }).join("") + "</div>" : "") +
         '<div class="mk-grid" id="stGrid"></div></section>' +
         '<section class="section" style="padding-top:0"><div class="grid-2" style="align-items:start"><div><h2>' + t("reviews") + (revs.length ? " " + stars(avg) + ' <span class="mk-small">' + avg.toFixed(1) + " / 5 · " + revs.length + "</span>" : "") + "</h2>" +
         (revs.length ? revs.slice(0, 20).map(function (r) { return '<div class="mk-rev">' + stars(r.rating) + " <b>" + esc(r.name) + '</b> <span class="mk-small">' + dateFmt(r.created_at) + "</span>" + (r.comment ? "<p style=\"margin:6px 0 0\">" + esc(r.comment) + "</p>" : "") + "</div>"; }).join("") : '<p class="mk-small">' + t("no_reviews") + "</p>") +
         '<p style="margin-top:14px"><button type="button" class="mk-link" id="stReport">⚑ ' + t("report") + '</button></p></div><div class="mk-panel"><h3 style="margin-top:0">' + t("write_review") + '</h3><form class="mk-form" id="rvF"><div class="full"><div class="mk-rate" id="rvStars">' + [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-n="' + n + '" aria-label="' + n + '">★</button>'; }).join("") + '</div></div><div class="full"><label>' + t("your_name") + ' *</label><input name="rn" required maxlength="60"></div><div class="full"><label>' + t("comment") + '</label><textarea name="rc" maxlength="600" style="min-height:80px"></textarea></div><div class="full"><button class="btn btn-primary btn-sm" type="submit">' + t("send") + '</button><div id="rvM"></div></div></form></div></div></section></div>';
       grid();
       $("#stQ").addEventListener("input", function () { state.q = this.value.trim().toLowerCase(); grid(); });
+      var sc = $("#stSecs"); if (sc) sc.addEventListener("click", function (e) { var a = e.target.closest("[data-sec]"); if (!a) return; state.sec = a.dataset.sec; $$(".mk-chip", sc).forEach(function (x) { x.classList.toggle("on", x === a); }); grid(); });
       var ch = $("#stChips"); if (ch) ch.addEventListener("click", function (e) { var a = e.target.closest("[data-c]"); if (!a) return; state.cat = +a.dataset.c; $$(".mk-chip", ch).forEach(function (x) { x.classList.toggle("on", x === a); }); grid(); });
       var rate = 0;
       $$("#rvStars button").forEach(function (b) { b.addEventListener("click", function () { rate = +b.dataset.n; $$("#rvStars button").forEach(function (x) { x.classList.toggle("on", +x.dataset.n <= rate); }); }); });
@@ -744,12 +749,14 @@
       '<div><label>' + t("bname") + ' *</label><input name="bname" required maxlength="80" value="' + esc(s.name || "") + '"></div>' +
       '<div class="full"><label>' + t("slug") + ' *</label><div class="mk-inline"><span class="mk-small">' + esc(location.host) + '/</span><input name="slug" required pattern="[a-z0-9][a-z0-9-]{2,40}" style="flex:1;min-width:160px" value="' + esc(s.slug || "") + '"' + (locked ? " readonly" : "") + '></div><div class="hint">' + t("slug_hint") + "</div></div>" +
       '<div><label>' + t("main_cat") + ' *</label><select name="category_id" required><option value="">' + t("choose") + "</option>" + catOpts + "</select></div>" +
-      '<div><label>' + t("country") + ' *</label><select name="country" required>' + Object.keys(COUNTRIES).map(function (c) { return '<option value="' + c + '"' + ((s.country || myCountry() || "CI") === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("") + "</select></div>" +
+      '<div><label>' + t("country") + ' *</label><select name="country" required>' + Object.keys(COUNTRIES).map(function (c) { return '<option value="' + c + '"' + ((s.country || myCountry() || "CI") === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("") + "</select>" +
+        '<label style="display:flex;gap:8px;align-items:center;font-weight:500;margin-top:8px"><input type="checkbox" name="both"' + ((s.markets || []).length > 1 ? " checked" : "") + " style=\"width:auto\"> " + T3x("I sell in both countries (Côte d’Ivoire + Nigeria)", "Je vends dans les deux pays (Côte d’Ivoire + Nigeria)", "أبيع في البلدين (ساحل العاج + نيجيريا)") + "</label></div>" +
       '<div><label>' + t("city") + ' *</label><input name="city" required maxlength="60" list="cityList" autocomplete="off" value="' + esc(s.city || "") + '"><datalist id="cityList"></datalist></div>' +
       '<div class="full"><label>' + t("address") + '</label><input name="address" maxlength="160" value="' + esc(s.address || "") + '"></div>' +
       '<div><label>' + t("store_phone") + ' *</label><input name="phone" type="tel" required maxlength="30" value="' + esc(s.phone || (me && me.phone) || "") + '"><div class="hint">' + t("phone_hint") + "</div></div>" +
       '<div><label>' + t("store_wa") + '</label><input name="whatsapp" type="tel" maxlength="30" value="' + esc(s.whatsapp || "") + '"></div>' +
       '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="1200">' + esc(s.description || "") + "</textarea></div>" +
+      '<div class="full"><label>' + T3x("My sections — what I sell (optional)", "Mes rubriques — ce que je vends (facultatif)", "أقسام متجري — ما أبيعه (اختياري)") + '</label><input name="sections" maxlength="400" placeholder="' + T3x("e.g. Phones, Accessories, Chargers", "ex. : Téléphones, Accessoires, Chargeurs", "مثال: هواتف، إكسسوارات، شواحن") + '" value="' + esc((s.sections || []).join(", ")) + '"><small class="mk-small">' + T3x("Separate with commas. Customers will see them as tabs in your store.", "Séparez par des virgules. Les clients les verront comme onglets dans votre boutique.", "افصل بينها بفاصلة، وتظهر للزبائن كتبويبات في متجرك.") + "</small></div>" +
       '<div class="full" style="margin-top:8px"><b>💳 ' + t("pay_sec") + '</b><div class="hint">' + t("pay_hint") + "</div></div>" +
       PAYS.map(function (p) { var cc = PAYS_ALL.NG.indexOf(p) > -1 ? "NG" : "CI"; return '<div class="pay-f" data-c="' + cc + '"><label>' + p[1] + '</label><input name="' + p[0] + '" type="text" maxlength="' + (p[0] === "pay_bank" ? 80 : 30) + '" value="' + esc(s[p[0]] || "") + '"></div>'; }).join("") +
       '<div class="full"><label>' + t("pay_name") + '</label><input name="pay_name" maxlength="80" value="' + esc(s.pay_name || "") + '"></div>' +
@@ -775,6 +782,8 @@
     f.addEventListener("submit", async function (e) {
       e.preventDefault(); var M = $("#stM"), b = f.querySelector("button[type=submit]");
       var row = { owner_name: f.owner_name.value.trim(), name: f.bname.value.trim(), slug: slugify(f.slug.value), category_id: +f.category_id.value || null, city: f.city.value.trim(), address: f.address.value.trim() || null, phone: f.phone.value.trim(), whatsapp: f.whatsapp.value.trim() || null, description: f.description.value.trim() || null, logo_url: draft.logo || null, cover_url: draft.cover || null, pay_name: f.pay_name.value.trim() || null, country: f.country.value };
+      row.markets = f.both && f.both.checked ? ["CI", "NG"] : [row.country];
+      if (f.sections) { var secSeen = {}; row.sections = f.sections.value.split(/[,،;\n]/).map(function (x) { return x.trim().slice(0, 40); }).filter(function (x) { var k = x.toLowerCase(); if (!x || secSeen[k]) return false; secSeen[k] = 1; return true; }).slice(0, 20); }
       PAYS.forEach(function (p) { row[p[0]] = f[p[0]].value.trim() || null; });
       if (!row.owner_name || !row.name || !row.slug || row.slug.length < 3 || !row.category_id || !row.city || !row.phone) return msg(M, "err", t("required"));
       if (RESERVED.indexOf(row.slug) > -1) return msg(M, "err", t("slug_taken"));
@@ -852,6 +861,8 @@
       m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + (p.id ? t("edit") : t("add_prod")) + '</h2><form class="mk-form" id="pF">' +
         '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120" value="' + esc(p.title || "") + '"></div>' +
         '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
+        ((store.sections || []).length ? '<div><label>' + T3x("Section", "Rubrique", "القسم") + '</label><select name="section"><option value="">—</option>' + store.sections.map(function (x) { return '<option' + (p.section === x ? " selected" : "") + ">" + esc(x) + "</option>"; }).join("") + "</select></div>" : "") +
+        ((store.markets || []).length > 1 ? '<div><label>' + T3x("Currency", "Devise", "العملة") + '</label><select name="cur"><option value="XOF"' + (p.currency !== "NGN" ? " selected" : "") + '>FCFA (Côte d’Ivoire)</option><option value="NGN"' + (p.currency === "NGN" ? " selected" : "") + ">₦ Naira (Nigeria)</option></select></div>" : "") +
         '<div><label>' + t("price").replace("FCFA", store.country === "NG" ? "₦" : "FCFA").replace("فرنك", store.country === "NG" ? "نيرة" : "فرنك") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.price != null ? p.price : "") + '"></div>' +
         '<div><label>' + t("old_price") + '</label><input name="old" type="number" min="0" step="1" value="' + esc(p.compare_at_price || "") + '"></div>' +
         '<div><label>' + t("qty_stock") + '</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock != null ? p.stock : "") + '"></div>' +
@@ -877,6 +888,8 @@
       $("#pF", m).addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button[type=submit]"), M = $("#pM", m);
         var row = { title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: Math.max(0, Math.round(+f.price.value || 0)), compare_at_price: +f.old.value ? Math.round(+f.old.value) : null, stock: f.stock.value === "" ? null : Math.max(0, Math.round(+f.stock.value)), description: f.description.value.trim() || null, images: imgs, condition: f.cond.value, negotiable: f.neg.checked };
+        if (f.section) row.section = f.section.value || null;
+        row.currency = f.cur ? f.cur.value : (store.country === "NG" ? "NGN" : "XOF");
         if (!row.title || !row.category_id) return msg(M, "err", t("required"));
         b.disabled = true;
         var r = p.id ? await sb.from("products").update(row).eq("id", p.id) : await sb.from("products").insert(Object.assign({ store_id: store.id }, row));
