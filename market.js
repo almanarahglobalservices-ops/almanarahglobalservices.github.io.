@@ -268,14 +268,14 @@
       '<h2>' + T("Welcome 👋", "Bienvenue 👋", "مرحبًا بك 👋") + '</h2><p class="wl-sub">' + T("The marketplace of Côte d’Ivoire and Nigeria. What would you like to do?", "La marketplace de Côte d’Ivoire et du Nigeria. Que voulez-vous faire ?", "سوق ساحل العاج ونيجيريا. ماذا تريد أن تفعل؟") + "</p>" +
       '<div class="wl-ch"><a href="/shop.html" data-go class="wl-b"><span>🛍️</span><b>' + T("I want to buy", "Je veux acheter", "أريد الشراء") + "</b><small>" + T("Find stores near you", "Trouvez des boutiques près de chez vous", "اعثر على متاجر قريبة منك") + '</small></a>' +
       '<a href="/sell.html" data-go class="wl-b gold"><span>🏪</span><b>' + T("I want to sell", "Je veux vendre", "أريد البيع") + "</b><small>" + T("Open your store — free", "Ouvrez votre boutique — gratuit", "افتح متجرك مجانًا") + "</small></a></div>" +
-      '<button type="button" class="wl-vid" data-vid><img src="/lancement.jpg" alt=""><span class="pl">▶</span><span class="lb">' + T("Discover in 45 seconds", "Découvrir en 45 secondes", "اكتشف في 45 ثانية") + "</span></button>" +
+      '<button type="button" class="wl-vid" data-vid><img src="/lancement.jpg" alt=""><span class="pl">▶</span><span class="lb">' + T("Discover in 50 seconds", "Découvrir en 50 secondes", "اكتشف في 50 ثانية") + "</span></button>" +
       '<button type="button" class="wl-skip">' + T("Just browse", "Visiter le site", "تصفح الموقع") + " →</button></div>";
     document.body.appendChild(m);
     function close() { done(); m.remove(); }
     $(".x", m).onclick = close; $(".wl-skip", m).onclick = close;
     m.addEventListener("click", function (e) { if (e.target === m) close(); });
     $$("[data-go]", m).forEach(function (a) { a.addEventListener("click", done); });
-    $("[data-vid]", m).onclick = function () { var b = this; b.outerHTML = '<video class="wl-video" src="/lancement.mp4" poster="/lancement.jpg" controls autoplay playsinline></video>'; done(); };
+    $("[data-vid]", m).onclick = function () { var b = this; b.outerHTML = '<video class="wl-video" src="/lancement.mp4?v=2" poster="/lancement.jpg" controls autoplay playsinline></video>'; done(); };
   }
   window.AMG_WELCOME = welcome;
 
