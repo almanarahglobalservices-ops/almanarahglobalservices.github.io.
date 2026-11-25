@@ -544,6 +544,13 @@
     var md = document.querySelector('meta[name="description"]'); if (md && s.description) md.content = s.description.slice(0, 160);
     var pr = await sb.from("products").select(PSEL).eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(1000);
     var items = pr.data || [], pm = await promoMap(items), state = { q: "", cat: 0 };
+    /* the owner sees a "manage" bar on their own store page */
+    user().then(function (u) {
+      if (!u || u.id !== s.owner_id || document.getElementById("ownBar")) return;
+      var bar = document.createElement("div"); bar.id = "ownBar"; bar.className = "mk-ownbar";
+      bar.innerHTML = "<span>" + T3x("This is your store", "C’est votre boutique", "هذا متجرك") + '</span><a class="mk-btn gold" href="/sell.html#add">＋ ' + t("add_prod") + '</a><a class="mk-btn" href="/sell.html#quick">⚡ ' + T3x("Many products", "Plusieurs produits", "منتجات كثيرة") + '</a><a class="mk-btn" href="/sell.html#prod">⚙ ' + T3x("Manage", "Gérer", "إدارة") + "</a>";
+      document.body.appendChild(bar);
+    });
     var rv = await sb.from("reviews").select("name,rating,comment,created_at").eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(100);
     var revs = rv.data || [], avg = revs.length ? revs.reduce(function (a, r) { return a + r.rating; }, 0) / revs.length : 0;
     var link = storeUrl(s.slug), picks = [];
@@ -1148,7 +1155,13 @@
       }
     }
 
+    var jump = tab === "add" || tab === "quick" ? tab : "";
+    if (jump) { tab = "prod"; history.replaceState(null, "", location.pathname + location.search + "#prod"); }
     await loadAll(); shell();
+    if (jump) {
+      var lim = plan().product_limit, full = data.products.length >= lim && !(me && me.role === "admin");
+      if (full) { tab = "plan"; shell(); alert(t("limit")); } else if (jump === "add") productModal(null); else quickModal();
+    }
   }
 
   /* =============== ADMIN =============== */
@@ -1365,6 +1378,18 @@
       f.reset(); msg(box, "ok", T("Thank you! Your message has been sent. We will reply soon.", "Merci ! Votre message a été envoyé. Nous vous répondrons rapidement.", "شكرًا! تم إرسال رسالتك وسنرد عليك قريبًا."));
     });
   }
+  (async function myStoreLinks() {
+    try {
+      var u = await user(); if (!u) return;
+      var st = (await sb.from("stores").select("id").eq("owner_id", u.id).limit(1)).data || [];
+      if (!st.length) return;
+      $$('a[href="sell.html"], a[href="/sell.html"]').forEach(function (a) {
+        a.setAttribute("href", "/sell.html#prod");
+        a.setAttribute("data-fr", "Ma boutique"); a.setAttribute("data-ar", "متجري");
+        a.textContent = T3x("My store", "Ma boutique", "متجري");
+      });
+    } catch (e) {}
+  })();
   var run = { contact: pageContact, home: pageHome, shop: pageShop, store: pageStore, product: pageProduct, sell: pageSell, manage: pageManage }[page];
   function go() { if (run) run().catch(function (e) { console.error(e); var b = document.querySelector("[data-mk-root]"); if (b) b.innerHTML = '<div class="mk-msg err">' + t("fail") + "</div>"; }); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go); else go();

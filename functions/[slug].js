@@ -7,6 +7,8 @@ export async function onRequestGet(ctx) {
   let raw = String(ctx.params.slug || "");
   try { raw = decodeURIComponent(raw); } catch (e) {}
   const slug = raw.toLowerCase();
+  // short entry to the seller dashboard
+  if (slug === "ma-boutique" || slug === "mon-espace" || slug === "my-store") return Response.redirect(new URL("/sell.html#prod", ctx.request.url).toString(), 302);
   if (SLUG.test(slug)) return storePage(ctx, slug);
   const clean = slug.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, "").replace(/[^a-z0-9-]/g, "");
   if (SLUG.test(clean)) return Response.redirect(new URL("/" + clean, ctx.request.url).toString(), 301);

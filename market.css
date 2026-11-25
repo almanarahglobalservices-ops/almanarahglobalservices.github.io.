@@ -269,3 +269,5 @@
 .mk-brand .ic{font-size:1.9rem}.mk-brand .tx{flex:1;min-width:200px;display:grid;gap:3px}
 .mk-brand .tx b{color:#101B45}.mk-brand .tx span{font-size:.86rem;color:#4a5068}.mk-brand .tx em{font-style:normal;font-weight:800;color:#B78A32}
 .mk-brand-ck{display:flex;gap:8px;align-items:center;font-weight:700;color:#101B45;cursor:pointer}.mk-brand-ck input{width:auto}
+.mk-ownbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:150;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:#101B45;color:#fff;padding:10px 14px;border-radius:16px;box-shadow:0 10px 30px rgba(16,27,69,.35);max-width:calc(100% - 20px);animation:mkIn .35s ease both}
+.mk-ownbar span{font-weight:700;font-size:.9rem}.mk-ownbar .mk-btn{text-decoration:none}
