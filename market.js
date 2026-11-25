@@ -22,7 +22,7 @@
     view_store: ["View store", "Voir la boutique", "زيارة المتجر"], wa: ["WhatsApp", "WhatsApp", "واتساب"], call: ["Call", "Appeler", "اتصال"],
     share: ["Share this store", "Partager la boutique", "شارك المتجر"], copy: ["Copy link", "Copier le lien", "نسخ الرابط"], copied: ["Link copied", "Lien copié", "تم نسخ الرابط"],
     not_found: ["This page was not found or is not available.", "Page introuvable ou indisponible.", "الصفحة غير موجودة أو غير متاحة."],
-    preview: ["Preview — your store is not public yet. It will appear after approval.", "Aperçu — votre boutique n’est pas encore publique. Elle apparaîtra après validation.", "معاينة — متجرك ليس ظاهرًا بعد، وسيظهر بعد الموافقة."],
+    preview: ["Preview — your store will be visible to everyone shortly.", "Aperçu — votre boutique sera visible par tous sous peu.", "معاينة — سيظهر متجرك للجميع قريبًا."],
     in_store: ["Search in this store…", "Rechercher dans la boutique…", "ابحث في هذا المتجر…"], seller: ["Seller", "Vendeur", "البائع"], category: ["Category", "Catégorie", "القسم"],
     wa_msg: ["Hello, I saw this on AL MANARAH GLOBAL SERVICES and I am interested:", "Bonjour, j’ai vu ceci sur AL MANARAH GLOBAL SERVICES et je suis intéressé(e) :", "السلام عليكم، رأيت هذا على موقع المنارة وأنا مهتم:"],
     wa_store: ["Hello, I found your store on AL MANARAH GLOBAL SERVICES.", "Bonjour, j’ai trouvé votre boutique sur AL MANARAH GLOBAL SERVICES.", "السلام عليكم، وجدت متجرك على موقع المنارة."],
@@ -40,7 +40,7 @@
     confirm_email: ["Account created. Please confirm your email, then sign in.", "Compte créé. Confirmez votre e-mail puis connectez-vous.", "تم إنشاء الحساب. أكّد بريدك ثم سجّل الدخول."],
     logout: ["Sign out", "Déconnexion", "خروج"], bad_login: ["Email or password is incorrect.", "E-mail ou mot de passe incorrect.", "البريد أو كلمة السر غير صحيحة."],
     // store setup
-    setup_t: ["Open your store", "Ouvrez votre boutique", "افتح متجرك"], setup_p: ["Fill in your details. Your store goes live after approval by AL MANARAH.", "Renseignez vos informations. Votre boutique sera en ligne après validation par AL MANARAH.", "املأ بياناتك، ويظهر متجرك بعد موافقة المنارة."],
+    setup_t: ["Open your store", "Ouvrez votre boutique", "افتح متجرك"], setup_p: ["Fill in your details. Your store will be online shortly.", "Renseignez vos informations. Votre boutique sera en ligne sous peu.", "املأ بياناتك، وسيكون متجرك ظاهرًا قريبًا."],
     owner: ["Your full name", "Votre nom complet", "اسمك الكامل"], bname: ["Business / store name", "Nom de l’entreprise / boutique", "اسم التجارة / المتجر"],
     slug: ["Store link", "Lien de la boutique", "رابط المتجر"], slug_hint: ["Letters, numbers and dashes only", "Lettres, chiffres et tirets", "حروف إنجليزية وأرقام وشرطات فقط"],
     main_cat: ["Main category", "Catégorie principale", "القسم الرئيسي"], address: ["Address / area", "Adresse / quartier", "العنوان / الحي"],
@@ -53,10 +53,10 @@
     // dashboard
     t_over: ["Overview", "Aperçu", "نظرة عامة"], t_prod: ["Products", "Produits", "المنتجات"], t_req: ["Requests", "Demandes", "الطلبات"], t_promo: ["Promotions", "Promotions", "العروض"],
     t_store: ["Store settings", "Ma boutique", "إعدادات المتجر"], t_plan: ["Plan", "Abonnement", "الباقة"],
-    st_pending: ["Pending approval", "En attente de validation", "قيد المراجعة"], st_approved: ["Approved", "Validé", "مقبول"], st_rejected: ["Rejected", "Refusé", "مرفوض"],
+    st_pending: ["Coming soon", "Bientôt en ligne", "قريبًا"], st_approved: ["Approved", "Validé", "مقبول"], st_rejected: ["Rejected", "Refusé", "مرفوض"],
     st_suspended: ["Suspended", "Suspendu", "موقوف"], st_hidden: ["Hidden", "Masqué", "مخفي"], st_new: ["New", "Nouveau", "جديد"], st_contacted: ["Contacted", "Contacté", "تم التواصل"],
     st_completed: ["Completed", "Terminé", "تمّ"], st_cancelled: ["Cancelled", "Annulé", "ملغى"],
-    store_pending: ["Your store is waiting for approval. You can already add products — they will appear after approval.", "Votre boutique attend la validation. Vous pouvez déjà ajouter des produits — ils apparaîtront après validation.", "متجرك قيد المراجعة، ويمكنك إضافة المنتجات الآن وستظهر بعد الموافقة."],
+    store_pending: ["Your store is being prepared and will be online shortly. You can already add your products.", "Votre boutique est en préparation et sera en ligne sous peu. Vous pouvez déjà ajouter vos produits.", "متجرك قيد التجهيز وسيظهر قريبًا، ويمكنك إضافة منتجاتك الآن."],
     store_rejected: ["Your store was not approved.", "Votre boutique n’a pas été validée.", "لم تتم الموافقة على متجرك."],
     store_suspended: ["Your store is suspended. Contact AL MANARAH.", "Votre boutique est suspendue. Contactez AL MANARAH.", "متجرك موقوف. تواصل مع المنارة."],
     your_link: ["Your store link — share it everywhere:", "Le lien de votre boutique — partagez-le partout :", "رابط متجرك — انشره في كل مكان:"],
@@ -65,7 +65,7 @@
     title: ["Product name", "Nom du produit", "اسم المنتج"], price: ["Price (FCFA)", "Prix (FCFA)", "السعر (فرنك)"], old_price: ["Old price (optional)", "Ancien prix (facultatif)", "السعر القديم (اختياري)"],
     qty_stock: ["Quantity available (optional)", "Quantité disponible (facultatif)", "الكمية المتوفرة (اختياري)"], photos: ["Photos (up to 6)", "Photos (jusqu’à 6)", "الصور (حتى 6)"],
     add_photo: ["Add photo", "Ajouter une photo", "أضف صورة"], uploading: ["Uploading…", "Envoi…", "جارٍ الرفع…"],
-    review_note: ["Every new or edited product is checked by AL MANARAH before it appears.", "Chaque produit nouveau ou modifié est vérifié par AL MANARAH avant d’apparaître.", "كل منتج جديد أو معدَّل تراجعه المنارة قبل ظهوره."],
+    review_note: ["New or edited products appear in your store shortly, usually within a few hours.", "Les produits nouveaux ou modifiés apparaissent dans votre boutique sous peu, généralement en quelques heures.", "المنتجات الجديدة أو المعدَّلة تظهر في متجرك قريبًا، عادةً خلال ساعات."],
     limit: ["You have reached your plan limit. Upgrade to add more products.", "Limite de votre abonnement atteinte. Passez à une offre supérieure.", "وصلت إلى حد باقتك. قم بالترقية لإضافة المزيد."],
     sure: ["Are you sure?", "Êtes-vous sûr ?", "هل أنت متأكد؟"], reason: ["Reason", "Motif", "السبب"],
     no_req: ["No requests yet.", "Aucune demande pour le moment.", "لا توجد طلبات بعد."], reply_wa: ["Reply on WhatsApp", "Répondre sur WhatsApp", "رد على واتساب"],
@@ -92,7 +92,7 @@
     r_scam: ["Scam / fraud", "Arnaque / fraude", "احتيال"], r_fake: ["Fake or wrong item", "Article faux ou différent", "منتج مزيف أو مختلف"], r_sold: ["Already sold / unavailable", "Déjà vendu / indisponible", "تم بيعه / غير متوفر"], r_bad: ["Offensive or forbidden", "Offensant ou interdit", "محتوى مسيء أو ممنوع"], r_other: ["Other", "Autre", "أخرى"],
     details: ["Details", "Détails", "التفاصيل"], your_contact: ["Your phone or email (optional)", "Votre téléphone ou e-mail (facultatif)", "هاتفك أو بريدك (اختياري)"], thanks_report: ["Thank you. AL MANARAH will review this.", "Merci. AL MANARAH va vérifier.", "شكرًا لك، ستراجعه المنارة."],
     reviews: ["Reviews", "Avis", "التقييمات"], no_reviews: ["No reviews yet.", "Pas encore d’avis.", "لا توجد تقييمات بعد."], write_review: ["Rate this seller", "Noter ce vendeur", "قيّم هذا البائع"],
-    your_name: ["Your name", "Votre nom", "اسمك"], comment: ["Comment", "Commentaire", "تعليق"], review_sent: ["Thank you! Your review will appear after checking.", "Merci ! Votre avis apparaîtra après vérification.", "شكرًا! سيظهر تقييمك بعد المراجعة."],
+    your_name: ["Your name", "Votre nom", "اسمك"], comment: ["Comment", "Commentaire", "تعليق"], review_sent: ["Thank you! Your review will appear shortly.", "Merci ! Votre avis apparaîtra sous peu.", "شكرًا! سيظهر تقييمك قريبًا."],
     share_p: ["Share", "Partager", "مشاركة"], pay_online: ["Pay online", "Payer en ligne", "الدفع أونلاين"],
     pay_sec: ["Online payment (optional)", "Paiement en ligne (facultatif)", "الدفع أونلاين (اختياري)"], pay_hint: ["Customers see these numbers when they tap “Pay online” on your store.", "Les clients voient ces numéros en touchant « Payer en ligne » sur votre boutique.", "يرى الزبائن هذه الأرقام عند الضغط على «الدفع أونلاين» في متجرك."],
     agree: ["I have read and accept the", "J’ai lu et j’accepte le", "قرأت وأوافق على"], agreement: ["Seller agreement", "Contrat vendeur", "عقد البائع"], agree_err: ["Please accept the seller agreement.", "Veuillez accepter le contrat vendeur.", "يرجى الموافقة على عقد البائع."],
@@ -332,7 +332,7 @@
   /* =============== STORE =============== */
   async function pageStore() {
     await cats();
-    var m = location.pathname.match(/^\/(?:store\/)?([a-z0-9][a-z0-9-]+)\/?$/), slug = (m && m[1] !== "store" && m[1]) || qs("s") || "";
+    var m = location.pathname.toLowerCase().match(/^\/(?:store\/)?([a-z0-9][a-z0-9-]+)\/?$/), slug = (m && m[1] !== "store" && m[1]) || qs("s") || "";
     var box = $("#storeApp");
     if (!slug) { box.innerHTML = '<div class="container section">' + emptyBox("🔎", t("not_found")) + "</div>"; return; }
     var r = await sb.from("stores").select("*").eq("slug", slug).maybeSingle(), s = r.data;
