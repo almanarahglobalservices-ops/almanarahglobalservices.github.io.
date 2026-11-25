@@ -585,7 +585,7 @@
 
   // 4. Day / night mode
   function initTheme(actions) {
-    var btn = mk("button", { type: "button", "class": "icon-btn", "aria-label": "Day / night mode" });
+    var btn = mk("button", { type: "button", "class": "icon-btn theme-btn", "aria-label": "Day / night mode" });
     function set(t) { document.documentElement.setAttribute("data-theme", t); btn.innerHTML = t === "dark" ? SVG_SUN : SVG_MOON; store.set("theme", t); }
     set(store.get("theme") === "dark" ? "dark" : "light");
     btn.addEventListener("click", function () { set(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); });

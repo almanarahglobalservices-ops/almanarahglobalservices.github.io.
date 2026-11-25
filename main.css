@@ -1074,3 +1074,5 @@ html[lang="ar"] .l-en::before{content:"هذا النص القانوني متاح
 .acct-btn:hover{background:#101B45;color:#fff;border-color:#101B45}
 .acct-btn.in{background:#101B45;color:#fff;border-color:#101B45}
 @media (max-width:560px){.acct-btn{width:36px;height:36px;padding:0;justify-content:center;flex:none}.acct-btn .t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
+/* phones: keep the header on one line with the account button */
+@media (max-width:560px){.nav-actions{gap:4px}.nav-actions .icon-btn,.acct-btn{width:34px;height:34px}.nav-actions .theme-btn{display:none}.lang button{padding:4px 6px;font-size:.72rem}}
