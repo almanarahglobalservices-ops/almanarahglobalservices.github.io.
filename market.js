@@ -95,6 +95,7 @@
     your_name: ["Your name", "Votre nom", "اسمك"], comment: ["Comment", "Commentaire", "تعليق"], review_sent: ["Thank you! Your review will appear after checking.", "Merci ! Votre avis apparaîtra après vérification.", "شكرًا! سيظهر تقييمك بعد المراجعة."],
     share_p: ["Share", "Partager", "مشاركة"], pay_online: ["Pay online", "Payer en ligne", "الدفع أونلاين"],
     pay_sec: ["Online payment (optional)", "Paiement en ligne (facultatif)", "الدفع أونلاين (اختياري)"], pay_hint: ["Customers see these numbers when they tap “Pay online” on your store.", "Les clients voient ces numéros en touchant « Payer en ligne » sur votre boutique.", "يرى الزبائن هذه الأرقام عند الضغط على «الدفع أونلاين» في متجرك."],
+    qr: ["QR code", "Code QR", "رمز QR"], qr_dl: ["Download QR code", "Télécharger le code QR", "تحميل رمز QR"], qr_hint: ["Print it or send it: customers scan it to open your store.", "Imprimez-le ou envoyez-le : les clients le scannent pour ouvrir votre boutique.", "اطبعه أو أرسله: يمسحه الزبائن فيفتح متجرك مباشرة."], scan_me: ["Scan to see all our products", "Scannez pour voir tous nos produits", "امسح الرمز لترى كل منتجاتنا"],
     pay_name: ["Account name", "Nom du compte", "اسم صاحب الحساب"], pay_after: ["After paying, send your receipt to the seller on WhatsApp.", "Après le paiement, envoyez votre reçu au vendeur sur WhatsApp.", "بعد الدفع، أرسل الإيصال إلى البائع عبر الواتساب."], send_receipt: ["Send receipt on WhatsApp", "Envoyer le reçu sur WhatsApp", "أرسل الإيصال عبر الواتساب"], deals: ["Deals", "Bonnes affaires", "عروض"]
   };
   function t(k) { var r = D[k]; if (!r) return k; var l = L(); return l === "fr" ? r[1] : l === "ar" ? (r[2] || r[0]) : r[0]; }
@@ -352,7 +353,7 @@
         '<div class="st-actions">' + (wa(s.whatsapp || s.phone) ? '<a class="btn btn-wa2 btn-sm" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, t("wa_store") + " " + link) + '">' + t("wa") + "</a>" : "") + (tel(s.phone) ? '<a class="btn btn-outline btn-sm" href="' + tel(s.phone) + '">' + t("call") + "</a>" : "") + (hasPay(s) ? '<button type="button" class="btn btn-gold btn-sm" id="stPay">💳 ' + t("pay_online") + "</button>" : "") + "</div></div>" +
         (s.status !== "approved" ? '<div class="mk-msg warn" style="margin-top:16px">' + t("preview") + "</div>" : "") +
         (s.description ? '<p class="st-desc">' + esc(s.description) + "</p>" : "") +
-        '<div class="st-share"><b>' + t("share") + ':</b> <code>' + esc(link) + '</code> <button class="mk-btn" id="stCopy" type="button">' + t("copy") + '</button> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(s.name + " — " + link) + '">' + t("wa") + "</a></div>" +
+        '<div class="st-share"><b>' + t("share") + ':</b> <code>' + esc(link) + '</code> <button class="mk-btn" id="stCopy" type="button">' + t("copy") + '</button> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(s.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn" id="stQr" type="button">▦ ' + t("qr") + "</button></div>" +
         '<section class="section" style="padding-top:34px"><div class="mk-bar"><input id="stQ" type="search" placeholder="' + t("in_store") + '"></div>' +
         (used.length > 1 ? '<div class="mk-chips" id="stChips"><a class="mk-chip on" data-c="0">' + t("all") + "</a>" + used.map(function (id) { var c = catById(id); return c ? '<a class="mk-chip" data-c="' + id + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>" : ""; }).join("") + "</div>" : "") +
         '<div class="mk-grid" id="stGrid"></div></section>' +
@@ -366,10 +367,40 @@
       $$("#rvStars button").forEach(function (b) { b.addEventListener("click", function () { rate = +b.dataset.n; $$("#rvStars button").forEach(function (x) { x.classList.toggle("on", +x.dataset.n <= rate); }); }); });
       $("#rvF").addEventListener("submit", async function (e) { e.preventDefault(); var f = e.target; if (!rate) return msg($("#rvM"), "err", t("required")); var r = await sb.rpc("submit_review", { p_store: s.id, p_name: f.rn.value.trim(), p_rating: rate, p_comment: f.rc.value.trim() || null }); if (r.error) return msg($("#rvM"), "err", t("fail")); msg($("#rvM"), "ok", t("review_sent")); f.reset(); });
       $("#stReport").addEventListener("click", function () { reportModal(s.id, null); });
+      var sq = $("#stQr"); if (sq) sq.addEventListener("click", function () { qrModal(s); });
       var sp = $("#stPay"); if (sp) sp.addEventListener("click", function () { payModal(s, ""); });
       $("#stCopy").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
     };
     rerender();
+  }
+
+  async function qrCanvas(store) {
+    var url = storeUrl(store.slug), qr = window.qrcode(0, "H"); qr.addData(url); qr.make();
+    var n = qr.getModuleCount(), W = 720, H = 900, pad = 70, size = W - pad * 2, cell = size / n;
+    var c = document.createElement("canvas"); c.width = W; c.height = H; var g = c.getContext("2d");
+    g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#101B45"; g.fillRect(0, 0, W, 120);
+    g.fillStyle = "#ffffff"; g.textAlign = "center"; g.font = "bold 40px Manrope, Arial, sans-serif";
+    var name = store.name.length > 28 ? store.name.slice(0, 27) + "…" : store.name; g.fillText(name, W / 2, 72);
+    g.fillStyle = "#B78A32"; g.fillRect(0, 120, W, 6);
+    var top = 160; g.fillStyle = "#101B45";
+    for (var r = 0; r < n; r++) for (var col = 0; col < n; col++) if (qr.isDark(r, col)) g.fillRect(Math.floor(pad + col * cell), Math.floor(top + r * cell), Math.ceil(cell), Math.ceil(cell));
+    var src = store.logo_url || "/logo.png";
+    await new Promise(function (res) { var im = new Image(); im.crossOrigin = "anonymous"; im.onload = function () { var L = size * 0.2, x = W / 2 - L / 2, y = top + size / 2 - L / 2; g.fillStyle = "#fff"; g.fillRect(x - 8, y - 8, L + 16, L + 16); g.drawImage(im, x, y, L, L); res(); }; im.onerror = res; im.src = src; });
+    g.fillStyle = "#101B45"; g.font = "bold 30px Manrope, Arial, sans-serif"; g.fillText(t("scan_me"), W / 2, top + size + 60);
+    g.fillStyle = "#555"; g.font = "22px Manrope, Arial, sans-serif"; g.fillText(url.replace(/^https?:\/\//, ""), W / 2, top + size + 100);
+    g.fillStyle = "#B78A32"; g.font = "bold 20px Manrope, Arial, sans-serif"; g.fillText("AL MANARAH GLOBAL SERVICES", W / 2, H - 24);
+    return c;
+  }
+  async function qrModal(store) {
+    if (!window.qrcode) return;
+    var m = document.createElement("div"); m.className = "mk-modal";
+    m.innerHTML = '<div class="box" style="text-align:center"><button class="x" type="button">✕</button><h3 style="margin-top:0">' + t("qr") + " — " + esc(store.name) + '</h3><p class="mk-small">' + t("qr_hint") + '</p><div id="qrBox">' + t("loading") + '</div><p><a class="btn btn-primary btn-sm" id="qrDl" download="' + esc(store.slug) + '-qr.png">⬇ ' + t("qr_dl") + "</a></p></div>";
+    document.body.appendChild(m); $(".x", m).onclick = function () { m.remove(); }; m.addEventListener("click", function (e) { if (e.target === m) m.remove(); });
+    var c = await qrCanvas(store), url;
+    try { url = c.toDataURL("image/png"); } catch (e) { store = Object.assign({}, store, { logo_url: null }); c = await qrCanvas(store); url = c.toDataURL("image/png"); }
+    $("#qrBox", m).innerHTML = '<img src="' + url + '" alt="QR" style="width:min(320px,100%);border:1px solid var(--line);border-radius:12px;margin:0 auto;display:block">';
+    $("#qrDl", m).href = url;
   }
 
   var PAYS = [["pay_mtn", "MTN Mobile Money"], ["pay_orange", "Orange Money"], ["pay_moov", "Moov Money"], ["pay_wave", "Wave"]];
@@ -572,10 +603,11 @@
       var pl = plan(), link = storeUrl(store.slug), nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
       var banner = store.status === "pending" ? '<div class="mk-msg warn">' + t("store_pending") + "</div>" : store.status === "rejected" ? '<div class="mk-msg err">' + t("store_rejected") + (store.admin_note ? "<br>" + t("note_from") + " " + esc(store.admin_note) : "") + "</div>" : store.status === "suspended" ? '<div class="mk-msg err">' + t("store_suspended") + (store.admin_note ? "<br>" + esc(store.admin_note) : "") + "</div>" : "";
       B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + data.products.length + " / " + pl.product_limit + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
-        '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/store/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + "</a></div>" +
+        '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/store/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
         '<p style="margin-top:22px"><button class="btn btn-primary" id="goAdd" type="button">＋ ' + t("add_prod") + "</button></p>";
       $("#cp").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
       $("#goAdd").addEventListener("click", function () { productModal(null); });
+      $("#ovQr").addEventListener("click", function () { qrModal(store); });
     }
 
     function tProd() {
