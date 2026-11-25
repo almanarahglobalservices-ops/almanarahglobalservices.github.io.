@@ -413,12 +413,17 @@
       if (c) q = q.eq("category_id", c.id);
       if (state.country) q = q.eq("country", state.country);
       if (state.city) q = q.eq("city", state.city);
-      if (state.q) { var sq = state.q.replace(/[%,()]/g, " "); q = q.or("name.ilike.%" + sq + "%,description.ilike.%" + sq + "%,city.ilike.%" + sq + "%"); }
+      if (state.q) {
+        var sq = state.q.replace(/[%,()]/g, " ");
+        var pr = await sb.from("products").select("store_id").eq("status", "approved").or("title.ilike.%" + sq + "%,description.ilike.%" + sq + "%").limit(1000);
+        var ids = Array.from(new Set((pr.data || []).map(function (x) { return x.store_id; }))).slice(0, 150);
+        q = q.or("name.ilike.%" + sq + "%,description.ilike.%" + sq + "%,city.ilike.%" + sq + "%" + (ids.length ? ",id.in.(" + ids.join(",") + ")" : ""));
+      }
       var r = await q.order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(60);
       var st = r.data || [];
-      $("#shopStoresWrap").classList.toggle("mk-hide", !st.length);
+      $("#shopStoresWrap").classList.remove("mk-hide");
       $("#shopStoresT").textContent = (L() === "ar" ? "المتاجر" : L() === "en" ? "Stores" : "Boutiques") + " (" + st.length + ")";
-      $("#shopStores").innerHTML = st.map(function (x) { return storeCard(x, null); }).join("");
+      $("#shopStores").innerHTML = st.length ? st.map(function (x) { return storeCard(x, null); }).join("") : emptyBox("🔎", t("none"), t("none_hint"), true);
       state.hasStores = st.length > 0;
     }
     function draw() {
@@ -429,6 +434,11 @@
       $("#shopMore").classList.toggle("mk-hide", state.done || !state.items.length);
     }
     async function load(reset) {
+      /* products are shown only inside each store: the shop lists stores (saved items excepted) */
+      var only = !state.fav;
+      ["#fCond", "#fMin", "#fMax", "#shopSort"].forEach(function (id) { var e = $(id); if (e) e.classList.toggle("mk-hide", only); });
+      if (only) { await loadStores(); $("#shopProdT").classList.add("mk-hide"); $("#shopGrid").innerHTML = ""; $("#shopMore").classList.add("mk-hide"); return; }
+      $("#shopStoresWrap").classList.add("mk-hide");
       if (reset) { await loadStores(); state.page = 0; state.items = []; state.done = false; $("#shopGrid").innerHTML = '<div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div>'; }
       var per = 24, q = sb.from("products").select(state.city || state.country ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved");
       if (state.country) q = q.eq("stores.country", state.country);
