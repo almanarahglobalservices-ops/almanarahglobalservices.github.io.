@@ -1099,6 +1099,6 @@ img,video,iframe,table{max-width:100%}
   .lang{gap:0}.lang button{padding:3px 5px;font-size:.68rem}
   .brand img{width:34px;height:34px}.brand b{font-size:.78rem}.brand small{font-size:.5rem}
 }
-@media (max-width:400px){.nav-actions .theme-btn{display:none}.brand span{display:none}}
+@media (max-width:400px){.nav-actions .theme-btn{display:none}}
 /* site share button removed from the header (it is under the home search) */
 .nav-actions .share-btn{display:none!important}
