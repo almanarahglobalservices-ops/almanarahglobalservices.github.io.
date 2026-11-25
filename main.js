@@ -706,8 +706,8 @@
     var closed = false; try { closed = sessionStorage.getItem("promoClosed") === P.id; } catch (e) {}
     var fl = mk("aside", { "class": "promo-float", "aria-label": "Offer" });
     fl.innerHTML = '<button type="button" class="pf-x" aria-label="Close">✕</button><span class="pf-badge"></span><h4 class="pf-title"></h4><p class="pf-dates"></p><p class="pf-price"></p><p class="pf-count"></p><div class="pf-actions"><a class="btn btn-gold btn-sm pf-book" href="' + link + '"></a><button type="button" class="btn btn-outline btn-sm pf-add"></button></div>';
-    if (P.float !== false) document.body.appendChild(fl);
-    if (!closed && P.float !== false) setTimeout(function () { fl.classList.add("show"); }, 2500);
+    if (P.float === true) document.body.appendChild(fl);
+    if (!closed && P.float === true) setTimeout(function () { fl.classList.add("show"); }, 2500);
     fl.querySelector(".pf-x").addEventListener("click", function () { fl.classList.remove("show"); try { sessionStorage.setItem("promoClosed", P.id); } catch (e) {} });
     fl.querySelector(".pf-add").addEventListener("click", function () { promoAddToBasket(P); var b = document.querySelector(".bk-btn"); if (b) { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); } });
     fl.querySelector(".pf-book").addEventListener("click", function () { promoAddToBasket(P); });
