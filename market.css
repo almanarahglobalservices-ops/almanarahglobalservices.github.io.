@@ -274,3 +274,15 @@
 .mk-topacts{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
 .mk-topacts .btn{flex:1 1 auto;justify-content:center}
 @media (max-width:560px){.mk-topacts .btn{flex:1 1 100%;padding:12px}}
+/* home hero on phones: compact, tidy buttons and country chips that fit the screen */
+@media (max-width:640px){
+  .mk-hero{padding:34px 0 40px}
+  .mk-hero h1{font-size:1.75rem;line-height:1.2}
+  .mk-hero p{font-size:.95rem}
+  .mk-hero .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .mk-hero .actions .btn{width:100%;justify-content:center;padding:10px 8px;font-size:.82rem;min-height:42px;text-align:center}
+  .mk-hero .actions .btn:first-child{grid-column:1 / -1}
+  #mkCountry{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;overflow:visible;margin-top:16px!important}
+  #mkCountry .mk-chip{padding:7px 4px;font-size:.74rem;text-align:center;overflow:hidden;text-overflow:ellipsis}
+  .mk-stats{gap:10px}
+}
