@@ -95,6 +95,9 @@
     your_name: ["Your name", "Votre nom", "اسمك"], comment: ["Comment", "Commentaire", "تعليق"], review_sent: ["Thank you! Your review will appear after checking.", "Merci ! Votre avis apparaîtra après vérification.", "شكرًا! سيظهر تقييمك بعد المراجعة."],
     share_p: ["Share", "Partager", "مشاركة"], pay_online: ["Pay online", "Payer en ligne", "الدفع أونلاين"],
     pay_sec: ["Online payment (optional)", "Paiement en ligne (facultatif)", "الدفع أونلاين (اختياري)"], pay_hint: ["Customers see these numbers when they tap “Pay online” on your store.", "Les clients voient ces numéros en touchant « Payer en ligne » sur votre boutique.", "يرى الزبائن هذه الأرقام عند الضغط على «الدفع أونلاين» في متجرك."],
+    agree: ["I have read and accept the", "J’ai lu et j’accepte le", "قرأت وأوافق على"], agreement: ["Seller agreement", "Contrat vendeur", "عقد البائع"], agree_err: ["Please accept the seller agreement.", "Veuillez accepter le contrat vendeur.", "يرجى الموافقة على عقد البائع."],
+    one_rule: ["One product per listing — no photos of a whole shop or many items.", "Un produit par annonce — pas de photo d’une boutique entière ou de plusieurs articles.", "منتج واحد لكل إعلان — لا تصوّر الدكان كله أو سلعًا كثيرة في إعلان واحد."],
+    yearly: ["12 months — pay only 6", "12 mois — payez seulement 6", "12 شهرًا — ادفع 6 فقط"], per_year: ["/ year", "/ an", "/ سنة"],
     qr: ["QR code", "Code QR", "رمز QR"], qr_dl: ["Download QR code", "Télécharger le code QR", "تحميل رمز QR"], qr_hint: ["Print it or send it: customers scan it to open your store.", "Imprimez-le ou envoyez-le : les clients le scannent pour ouvrir votre boutique.", "اطبعه أو أرسله: يمسحه الزبائن فيفتح متجرك مباشرة."], scan_me: ["Scan to see all our products", "Scannez pour voir tous nos produits", "امسح الرمز لترى كل منتجاتنا"],
     pay_name: ["Account name", "Nom du compte", "اسم صاحب الحساب"], pay_after: ["After paying, send your receipt to the seller on WhatsApp.", "Après le paiement, envoyez votre reçu au vendeur sur WhatsApp.", "بعد الدفع، أرسل الإيصال إلى البائع عبر الواتساب."], send_receipt: ["Send receipt on WhatsApp", "Envoyer le reçu sur WhatsApp", "أرسل الإيصال عبر الواتساب"], deals: ["Deals", "Bonnes affaires", "عروض"]
   };
@@ -548,6 +551,7 @@
       PAYS.map(function (p) { return '<div><label>' + p[1] + '</label><input name="' + p[0] + '" type="text" inputmode="tel" maxlength="30" value="' + esc(s[p[0]] || "") + '"></div>'; }).join("") +
       '<div class="full"><label>' + t("pay_name") + '</label><input name="pay_name" maxlength="80" value="' + esc(s.pay_name || "") + '"></div>' +
       '<div><label>' + t("logo") + '</label><div class="mk-imgs" id="lgBox"></div></div><div><label>' + t("cover") + '</label><div class="mk-imgs" id="cvBox"></div></div>' +
+      (s.id ? "" : '<div class="full"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:600"><input type="checkbox" name="agree" style="width:auto;margin-top:4px"> <span>' + t("agree") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + "</a> — AL MANARAH GLOBAL SERVICES.</span></label></div>") +
       '<div class="full"><button class="btn btn-primary" type="submit">' + (s.id ? t("save") : t("create_store")) + '</button><div id="stM"></div></div></form>';
   }
   function wireStoreForm(draft, s, u, save) {
@@ -566,7 +570,7 @@
       var row = { owner_name: f.owner_name.value.trim(), name: f.bname.value.trim(), slug: slugify(f.slug.value), category_id: +f.category_id.value || null, city: f.city.value.trim(), address: f.address.value.trim() || null, phone: f.phone.value.trim(), whatsapp: f.whatsapp.value.trim() || null, description: f.description.value.trim() || null, logo_url: draft.logo || null, cover_url: draft.cover || null, pay_name: f.pay_name.value.trim() || null };
       PAYS.forEach(function (p) { row[p[0]] = f[p[0]].value.trim() || null; });
       if (!row.owner_name || !row.name || !row.slug || row.slug.length < 3 || !row.category_id || !row.city || !row.phone) return msg(M, "err", t("required"));
-      if (!s.id) row.owner_id = u.id;
+      if (!s.id) { if (!f.agree.checked) return msg(M, "err", t("agree_err")); row.owner_id = u.id; row.accepted_terms_at = new Date().toISOString(); }
       b.disabled = true; var err = await save(row); b.disabled = false;
       if (err) msg(M, "err", /stores_slug_key|duplicate/.test(err.message || "") ? t("slug_taken") : esc(err.message)); else msg(M, "ok", t("saved"));
     });
@@ -642,7 +646,7 @@
         '<div><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" name="neg" style="width:auto"' + (p.negotiable ? " checked" : "") + "> " + t("negotiable") + "</label></div>" +
         '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="3000">' + esc(p.description || "") + "</textarea></div>" +
         '<div class="full"><label>' + t("photos") + '</label><div class="mk-imgs" id="pImgs"></div></div>' +
-        '<div class="full"><p class="mk-small">' + t("review_note") + '</p><button class="btn btn-primary" type="submit">' + t("save") + '</button><div id="pM"></div></div></form></div>';
+        '<div class="full"><div class="mk-msg warn" style="margin:0 0 10px">⚠ ' + t("one_rule") + '</div><p class="mk-small">' + t("review_note") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + '</a></p><button class="btn btn-primary" type="submit">' + t("save") + '</button><div id="pM"></div></div></form></div>';
       document.body.appendChild(m);
       function close() { m.remove(); }
       $(".x", m).onclick = close; m.addEventListener("click", function (e) { if (e.target === m) close(); });
@@ -704,7 +708,7 @@
     function tPlan() {
       var pl = plan(), C = window.SITE_CONFIG && window.SITE_CONFIG.payments || {};
       B().innerHTML = '<div class="mk-plans">' + PLANS.filter(function (x) { return x.active; }).map(function (x) {
-        return '<div class="mk-plan' + (x.id === pl.id ? " cur" : "") + '"><h3>' + esc(x.name) + '</h3><div class="p">' + (x.price_xof ? money(x.price_xof) + " <small>" + t("per_month") + "</small>" : t("free")) + "</div><ul><li>" + t("upto") + " " + x.product_limit + " " + t("products") + "</li>" + (x.featured ? "<li>✔ " + t("verified") + "</li>" : "") + "</ul>" +
+        return '<div class="mk-plan' + (x.id === pl.id ? " cur" : "") + '"><h3>' + esc(x.name) + '</h3><div class="p">' + (x.price_xof ? money(x.price_xof) + " <small>" + t("per_month") + "</small>" : t("free")) + "</div>" + (x.price_xof ? '<div class="mk-small">' + money(x.price_xof * 6) + " " + t("per_year") + " (" + t("yearly") + ")</div>" : "") + "<ul><li>" + t("upto") + " " + x.product_limit + " " + t("products") + "</li>" + (x.featured ? "<li>✔ " + t("verified") + "</li>" : "") + "</ul>" +
           (x.id === pl.id ? '<span class="mk-status s-approved">' + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span>" : x.price_xof ? '<button class="mk-btn gold" data-pl="' + x.id + '">' + t("choose_plan") + "</button>" : "") + "</div>";
       }).join("") + '</div><div id="payBox"></div>' +
         (data.preqs.length ? '<h3 style="margin-top:28px">' + t("my_reqs") + '</h3><div class="mk-list">' + data.preqs.map(function (r) { return '<div class="mk-row"><div class="mid"><b>' + esc(r.plan_id) + " × " + r.months + "</b><small>" + dateFmt(r.created_at) + " · " + esc(r.payment_ref || "") + "</small>" + (r.admin_note ? "<small>" + esc(r.admin_note) + "</small>" : "") + "</div>" + stLabel(r.status) + "</div>"; }).join("") + "</div>" : "");
@@ -712,10 +716,10 @@
       function payForm(pid) {
         var x = PLANS.filter(function (y) { return y.id === pid; })[0], receipt = "";
         $("#payBox").innerHTML = '<div class="mk-panel" style="margin-top:20px"><h3 style="margin-top:0">' + t("pay_t") + " — " + esc(x.name) + '</h3><p>' + t("pay_to") + "<br><b>MTN MoMo: " + esc(C.mtn || "+225 05 06 12 23 37") + "</b><br><b>Wave: " + esc(C.wave || "+225 05 06 12 23 37") + "</b><br>" + esc(C.name || "") + '</p><form class="mk-form" id="pyF">' +
-          '<div><label>' + t("months") + '</label><select name="m">' + [1, 3, 6, 12].map(function (n) { return '<option value="' + n + '">' + n + "</option>"; }).join("") + '</select></div><div><label>' + t("method") + '</label><select name="pm"><option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option></select></div>' +
+          '<div><label>' + t("months") + '</label><select name="m">' + [1, 3, 6, 12].map(function (n) { return '<option value="' + n + '">' + (n === 12 ? t("yearly") : n) + "</option>"; }).join("") + '</select></div><div><label>' + t("method") + '</label><select name="pm"><option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option></select></div>' +
           '<div class="full"><b>' + t("total") + ': <span id="pyT"></span></b></div><div><label>' + t("pay_ref") + ' *</label><input name="ref" required maxlength="80"></div><div><label>' + t("receipt") + '</label><div class="mk-imgs" id="rcBox"></div></div>' +
           '<div class="full"><button class="btn btn-primary btn-sm" type="submit">' + t("submit_pay") + '</button><div id="pyM"></div></div></form></div>';
-        var f = $("#pyF"); function tot() { $("#pyT").textContent = money(x.price_xof * +f.m.value); } f.m.onchange = tot; tot();
+        var f = $("#pyF"); function tot() { var m = +f.m.value; $("#pyT").textContent = money(x.price_xof * (m === 12 ? 6 : m)); } f.m.onchange = tot; tot();
         function rc() { var b = $("#rcBox"); b.innerHTML = receipt ? '<div class="im"><img src="' + esc(receipt) + '" alt=""><button type="button">✕</button></div>' : '<label class="add">＋<input type="file" accept="image/*" hidden></label>'; var xb = $("button", b); if (xb) xb.onclick = function () { receipt = ""; rc(); }; var i = $("input", b); if (i) i.onchange = async function () { b.innerHTML = '<div class="add">' + t("uploading") + "</div>"; try { receipt = await upload(i.files[0], "r"); } catch (e) {} rc(); }; }
         rc();
         f.addEventListener("submit", async function (e) { e.preventDefault(); var r = await sb.from("plan_requests").insert({ store_id: store.id, plan_id: pid, months: +f.m.value, payment_method: f.pm.value, payment_ref: f.ref.value.trim(), receipt_url: receipt || null }); if (r.error) return msg($("#pyM"), "err", esc(r.error.message)); msg($("#pyM"), "ok", t("pay_sent")); await loadAll(); setTimeout(shell, 1500); });
@@ -832,7 +836,7 @@
     function aPay() {
       B().innerHTML = '<div class="mk-list">' + (D2.preqs.length ? D2.preqs.map(function (r) {
         var pl = PLANS.filter(function (x) { return x.id === r.plan_id; })[0] || {};
-        return '<div class="mk-row">' + (r.receipt_url ? '<a href="' + esc(r.receipt_url) + '" target="_blank"><img class="th" src="' + esc(r.receipt_url) + '" alt="receipt"></a>' : '<span class="th">🧾</span>') + '<div class="mid"><b>' + esc((r.stores || {}).name || "") + " → " + esc(pl.name || r.plan_id) + " × " + r.months + " month(s)</b><small>Expected: <b>" + money((pl.price_xof || 0) * r.months) + "</b> · " + esc(r.payment_method || "") + " · Ref: " + esc(r.payment_ref || "—") + " · " + dateFmt(r.created_at) + "</small></div>" + stLabel(r.status) +
+        return '<div class="mk-row">' + (r.receipt_url ? '<a href="' + esc(r.receipt_url) + '" target="_blank"><img class="th" src="' + esc(r.receipt_url) + '" alt="receipt"></a>' : '<span class="th">🧾</span>') + '<div class="mid"><b>' + esc((r.stores || {}).name || "") + " → " + esc(pl.name || r.plan_id) + " × " + r.months + " month(s)</b><small>Expected: <b>" + money((pl.price_xof || 0) * (r.months === 12 ? 6 : r.months)) + "</b> · " + esc(r.payment_method || "") + " · Ref: " + esc(r.payment_ref || "—") + " · " + dateFmt(r.created_at) + "</small></div>" + stLabel(r.status) +
           (r.status === "pending" ? '<div class="acts"><button class="mk-btn ok" data-a="ok" data-id="' + r.id + '">Confirm payment</button><button class="mk-btn no" data-a="no" data-id="' + r.id + '">Reject</button></div>' : "") + "</div>";
       }).join("") : emptyBox("🧾", "No payment requests")) + "</div>";
       $$("[data-a]", B()).forEach(function (b) { b.addEventListener("click", function () { var id = b.dataset.id, q = sb.from("plan_requests"); if (b.dataset.a === "ok" && confirm("Payment received? The plan will be activated.")) act(q.update({ status: "approved" }).eq("id", id)); if (b.dataset.a === "no") { var n = prompt("Reason:"); if (n !== null) act(q.update({ status: "rejected", admin_note: n }).eq("id", id)); } }); });
