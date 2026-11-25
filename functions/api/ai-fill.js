@@ -1,6 +1,7 @@
 // AI product filling for merchants: photo + a few words -> title, description, category, condition.
 // Needs a secret named GEMINI_API_KEY in Cloudflare Pages > Settings > Variables and Secrets.
-// Optional: GEMINI_MODEL (default "gemini-2.5-flash").
+// Optional: GEMINI_MODEL. Otherwise the newest Flash model is tried first, with fallbacks
+// (Google retires old model names: a 404 moves on to the next name).
 // Only signed-in users can call it; images are accepted only from our own Supabase storage.
 
 const SB_URL = "https://rcioefzhysholnfogljy.supabase.co";
@@ -9,6 +10,17 @@ const IMG_PREFIX = SB_URL + "/storage/v1/object/public/market/";
 
 function json(o, status) {
   return new Response(JSON.stringify(o), { status: status || 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+}
+
+const MODELS = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-2.5-flash"];
+async function gemini(env, payload) {
+  const list = (env.GEMINI_MODEL ? [env.GEMINI_MODEL] : []).concat(MODELS.filter((m) => m !== env.GEMINI_MODEL));
+  let last;
+  for (const model of list) {
+    last = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(env.GEMINI_API_KEY), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+    if (last.status !== 404) return { r: last, model };
+  }
+  return { r: last, model: list[list.length - 1] };
 }
 
 function b64(buf) {
@@ -61,12 +73,7 @@ Rules:
 - condition: "new" unless the photo or words clearly show used or refurbished.`;
   parts.push({ text: prompt });
 
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
-  const gr = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(key), {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature: 0.3, responseMimeType: "application/json" } })
-  });
+  const { r: gr } = await gemini(env, { contents: [{ role: "user", parts }], generationConfig: { temperature: 0.3, responseMimeType: "application/json" } });
   if (!gr.ok) return json({ error: "AI_" + gr.status }, 502);
   const gj = await gr.json().catch(() => ({}));
   const txt = (((gj.candidates || [])[0] || {}).content || {}).parts?.map((p) => p.text || "").join("") || "";
@@ -85,8 +92,7 @@ export async function onRequestGet({ request, env }) {
   if (new URL(request.url).searchParams.get("check") !== "1") return json({ error: "NO" }, 404);
   const key = env.GEMINI_API_KEY;
   if (!key) return json({ key: false });
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
-  const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(key), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Reply with the word OK" }] }] }) });
+  const { r, model } = await gemini(env, { contents: [{ role: "user", parts: [{ text: "Reply with the word OK" }] }] });
   const txt = await r.text();
   return json({ key: true, keyLength: key.length, model, status: r.status, body: txt.slice(0, 600) });
 }
