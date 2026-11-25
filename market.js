@@ -251,7 +251,7 @@
       var st = $("#mkStats"); if (st) st.innerHTML = "<div><b>" + (cnt.data || []).length + "</b>" + t("products") + "</div><div><b>" + Object.keys(byStore).length + "</b>" + t("stores") + "</div><div><b>" + (CATS.length) + "</b>" + (L() === "fr" ? "catégories" : L() === "ar" ? "أقسام" : "categories") + "</div>";
       $("#mkCats").innerHTML = CATS.filter(function (c) { return c.active; }).map(function (c) {
         var trv = c.slug === "travel";
-        return '<a class="mk-cat' + (trv ? " travel" : "") + '" href="' + (trv ? "/services.html" : "/shop.html?cat=" + c.slug) + '"><span class="ico">' + esc(c.icon || "🛍️") + "</span>" + esc(catName(c)) +
+        return '<a class="mk-cat' + (trv ? " travel" : "") + '" href="' + "/shop.html?cat=" + c.slug + '"><span class="ico">' + esc(c.icon || "🛍️") + "</span>" + esc(catName(c)) +
           '<span class="cnt">' + (trv ? (L() === "fr" ? "Omra · Hajj · Hôtels · Visas" : L() === "ar" ? "عمرة · حج · فنادق · تأشيرات" : "Umrah · Hajj · Hotels · Visas") : (byCat[c.id] || 0) + " " + t("products")) + "</span></a>";
       }).join("");
       var f = feat.data || [];
@@ -285,9 +285,11 @@
     function chips() {
       filtersUI();
       $("#shopChips").innerHTML = '<a class="mk-chip' + (state.fav ? " on" : "") + '" data-fav-chip="1">♥ ' + t("saved") + '</a><a class="mk-chip' + (state.cat || state.fav ? "" : " on") + '" data-cat="">' + t("all") + "</a>" + CATS.filter(function (c) { return c.active; }).map(function (c) {
-        return c.slug === "travel" ? '<a class="mk-chip" href="/services.html">' + esc(c.icon) + " " + esc(catName(c)) + "</a>" : '<a class="mk-chip' + (state.cat === c.slug ? " on" : "") + '" data-cat="' + c.slug + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>";
+        return '<a class="mk-chip' + (state.cat === c.slug ? " on" : "") + '" data-cat="' + c.slug + '">' + esc(c.icon) + " " + esc(catName(c)) + "</a>";
       }).join("");
       var c = CATS.filter(function (x) { return x.slug === state.cat; })[0];
+      var tb = $("#shopTravel"); if (!tb) { tb = document.createElement("div"); tb.id = "shopTravel"; $("#shopChips").after(tb); }
+      tb.innerHTML = state.cat === "travel" ? '<a class="mk-trv" style="max-width:none;margin:0 0 18px" href="/services.html"><span class="ico">✈️</span><span class="t"><b>' + (L() === "fr" ? "Voyages par AL MANARAH" : L() === "ar" ? "السفريات مع المنارة" : "Travel by AL MANARAH") + "</b><small>" + (L() === "fr" ? "Omra, Hajj, hôtels, visas (Schengen, Chine, Qatar…)" : L() === "ar" ? "عمرة، حج، فنادق، تأشيرات (شنغن، الصين، قطر…)" : "Umrah, Hajj, hotels, visas (Schengen, China, Qatar…)") + '</small></span><span class="go">→</span></a>' : "";
       $("#shopTitle").textContent = state.fav ? "♥ " + t("saved") : c ? catName(c) : (state.q ? "“" + state.q + "”" : (L() === "fr" ? "Tous les produits" : L() === "ar" ? "كل المنتجات" : "All products"));
       input.placeholder = t("search"); $("#shopGo").textContent = t("go"); $("#shopMore").textContent = t("more");
       sort.innerHTML = '<option value="new">' + t("newest") + '</option><option value="asc">' + t("cheap") + '</option><option value="desc">' + t("dear") + "</option>"; sort.value = state.sort;
@@ -484,7 +486,7 @@
     });
   }
   function storeForm(s, me) {
-    var catOpts = (CATS || []).filter(function (c) { return c.active && c.slug !== "travel"; }).map(function (c) { return '<option value="' + c.id + '"' + (s.category_id === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
+    var catOpts = (CATS || []).filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + (s.category_id === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
     var locked = s.id && s.status === "approved";
     return '<form id="stF" class="mk-form">' +
       '<div><label>' + t("owner") + ' *</label><input name="owner_name" required maxlength="80" value="' + esc(s.owner_name || (me && me.full_name) || "") + '"></div>' +
@@ -578,7 +580,7 @@
     function productModal(p) {
       p = p || {}; var imgs = (p.images || []).slice();
       var m = document.createElement("div"); m.className = "mk-modal";
-      var catOpts = CATS.filter(function (c) { return c.active && (c.slug !== "travel" || (me && me.role === "admin")); }).map(function (c) { return '<option value="' + c.id + '"' + ((p.category_id || store.category_id) === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
+      var catOpts = CATS.filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + ((p.category_id || store.category_id) === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
       m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + (p.id ? t("edit") : t("add_prod")) + '</h2><form class="mk-form" id="pF">' +
         '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120" value="' + esc(p.title || "") + '"></div>' +
         '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
