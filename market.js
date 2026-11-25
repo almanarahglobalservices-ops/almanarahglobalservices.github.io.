@@ -113,6 +113,11 @@
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function money(n, cur) { if (n == null || n === "") return ""; if (cur === "NGN") return "₦" + Number(n).toLocaleString("en-US"); return Number(n).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") + " FCFA"; }
   var COUNTRIES = { CI: { flag: "🇨🇮", en: "Côte d’Ivoire", fr: "Côte d’Ivoire", ar: "ساحل العاج", cur: "XOF", code: "225" }, NG: { flag: "🇳🇬", en: "Nigeria", fr: "Nigeria", ar: "نيجيريا", cur: "NGN", code: "234" } };
+  var CITIES = {
+    CI: ["Abidjan", "Bouaké", "Yamoussoukro", "San-Pédro", "Daloa", "Korhogo", "Man", "Divo", "Gagnoa", "Abengourou", "Soubré", "Anyama", "Grand-Bassam", "Bingerville", "Séguéla", "Odienné", "Bondoukou", "Agboville", "Dimbokro", "Sassandra", "Ferkessédougou", "Issia", "Bouaflé", "Toumodi", "Dabou"],
+    NG: ["Lagos", "Abuja", "Kano", "Ibadan", "Port Harcourt", "Benin City", "Kaduna", "Ilorin", "Abeokuta", "Onitsha", "Enugu", "Jos", "Owerri", "Uyo", "Warri", "Calabar", "Aba", "Akure", "Osogbo", "Ogbomoso", "Zaria", "Sokoto", "Maiduguri", "Ado-Ekiti", "Asaba", "Minna", "Bauchi", "Yola", "Makurdi", "Lokoja"]
+  };
+  function citiesOf(country, extra) { var base = country ? (CITIES[country] || []) : [].concat(CITIES.CI, CITIES.NG); var all = base.concat((extra || []).filter(function (c) { return base.map(function (x) { return x.toLowerCase(); }).indexOf(c.toLowerCase()) < 0; })); return all; }
   function curOf(country) { return (COUNTRIES[country] || COUNTRIES.CI).cur; }
   function cName(c) { var x = COUNTRIES[c]; if (!x) return ""; var l = L(); return x.flag + " " + (l === "fr" ? x.fr : l === "ar" ? x.ar : x.en); }
   function myCountry() { try { return localStorage.getItem("mk_country") || ""; } catch (e) { return ""; } }
@@ -222,6 +227,34 @@
       "<h3>" + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</h3><span class="meta">' + esc(catName(catById(s.category_id))) + (s.city ? " · " + esc(s.city) : "") + (n != null ? " · " + n + " " + t("products") : "") + "</span></div></a>";
   }
 
+  /* live search: suggestions while typing (stores, products, categories) */
+  function liveSearch(input) {
+    if (!input || input.dataset.live) return; input.dataset.live = 1;
+    var box = document.createElement("div"); box.className = "mk-sug mk-hide"; input.parentNode.style.position = "relative"; input.parentNode.appendChild(box);
+    var timer, last = "";
+    function norm(x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+    input.setAttribute("autocomplete", "off");
+    input.addEventListener("input", function () {
+      clearTimeout(timer); var q = input.value.trim(); if (q.length < 2) { box.classList.add("mk-hide"); return; }
+      timer = setTimeout(async function () {
+        if (q === last) return; last = q; var sq = q.replace(/[%,()]/g, " ");
+        var [st, pr] = await Promise.all([
+          sb.from("stores").select("name,slug,city,logo_url,verified").eq("status", "approved").or("name.ilike.%" + sq + "%,city.ilike.%" + sq + "%").limit(5),
+          sb.from("products").select("id,title,price,images,stores(name,country)").eq("status", "approved").ilike("title", "%" + sq + "%").limit(6)
+        ]);
+        await cats(); var nq = norm(q);
+        var cs = CATS.filter(function (c) { return c.active && [c.name_en, c.name_fr, c.name_ar, c.slug].some(function (n) { return norm(n).indexOf(nq) > -1; }); }).slice(0, 3);
+        var html = cs.map(function (c) { return '<a href="/shop.html?cat=' + c.slug + '"><span class="i">' + esc(c.icon) + "</span><span>" + esc(catName(c)) + "</span></a>"; }).join("") +
+          (st.data || []).map(function (x) { return '<a href="/' + esc(x.slug) + '"><span class="i">' + (x.logo_url ? '<img src="' + esc(x.logo_url) + '" alt="">' : "🏪") + "</span><span><b>" + esc(x.name) + "</b>" + (x.verified ? " ✔" : "") + "<small>" + esc(x.city || "") + "</small></span></a>"; }).join("") +
+          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(x.images[0]) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, curOf((x.stores || {}).country)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
+        box.innerHTML = html || '<div class="mk-sug-none">' + t("none") + "</div>";
+        box.classList.remove("mk-hide");
+      }, 250);
+    });
+    document.addEventListener("click", function (e) { if (!box.contains(e.target) && e.target !== input) box.classList.add("mk-hide"); });
+    input.addEventListener("focus", function () { if (box.innerHTML && input.value.trim().length > 1) box.classList.remove("mk-hide"); });
+  }
+
   /* =============== HOME =============== */
   async function pageHome() {
     await cats();
@@ -286,6 +319,7 @@
       $("#mkStores").innerHTML = s.map(function (x) { return storeCard(x, byStore[x.id] || 0); }).join("");
     };
     rerender();
+    liveSearch($("#mkSearchForm input[name=q]"));
     var f = $("#mkSearchForm"); if (f) f.addEventListener("submit", function (e) { e.preventDefault(); var q = f.q.value.trim(); location.href = "/shop.html" + (q ? "?q=" + encodeURIComponent(q) : ""); });
   }
 
@@ -293,13 +327,14 @@
   async function pageShop() {
     await cats();
     var state = { cat: qs("cat") || "", q: qs("q") || "", sort: "new", page: 0, items: [], done: false, pm: { p: {}, s: {} }, country: myCountry(), city: "", cond: "", min: "", max: "", fav: qs("fav") === "1" };
-    var input = $("#shopQ"), sort = $("#shopSort"); input.value = state.q;
-    var cityRes = await sb.from("stores").select("city").eq("status", "approved").limit(2000);
-    var cities = Array.from(new Set((cityRes.data || []).map(function (x) { return (x.city || "").trim(); }).filter(Boolean))).sort();
+    var input = $("#shopQ"), sort = $("#shopSort"); input.value = state.q; liveSearch(input);
+    var cityRes = await sb.from("stores").select("city,country").eq("status", "approved").limit(2000);
+    function storeCities(cc) { return Array.from(new Set((cityRes.data || []).filter(function (x) { return !cc || x.country === cc; }).map(function (x) { return (x.city || "").trim(); }).filter(Boolean))); }
     function filtersUI() {
-      var fc = $("#fCountry"); if (!fc) { fc = document.createElement("select"); fc.id = "fCountry"; $("#shopFilters").prepend(fc); fc.addEventListener("change", function () { state.country = fc.value; setCountry(fc.value); load(true); }); }
+      var fc = $("#fCountry"); if (!fc) { fc = document.createElement("select"); fc.id = "fCountry"; $("#shopFilters").prepend(fc); fc.addEventListener("change", function () { state.country = fc.value; state.city = ""; setCountry(fc.value); filtersUI(); load(true); }); }
       fc.innerHTML = '<option value="">🌍 ' + t("all_countries") + "</option>" + ["CI", "NG"].map(function (c) { return '<option value="' + c + '"' + (state.country === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("");
-      $("#fCity").innerHTML = '<option value="">' + t("any_city") + "</option>" + cities.map(function (c) { return '<option' + (state.city === c ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("");
+      function opts(list) { return list.map(function (c) { return '<option' + (state.city === c ? " selected" : "") + ">" + esc(c) + "</option>"; }).join(""); }
+      $("#fCity").innerHTML = '<option value="">' + t("any_city") + "</option>" + (state.country ? opts(citiesOf(state.country, storeCities(state.country))) : ["CI", "NG"].map(function (cc) { return '<optgroup label="' + esc(cName(cc)) + '">' + opts(citiesOf(cc, storeCities(cc))) + "</optgroup>"; }).join(""));
       $("#fCond").innerHTML = '<option value="">' + t("any_cond") + "</option>" + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + (state.cond === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("");
       $("#fMin").placeholder = t("pmin"); $("#fMax").placeholder = t("pmax");
       $("#shopFilters").classList.toggle("mk-hide", state.fav);
@@ -320,12 +355,13 @@
     }
     var storeCounts = {};
     async function loadStores() {
-      if (state.fav || state.q) { $("#shopStoresWrap").classList.add("mk-hide"); return; }
+      if (state.fav) { $("#shopStoresWrap").classList.add("mk-hide"); state.hasStores = false; return; }
       var c = CATS.filter(function (x) { return x.slug === state.cat; })[0];
       var q = sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("status", "approved");
       if (c) q = q.eq("category_id", c.id);
       if (state.country) q = q.eq("country", state.country);
       if (state.city) q = q.eq("city", state.city);
+      if (state.q) { var sq = state.q.replace(/[%,()]/g, " "); q = q.or("name.ilike.%" + sq + "%,description.ilike.%" + sq + "%,city.ilike.%" + sq + "%"); }
       var r = await q.order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(60);
       var st = r.data || [];
       $("#shopStoresWrap").classList.toggle("mk-hide", !st.length);
@@ -334,7 +370,7 @@
       state.hasStores = st.length > 0;
     }
     function draw() {
-      $("#shopProdT").classList.toggle("mk-hide", !state.hasStores || state.fav || state.q);
+      $("#shopProdT").classList.toggle("mk-hide", !state.hasStores || state.fav);
       $("#shopProdT").textContent = L() === "ar" ? "المنتجات" : L() === "en" ? "Products" : "Produits";
       if (!state.items.length && state.hasStores && !state.fav) { $("#shopGrid").innerHTML = '<p class="mk-small">' + t("none") + "</p>"; $("#shopMore").classList.add("mk-hide"); return; }
       $("#shopGrid").innerHTML = state.items.length ? state.items.map(function (p) { return card(p, state.pm); }).join("") : state.fav ? emptyBox("♡", t("no_saved")) : emptyBox("🔎", t("none"), t("none_hint"), true);
@@ -582,7 +618,7 @@
       '<div class="full"><label>' + t("slug") + ' *</label><div class="mk-inline"><span class="mk-small">' + esc(location.host) + '/</span><input name="slug" required pattern="[a-z0-9][a-z0-9-]{2,40}" style="flex:1;min-width:160px" value="' + esc(s.slug || "") + '"' + (locked ? " readonly" : "") + '></div><div class="hint">' + t("slug_hint") + "</div></div>" +
       '<div><label>' + t("main_cat") + ' *</label><select name="category_id" required><option value="">' + t("choose") + "</option>" + catOpts + "</select></div>" +
       '<div><label>' + t("country") + ' *</label><select name="country" required>' + Object.keys(COUNTRIES).map(function (c) { return '<option value="' + c + '"' + ((s.country || myCountry() || "CI") === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("") + "</select></div>" +
-      '<div><label>' + t("city") + ' *</label><input name="city" required maxlength="60" value="' + esc(s.city || "") + '"></div>' +
+      '<div><label>' + t("city") + ' *</label><input name="city" required maxlength="60" list="cityList" autocomplete="off" value="' + esc(s.city || "") + '"><datalist id="cityList"></datalist></div>' +
       '<div class="full"><label>' + t("address") + '</label><input name="address" maxlength="160" value="' + esc(s.address || "") + '"></div>' +
       '<div><label>' + t("store_phone") + ' *</label><input name="phone" type="tel" required maxlength="30" value="' + esc(s.phone || (me && me.phone) || "") + '"><div class="hint">' + t("phone_hint") + "</div></div>" +
       '<div><label>' + t("store_wa") + '</label><input name="whatsapp" type="tel" maxlength="30" value="' + esc(s.whatsapp || "") + '"></div>' +
@@ -603,6 +639,8 @@
       var inp = $("input", b); if (inp) inp.onchange = async function () { if (!inp.files[0]) return; b.innerHTML = '<div class="add">' + t("uploading") + "</div>"; try { draft[key] = await upload(inp.files[0], "s"); } catch (e) { msg($("#stM"), "err", t("fail")); } imgBox(boxId, key); };
     }
     imgBox("lgBox", "logo"); imgBox("cvBox", "cover");
+    function cityList() { $("#cityList", f).innerHTML = citiesOf(f.country.value).map(function (c) { return '<option value="' + esc(c) + '">'; }).join(""); }
+    f.country.addEventListener("change", cityList); cityList();
     function payVis() { var c = f.country.value; $$(".pay-f", f).forEach(function (d) { d.classList.toggle("mk-hide", d.dataset.c !== c); }); }
     f.country.addEventListener("change", payVis); payVis();
     if (!s.id) f.bname.addEventListener("input", function () { if (!f.slug.dataset.touched) f.slug.value = slugify(f.bname.value); });

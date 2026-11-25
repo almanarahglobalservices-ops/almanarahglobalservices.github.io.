@@ -209,3 +209,12 @@
 .mk-rate{display:flex;gap:4px;font-size:1.6rem;direction:ltr}
 .mk-rate button{background:none;border:0;cursor:pointer;color:#ccc;font-size:1.6rem;padding:0}
 .mk-rate button.on{color:var(--gold)}
+.mk-sug{position:absolute;top:calc(100% + 6px);inset-inline:0;background:var(--white);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px -12px rgba(11,21,59,.35);z-index:60;max-height:420px;overflow:auto;text-align:start}
+.mk-sug a{display:flex;gap:10px;align-items:center;padding:9px 12px;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line);font-size:.9rem}
+.mk-sug a:last-child{border-bottom:0}
+.mk-sug a:hover{background:var(--green-50)}
+.mk-sug .i{width:36px;height:36px;border-radius:8px;background:var(--green-50);display:grid;place-items:center;flex:none;overflow:hidden;font-size:1.1rem}
+.mk-sug .i img{width:100%;height:100%;object-fit:cover}
+.mk-sug small{display:block;color:var(--muted);font-size:.76rem}
+.mk-sug-none{padding:12px;color:var(--muted);font-size:.88rem}
+.mk-search{position:relative}
