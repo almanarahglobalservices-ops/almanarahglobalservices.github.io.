@@ -1230,10 +1230,10 @@
     }
     function cnt(arr, st) { return arr.filter(function (x) { return x.status === st; }).length; }
     function shell() {
-      var tabs = [["over", "Overview"], ["stores", "Stores", cnt(D2.stores, "pending")], ["products", "Products", cnt(D2.products, "pending")], ["promos", "Promotions", cnt(D2.promos, "pending")], ["pay", "Plan payments", cnt(D2.preqs, "pending")], ["reviews", "Reviews", cnt(D2.reviews, "pending")], ["reports", "Reports", cnt(D2.reports, "open")], ["msgs", "Messages", cnt(D2.msgs, "open")], ["banners", "Banners"], ["orders", "Customer requests"], ["cats", "Categories"], ["plans", "Plans"]];
+      var tabs = [["over", "Overview"], ["stores", "Stores", cnt(D2.stores, "pending")], ["products", "Products", cnt(D2.products, "pending")], ["promos", "Promotions", cnt(D2.promos, "pending")], ["pay", "Plan payments", cnt(D2.preqs, "pending")], ["reviews", "Reviews", cnt(D2.reviews, "pending")], ["reports", "Reports", cnt(D2.reports, "open")], ["brand", "🎨 Brand requests", D2.msgs.filter(function (m) { return m.subject === "brand" && m.status === "open"; }).length], ["msgs", "Messages", D2.msgs.filter(function (m) { return m.subject !== "brand" && m.status === "open"; }).length], ["banners", "Banners"], ["orders", "Customer requests"], ["cats", "Categories"], ["plans", "Plans"]];
       app.innerHTML = '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="aB"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", "#" + tab); shell(); }); });
-      var fn = { over: aOver, stores: aStores, products: aProducts, promos: aPromos, pay: aPay, orders: aOrders, cats: aCats, plans: aPlans, reviews: aReviews, reports: aReports, msgs: aMsgs, banners: aBanners }[tab] || aOver; fn();
+      var fn = { over: aOver, stores: aStores, products: aProducts, promos: aPromos, pay: aPay, orders: aOrders, cats: aCats, plans: aPlans, reviews: aReviews, reports: aReports, msgs: aMsgs, brand: aBrand, banners: aBanners }[tab] || aOver; fn();
     }
     var B = function () { return $("#aB"); };
     async function act(promise) { var r = await promise; if (r && r.error) alert(r.error.message); await load(); shell(); }
@@ -1242,7 +1242,8 @@
     function aOver() {
       var paid = D2.stores.filter(function (s) { return s.plan_id !== "free"; });
       var mrr = paid.reduce(function (a, s) { var p = PLANS.filter(function (x) { return x.id === s.plan_id; })[0]; return a + (p ? p.price_xof : 0); }, 0);
-      B().innerHTML = '<div class="mk-kpis">' + [[D2.stores.length, "Stores"], [cnt(D2.stores, "approved"), "Live stores"], [cnt(D2.stores, "pending"), "Stores to approve"], [D2.products.length, "Products"], [cnt(D2.products, "pending"), "Products to approve"], [cnt(D2.preqs, "pending"), "Payments to confirm"], [paid.length, "Paid stores"], [money(mrr), "Monthly subscriptions"], [D2.orders.length, "Customer requests"]].map(function (k) { return '<div class="mk-kpi"><b>' + k[0] + "</b><span>" + k[1] + "</span></div>"; }).join("") + "</div>" +
+      var nb = D2.msgs.filter(function (m) { return m.subject === "brand" && m.status === "open"; }).length;
+      B().innerHTML = (nb ? '<div class="mk-msg warn" style="font-size:1rem">🎨 <b>' + nb + " new brand request(s)</b> — sellers waiting for you to create their brand. " + '<button type="button" class="mk-btn gold" id="goBrand">Open brand requests</button></div>' : "") + '<div class="mk-kpis">' + [[D2.stores.length, "Stores"], [cnt(D2.stores, "approved"), "Live stores"], [cnt(D2.stores, "pending"), "Stores to approve"], [D2.products.length, "Products"], [cnt(D2.products, "pending"), "Products to approve"], [cnt(D2.preqs, "pending"), "Payments to confirm"], [paid.length, "Paid stores"], [money(mrr), "Monthly subscriptions"], [D2.orders.length, "Customer requests"]].map(function (k) { return '<div class="mk-kpi"><b>' + k[0] + "</b><span>" + k[1] + "</span></div>"; }).join("") + "</div>" +
         '<p class="mk-small">Customer requests go to each seller. You approve stores, products, promotions and plan payments here. Travel enquiries (AMG) stay in your <a href="/admin.html">travel dashboard</a>.</p>';
     }
 
@@ -1348,9 +1349,25 @@
       }).join("") : emptyBox("⚑", "No reports")) + "</div>";
       $$("button[data-id]", B()).forEach(function (b) { b.addEventListener("click", function () { act(sb.from("reports").update({ status: "closed" }).eq("id", b.dataset.id)); }); });
     }
+    document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#goBrand")) { var tb = document.querySelector('.mk-tabs [data-t="brand"]'); if (tb) tb.click(); } });
+    function aBrand() {
+      var list = D2.msgs.filter(function (m) { return m.subject === "brand"; });
+      function line(msg, key) { var m = String(msg || "").split("\n").filter(function (l) { return l.indexOf(key + ":") === 0; })[0]; return m ? m.slice(key.length + 1).trim() : ""; }
+      B().innerHTML = '<p class="mk-small">Sellers who asked AL MANARAH to create their brand (name, logo, identity + 1 month follow-up — 20 000 FCFA). Contact them on WhatsApp, then mark the request as handled.</p><div class="mk-list">' + (list.length ? list.map(function (r) {
+        var store = line(r.message, "Store"), city = line(r.message, "City"), ph = line(r.message, "Phone") || r.phone || "";
+        var waNum = (ph.match(/WA\s*([+\d][\d\s]+)/) || [])[1] || r.phone, waText = "Bonjour " + r.name + ", c’est AL MANARAH GLOBAL SERVICES. Nous avons bien reçu votre demande de création de marque (nom, logo, identité visuelle). Parlons de votre projet 🙂";
+        return '<div class="mk-row"' + (r.status === "open" ? ' style="border-color:#B78A32;background:#fffaf0"' : "") + '><div class="mid"><b>🎨 ' + esc(r.name) + (r.status === "open" ? ' <span class="mk-status s-pending">NEW</span>' : "") + "</b>" +
+          "<small>🏪 Store: <b>" + esc(store || "—") + "</b>" + (city ? " · 📍 " + esc(city) : "") + "</small>" +
+          "<small>📞 " + esc(r.phone || "—") + (waNum && waNum !== r.phone ? " · WhatsApp " + esc(waNum) : "") + "</small><small>" + dateFmt(r.created_at) + "</small></div>" +
+          '<div class="acts">' + (wa(waNum) ? '<a class="mk-btn ok" target="_blank" rel="noopener" href="' + wa(waNum, waText) + '">WhatsApp</a>' : "") + (tel(r.phone) ? '<a class="mk-btn" href="' + tel(r.phone) + '">Call</a>' : "") + (r.status === "open" ? '<button class="mk-btn" data-mid="' + r.id + '">Mark handled</button>' : '<span class="mk-small">✓ handled</span>') + '<button class="mk-btn no" data-mdel="' + r.id + '">Delete</button></div></div>';
+      }).join("") : emptyBox("🎨", "No brand requests yet")) + "</div>";
+      $$("[data-mid]", B()).forEach(function (b) { b.addEventListener("click", function () { act(sb.from("messages").update({ status: "closed" }).eq("id", b.dataset.mid)); }); });
+      $$("[data-mdel]", B()).forEach(function (b) { b.addEventListener("click", function () { if (confirm("Delete this request?")) act(sb.from("messages").delete().eq("id", b.dataset.mdel)); }); });
+    }
     function aMsgs() {
       var SUBJ = { brand: "🎨 Brand creation (20 000 FCFA)", question: "General question", open_store: "Open a store", plan: "Plan / payment", ads: "Advertising", problem: "Problem", other: "Other" };
-      B().innerHTML = '<div class="mk-list">' + (D2.msgs.length ? D2.msgs.map(function (r) {
+      var list = D2.msgs.filter(function (m) { return m.subject !== "brand"; });
+      B().innerHTML = '<div class="mk-list">' + (list.length ? list.map(function (r) {
         return '<div class="mk-row"><div class="mid"><b>✉ ' + esc(r.name) + " — " + esc(SUBJ[r.subject] || r.subject) + "</b><small>" + (r.country ? cName(r.country) + " · " : "") + dateFmt(r.created_at) + "</small><small style=\"white-space:pre-wrap;color:var(--ink)\">" + esc(r.message) + "</small>" + (r.phone ? "<small>📞 " + esc(r.phone) + "</small>" : "") + (r.email ? "<small>✉ " + esc(r.email) + "</small>" : "") + "</div>" +
           '<div class="acts">' + (r.phone && wa(r.phone) ? '<a class="mk-btn" target="_blank" rel="noopener" href="' + wa(r.phone, "AL MANARAH GLOBAL SERVICES — ") + '">WhatsApp</a>' : "") + (r.email ? '<a class="mk-btn" href="mailto:' + esc(r.email) + '">E-mail</a>' : "") + (r.status === "open" ? '<button class="mk-btn ok" data-mid="' + r.id + '">Mark handled</button>' : '<span class="mk-small">✓ handled</span>') + '<button class="mk-btn no" data-mdel="' + r.id + '">Delete</button></div></div>';
       }).join("") : emptyBox("✉", "No messages")) + "</div>";
