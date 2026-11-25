@@ -257,7 +257,7 @@
   }
   function priceHtml(pr) { return '<span class="mk-price">' + money(pr.now, pr.cur) + (pr.was ? "<s>" + money(pr.was, pr.cur) + "</s>" : "") + "</span>"; }
 
-  var PSEL = "id,title,price,currency,section,stock,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country,markets)";
+  var PSEL = "id,title,price,currency,section,stock,compare_at_price,images,store_id,category_id,featured_until,created_at,condition,negotiable,stores(name,slug,verified,city,country,markets,kind)";
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
@@ -284,6 +284,7 @@
   }
   function storeOffer(gr, smap, badge, sub) {
     var p = gr.p, s = Object.assign({}, p.stores || {}, smap[p.store_id] || {}), img = (p.images || [])[0];
+    if (s.kind === "ad") return '<a class="mk-store mk-offer" href="/product.html?id=' + p.id + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + '><span class="ob">📢 ' + T3x("Ad", "Annonce", "إعلان") + '</span></div><div class="info"><span class="logo">📢</span><h3>' + esc(p.title) + '</h3><span class="meta">' + money(p.price, p.currency === "NGN" ? "NGN" : curOf(s.country)) + (s.city ? " · " + esc(s.city) : "") + '</span><span class="go">' + T3x("See the ad →", "Voir l’annonce →", "شاهد الإعلان ←") + "</span></div></a>";
     return '<a class="mk-store mk-offer" href="/' + esc(s.slug || "") + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + ">" + (badge ? '<span class="ob">' + badge + "</span>" : "") + '</div><div class="info">' +
       (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name || "") + "</span>") +
       "<h3>" + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + '</h3><span class="meta">' + (s.city ? esc(s.city) + " · " : "") + sub + '</span><span class="go">' + (L() === "fr" ? "Voir la boutique →" : L() === "ar" ? "ادخل المتجر ←" : "Visit store →") + "</span></div></a>";
@@ -301,7 +302,7 @@
       timer = setTimeout(async function () {
         if (q === last) return; last = q; var sq = q.replace(/[%,()]/g, " ");
         var [st, pr] = await Promise.all([
-          sb.from("stores").select("name,slug,city,logo_url,verified").eq("status", "approved").or("name.ilike.%" + sq + "%,city.ilike.%" + sq + "%").limit(5),
+          sb.from("stores").select("name,slug,city,logo_url,verified").eq("status", "approved").neq("kind", "ad").or("name.ilike.%" + sq + "%,city.ilike.%" + sq + "%").limit(5),
           sb.from("products").select("id,title,price,currency,images,stores(name,country)").eq("status", "approved").ilike("title", "%" + sq + "%").limit(6)
         ]);
         await cats(); var nq = norm(q);
@@ -364,7 +365,7 @@
       sb.from("stores").select("category_id").eq("status", "approved").limit(5000),
       PQ().order("created_at", { ascending: false }).limit(80),
       PQ().gt("featured_until", new Date().toISOString()).limit(8),
-      (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").or(mkOr(CC)) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
+      (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").or(mkOr(CC)) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").neq("kind", "ad").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
     ]);
     var byCat = {}, byStore = {}, stCat = {};
     (stc.data || []).forEach(function (r) { stCat[r.category_id] = (stCat[r.category_id] || 0) + 1; });
@@ -478,7 +479,7 @@
     async function loadStores() {
       if (state.fav) { $("#shopStoresWrap").classList.add("mk-hide"); state.hasStores = false; return; }
       var c = CATS.filter(function (x) { return x.slug === state.cat; })[0];
-      var q = sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("status", "approved");
+      var q = sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("status", "approved").neq("kind", "ad");
       if (c) q = q.eq("category_id", c.id);
       if (state.country) q = q.or(mkOr(state.country));
       if (state.city) q = q.eq("city", state.city);
@@ -494,6 +495,14 @@
       $("#shopStoresT").textContent = (L() === "ar" ? "المتاجر" : L() === "en" ? "Stores" : "Boutiques") + " (" + st.length + ")";
       $("#shopStores").innerHTML = st.length ? st.map(function (x) { return storeCard(x, null); }).join("") : emptyBox("🔎", t("none"), t("none_hint"), true);
       state.hasStores = st.length > 0;
+      /* single-item ads (people selling one thing) */
+      var aq = sb.from("products").select(PSEL.replace("stores(", "stores!inner(")).eq("status", "approved").eq("stores.kind", "ad");
+      if (c) aq = aq.eq("category_id", c.id);
+      if (state.country) aq = aq.eq("stores.country", state.country);
+      if (state.city) aq = aq.eq("stores.city", state.city);
+      if (state.q) aq = aq.or("title.ilike.%" + state.q.replace(/[%,()]/g, " ") + "%,description.ilike.%" + state.q.replace(/[%,()]/g, " ") + "%");
+      var ads = ((await aq.order("created_at", { ascending: false }).limit(48)).data) || [];
+      state.ads = ads;
     }
     function draw() {
       $("#shopProdT").classList.toggle("mk-hide", !state.hasStores || state.fav);
@@ -506,7 +515,12 @@
       /* products are shown only inside each store: the shop lists stores (saved items excepted) */
       var only = !state.fav;
       ["#fCond", "#fMin", "#fMax", "#shopSort"].forEach(function (id) { var e = $(id); if (e) e.classList.toggle("mk-hide", only); });
-      if (only) { await loadStores(); $("#shopProdT").classList.add("mk-hide"); $("#shopGrid").innerHTML = ""; $("#shopMore").classList.add("mk-hide"); return; }
+      if (only) {
+        await loadStores(); var ads = state.ads || [];
+        $("#shopProdT").classList.toggle("mk-hide", !ads.length); $("#shopProdT").textContent = "📢 " + T3x("Ads — single items", "Annonces — articles à l’unité", "إعلانات — قطع منفردة") + " (" + ads.length + ")";
+        var apm = ads.length ? await promoMap(ads) : { p: {}, s: {} };
+        $("#shopGrid").innerHTML = ads.map(function (p) { return card(p, apm); }).join(""); $("#shopMore").classList.add("mk-hide"); return;
+      }
       $("#shopStoresWrap").classList.add("mk-hide");
       if (reset) { await loadStores(); state.page = 0; state.items = []; state.done = false; $("#shopGrid").innerHTML = '<div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div>'; }
       var per = 24, q = sb.from("products").select(state.city || state.country ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved");
@@ -544,6 +558,7 @@
     if (!slug) { box.innerHTML = '<div class="container section">' + emptyBox("🔎", t("not_found")) + "</div>"; return; }
     var r = await sb.from("stores").select("*").eq("slug", slug).maybeSingle(), s = r.data;
     if (!s) { box.innerHTML = '<div class="container section">' + emptyBox("🔎", t("not_found")) + "</div>"; return; }
+    if (s.kind === "ad") { var ap = (await sb.from("products").select("id").eq("store_id", s.id).limit(1)).data || []; if (ap.length) { location.replace("/product.html?id=" + ap[0].id); return; } }
     document.title = s.name + " | AL MANARAH GLOBAL SERVICES";
     var md = document.querySelector('meta[name="description"]'); if (md && s.description) md.content = s.description.slice(0, 160);
     var pr = await sb.from("products").select(PSEL).eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(1000);
@@ -722,7 +737,7 @@
     await cats();
     var id = qs("id"), box = $("#pdApp");
     if (!id) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
-    var r = await sb.from("products").select("*,stores(id,name,slug,logo_url,city,country,phone,whatsapp,verified,status,pay_mtn,pay_orange,pay_moov,pay_wave,pay_opay,pay_palmpay,pay_bank,pay_name)").eq("id", id).maybeSingle(), p = r.data;
+    var r = await sb.from("products").select("*,stores(id,name,slug,logo_url,city,country,phone,whatsapp,verified,status,kind,pay_mtn,pay_orange,pay_moov,pay_wave,pay_opay,pay_palmpay,pay_bank,pay_name)").eq("id", id).maybeSingle(), p = r.data;
     if (!p) { box.innerHTML = emptyBox("🔎", t("not_found")); return; }
     document.title = p.title + " | AL MANARAH GLOBAL SERVICES";
     window.__mkStore = p.store_id; window.__mkProduct = p.id; track("view", p.store_id); track("product", p.store_id, p.id);
@@ -749,7 +764,7 @@
         (p.description ? '<div class="pd-desc">' + esc(p.description) + "</div>" : "") +
         (isHealth(p.category_id) ? '<p class="mk-health">🌿 ' + t("health_note") + "</p>" : "") +
         '<div class="mk-safe"><b>🛡 ' + t("safety_t") + "</b><ul>" + t("safety").map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><p style="margin:8px 0 0"><button type="button" class="mk-link" id="pdReport">⚑ ' + t("report") + "</button></p></div>" +
-        '<a class="pd-seller" href="/' + esc(s.slug) + '">' + (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name) + "</span>") +
+        '<a class="pd-seller" href="' + (s.kind === "ad" ? "#" : "/" + esc(s.slug)) + '"' + (s.kind === "ad" ? ' onclick="return false" style="cursor:default"' : "") + ">" + (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name) + "</span>") +
         '<span><span class="mk-small">' + t("seller") + "</span><br><b>" + esc(s.name) + "</b>" + (s.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + "<br><span class=\"mk-small\">" + esc(s.city || "") + '</span></span><span class="mk-more" style="margin-inline-start:auto">' + t("view_store") + " →</span></a>" +
         '<div class="mk-panel"><h3 style="margin-top:0">' + t("req_title") + '</h3><p class="mk-small">' + t("req_note") + '</p><form id="reqForm" class="mk-form">' +
         '<div><label>' + t("name") + ' *</label><input name="cname" required maxlength="80" autocomplete="name"></div><div><label>' + t("phone") + ' *</label><input name="phone" required type="tel" maxlength="30" autocomplete="tel"></div>' +
@@ -786,7 +801,7 @@
     if (adminView && me && me.role === "admin") store = (await sb.from("stores").select("*").eq("id", adminView).maybeSingle()).data;
     else store = (await sb.from("stores").select("*").eq("owner_id", u.id).order("created_at").limit(1).maybeSingle()).data;
     $("#sellIntro") && $("#sellIntro").classList.add("mk-hide");
-    if (!store) return showSetup(me);
+    if (!store) return qs("type") === "store" ? showSetup(me) : qs("type") === "ad" ? showAdForm(me) : showChoice(me);
     return dashboard(store, me, !!adminView);
 
     function showRecovery() {
@@ -818,6 +833,85 @@
     }
   }
 
+  function showChoice(me) {
+    var app = $("#sellApp");
+    rerender = function () { showChoice(me); };
+    app.innerHTML = '<div class="mk-panel"><h2 style="margin-top:0">' + T3x("What do you want to do?", "Que voulez-vous faire ?", "ماذا تريد أن تفعل؟") + '</h2><div class="mk-choice">' +
+      '<button type="button" data-c="store"><span class="ic">🏪</span><b>' + T3x("Open my store", "Ouvrir ma boutique", "افتح متجري") + "</b><span>" + T3x("For sellers with several products. Your own store link, free up to 15 products.", "Pour les vendeurs qui ont plusieurs produits. Votre propre lien de boutique, gratuit jusqu’à 15 produits.", "للتجار الذين عندهم منتجات كثيرة. رابط متجر خاص بك، مجانًا حتى 15 منتجًا.") + "</span><em>" + T3x("Free", "Gratuit", "مجاني") + "</em></button>" +
+      '<button type="button" data-c="ad"><span class="ic">📢</span><b>' + T3x("Sell one item", "Vendre un seul article", "بيع قطعة واحدة") + "</b><span>" + T3x("Just one thing to sell quickly (phone, TV, furniture…). No store needed.", "Juste une chose à vendre vite (téléphone, télé, meuble…). Pas besoin de boutique.", "عندك شيء واحد تريد بيعه بسرعة (هاتف، تلفاز، أثاث…) بلا متجر.") + "</span><em>" + money(AD_PRICE.ad, "XOF") + " / " + T3x("week", "semaine", "أسبوع") + '</em><small>' + T3x("Vehicles & real estate", "Véhicules et immobilier", "السيارات والعقارات") + ": " + money(AD_PRICE.ad_big, "XOF") + " / " + T3x("week", "semaine", "أسبوع") + "</small></button></div></div>";
+    $$("[data-c]", app).forEach(function (b) { b.addEventListener("click", function () { history.replaceState(null, "", "/sell.html?type=" + b.dataset.c); b.dataset.c === "store" ? showSetup(me) : showAdForm(me); window.scrollTo(0, 0); }); });
+  }
+  var AD_PRICE = { ad: 2000, ad_big: 5000 }, AD_BIG = ["auto", "real-estate"];
+  function adPlanFor(catId) { var c = catById(+catId); return c && AD_BIG.indexOf(c.slug) > -1 ? "ad_big" : "ad"; }
+  function adPayInfo(country) {
+    var C = window.SITE_CONFIG && window.SITE_CONFIG.payments || {};
+    return country === "NG" ? esc(t("pay_ng")) + "<br><b>GTBank: 0926802497</b> — MUHAMMAD JAMIU ISMAIL<br><b>Access Bank: 0823159299</b> — MUHAMMAD-JAMIU ISMAIL<br><b>Moniepoint: 8132881718</b> — AL MANARAH GLOBAL SERVICES" : t("pay_to") + "<br><b>MTN MoMo: " + esc(C.mtn || "+225 05 06 12 23 37") + "</b><br><b>Wave: " + esc(C.wave || "+225 05 06 12 23 37") + "</b><br>" + esc(C.name || "");
+  }
+  async function showAdForm(me) {
+    await Promise.all([cats(), plans()]);
+    var app = $("#sellApp"), u = await user(), imgs = [], receipt = "";
+    rerender = function () {};
+    var catOpts = '<option value="">' + t("choose") + "</option>" + CATS.filter(function (c) { return c.active && c.slug !== "travel" && c.slug !== "services"; }).map(function (c) { return '<option value="' + c.id + '">' + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
+    app.innerHTML = '<div class="mk-panel"><p style="margin:0 0 6px"><a href="/sell.html" class="mk-small">← ' + T3x("Back", "Retour", "رجوع") + '</a></p><h2 style="margin-top:0">📢 ' + T3x("Sell one item", "Vendre un seul article", "بيع قطعة واحدة") + '</h2><p class="mk-small">' + T3x("Fill in, pay, and your ad goes online as soon as AL MANARAH confirms your payment.", "Remplissez, payez, et votre annonce est en ligne dès qu’AL MANARAH confirme votre paiement.", "املأ البيانات وادفع، ويُنشر إعلانك فور تأكيد المنارة للدفع.") + '</p><form class="mk-form" id="adF">' +
+      '<div class="full"><label>' + t("photos").replace("6", 6) + ' *</label><div class="mk-imgs" id="adImgs"></div></div>' +
+      '<div class="full mk-ai"><p>' + t("ai_box") + '</p><div class="mk-ai-row"><input name="aihint" maxlength="200" placeholder="' + esc(t("ai_hint")) + '"><button type="button" class="mk-btn gold" id="adAi">' + t("ai_btn") + '</button></div><div id="adAiM"></div></div>' +
+      '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120"></div>' +
+      '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
+      '<div><label>' + T3x("Price", "Prix", "السعر") + ' *</label><input name="price" type="number" min="0" step="1" required></div>' +
+      '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '">' + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
+      '<div><label>' + t("country") + ' *</label><select name="country">' + Object.keys(COUNTRIES).map(function (c) { return '<option value="' + c + '"' + ((myCountry() || "CI") === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("") + "</select></div>" +
+      '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="2000"></textarea></div>' +
+      '<div><label>' + t("owner") + ' *</label><input name="owner_name" required maxlength="80" value="' + esc((me && me.full_name) || "") + '"></div>' +
+      '<div><label>' + t("city") + ' *</label><input name="city" required maxlength="60"></div>' +
+      '<div><label>' + t("store_phone") + ' *</label><input name="phone" type="tel" required maxlength="30" value="' + esc((me && me.phone) || "") + '"></div>' +
+      '<div><label>' + t("store_wa") + '</label><input name="whatsapp" type="tel" maxlength="30"></div>' +
+      '<div class="full mk-paybox"><b>💳 ' + T3x("Payment", "Paiement", "الدفع") + '</b><div class="mk-inline" style="margin:8px 0"><label style="margin:0">' + T3x("Duration", "Durée", "المدة") + '</label><select name="weeks" style="width:auto">' + [1, 2, 3, 4].map(function (n) { return '<option value="' + n + '">' + n + " " + T3x("week(s)", "semaine(s)", "أسبوع") + "</option>"; }).join("") + '</select><b id="adTot"></b></div><p class="mk-small" id="adPay"></p>' +
+      '<div class="mk-form" style="padding:0"><div><label>' + t("method") + '</label><select name="pm"></select></div><div><label>' + t("pay_ref") + ' *</label><input name="ref" required maxlength="80"></div><div><label>' + t("receipt") + '</label><div class="mk-imgs" id="adRc"></div></div></div></div>' +
+      '<div class="full"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:600"><input type="checkbox" name="agree" style="width:auto;margin-top:4px"> <span>' + t("agree") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + "</a> — AL MANARAH GLOBAL SERVICES.</span></label></div>" +
+      '<div class="full"><button class="btn btn-primary" type="submit" style="width:100%">' + T3x("Send my ad and payment", "Envoyer mon annonce et mon paiement", "أرسل إعلاني والدفع") + '</button><div id="adM"></div></div></form></div>';
+    var f = $("#adF");
+    function totals() {
+      var plan = adPlanFor(f.category_id.value), NG = f.country.value === "NG", pl = (PLANS || []).filter(function (x) { return x.id === plan; })[0] || {};
+      var unit = NG && pl.price_ngn ? pl.price_ngn : (pl.price_xof || AD_PRICE[plan]), cur = NG && pl.price_ngn ? "NGN" : "XOF";
+      $("#adTot").textContent = T3x("Total", "Total", "المجموع") + ": " + money(unit * +f.weeks.value, cur);
+      $("#adPay").innerHTML = adPayInfo(f.country.value);
+      f.pm.innerHTML = NG ? '<option value="other">GTBank</option><option value="other">Access Bank</option><option value="other">Moniepoint</option>' : '<option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option>';
+    }
+    ["category_id", "country", "weeks"].forEach(function (k) { f[k].addEventListener("change", totals); }); totals();
+    function drawImgs() {
+      var b = $("#adImgs");
+      b.innerHTML = imgs.map(function (x, i) { return '<div class="im"><img src="' + esc(x) + '" alt=""><button type="button" data-x="' + i + '">✕</button></div>'; }).join("") + (imgs.length < 6 ? '<label class="add">＋ ' + t("add_photo") + '<input type="file" accept="image/*" multiple hidden></label>' : "");
+      $$("[data-x]", b).forEach(function (x) { x.onclick = function () { imgs.splice(+x.dataset.x, 1); drawImgs(); }; });
+      var inp = $("input[type=file]", b); if (inp) inp.onchange = async function () { var fl = Array.prototype.slice.call(inp.files, 0, 6 - imgs.length), a = $(".add", b); if (a) a.textContent = t("uploading"); for (var i = 0; i < fl.length; i++) { try { imgs.push(await upload(fl[i], "p")); } catch (e) {} } drawImgs(); };
+    }
+    drawImgs();
+    function rc() { var b = $("#adRc"); b.innerHTML = receipt ? '<div class="im"><img src="' + esc(receipt) + '" alt=""><button type="button">✕</button></div>' : '<label class="add">＋<input type="file" accept="image/*" hidden></label>'; var xb = $("button", b); if (xb) xb.onclick = function () { receipt = ""; rc(); }; var i = $("input", b); if (i) i.onchange = async function () { b.innerHTML = '<div class="add">' + t("uploading") + "</div>"; try { receipt = await upload(i.files[0], "r"); } catch (e) {} rc(); }; }
+    rc();
+    $("#adAi").addEventListener("click", async function () {
+      var b = this, A = $("#adAiM"), hint = f.aihint.value.trim();
+      if (!imgs.length && !hint) return msg(A, "err", t("ai_need"));
+      b.disabled = true; b.textContent = t("ai_wait");
+      try { var r = await aiFill(imgs[0], hint); if (r.title) f.ptitle.value = r.title; if (r.description) f.description.value = r.description; if (r.category_id) { f.category_id.value = r.category_id; totals(); } if (r.condition) f.cond.value = r.condition; msg(A, "ok", t("ai_done")); } catch (e) { msg(A, "err", t("ai_fail")); }
+      b.disabled = false; b.textContent = t("ai_btn");
+    });
+    f.addEventListener("submit", async function (e) {
+      e.preventDefault(); var M = $("#adM"), b = f.querySelector("button[type=submit]");
+      if (!imgs.length) return msg(M, "err", T3x("Add at least one photo.", "Ajoutez au moins une photo.", "أضف صورة واحدة على الأقل."));
+      if (!f.agree.checked) return msg(M, "err", t("agree_err"));
+      if (!f.ptitle.value.trim() || !f.category_id.value || !f.ref.value.trim()) return msg(M, "err", t("required"));
+      b.disabled = true; msg(M, "info", t("loading"));
+      var cc = f.country.value, plan = adPlanFor(f.category_id.value);
+      var st = await sb.from("stores").insert({ kind: "ad", owner_id: u.id, owner_name: f.owner_name.value.trim(), name: f.owner_name.value.trim(), slug: "annonce-" + rnd(), category_id: +f.category_id.value, city: f.city.value.trim(), country: cc, phone: f.phone.value.trim(), whatsapp: f.whatsapp.value.trim() || null, accepted_terms_at: new Date().toISOString() }).select().single();
+      if (st.error) { b.disabled = false; return msg(M, "err", esc(st.error.message)); }
+      var pr = await sb.from("products").insert({ store_id: st.data.id, title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: Math.max(0, Math.round(+f.price.value || 0)), description: f.description.value.trim() || null, images: imgs, condition: f.cond.value, negotiable: false, currency: cc === "NG" ? "NGN" : "XOF" });
+      if (pr.error) { b.disabled = false; return msg(M, "err", esc(pr.error.message)); }
+      var pq = await sb.from("plan_requests").insert({ store_id: st.data.id, plan_id: plan, months: +f.weeks.value, payment_method: f.pm.value, payment_ref: f.ref.value.trim(), receipt_url: receipt || null });
+      b.disabled = false;
+      if (pq.error) return msg(M, "err", esc(pq.error.message));
+      msg(M, "ok", T3x("Thank you! Your ad will be online as soon as your payment is confirmed.", "Merci ! Votre annonce sera en ligne dès que votre paiement sera confirmé.", "شكرًا! سيُنشر إعلانك فور تأكيد الدفع."));
+      setTimeout(function () { location.href = "/sell.html"; }, 1800);
+    });
+  }
   async function showSetup(me, existing) {
     await cats();
     var app = $("#sellApp"), u = await user(), s = existing || {};
@@ -904,6 +998,13 @@
     var maxImg = store.custom_image_limit || MAX_IMAGES;
     /* automatic plan reminders: before expiry, after expiry, and when the free limit is reached */
     function planBanner() {
+      if (store.kind === "ad") {
+        var rb = ' <button type="button" class="mk-btn gold" data-goplan>' + T3x("Renew my ad", "Renouveler mon annonce", "جدّد إعلاني") + "</button>";
+        var waiting = data.preqs.some(function (r) { return r.status === "pending"; });
+        if (waiting) return '<div class="mk-msg info">⏳ ' + T3x("Payment received — AL MANARAH is checking it. Your ad goes online right after.", "Paiement reçu — AL MANARAH le vérifie. Votre annonce sera en ligne juste après.", "وصل دفعك — المنارة تتحقق منه، ويُنشر إعلانك بعدها مباشرة.") + "</div>";
+        if (store.plan_expires_at) return '<div class="mk-msg ok">📢 ' + T3x("Your ad is online until ", "Votre annonce est en ligne jusqu’au ", "إعلانك منشور حتى ") + dateFmt(store.plan_expires_at) + "." + rb + "</div>";
+        return '<div class="mk-msg err">📢 ' + T3x("Your ad is not online. Renew it to show it again.", "Votre annonce n’est pas en ligne. Renouvelez-la pour la publier.", "إعلانك غير منشور. جدّده لينشر من جديد.") + rb + "</div>";
+      }
       var pl = plan(), btn = ' <button type="button" class="mk-btn gold" data-goplan>' + T3x("Renew / upgrade", "Renouveler / passer à une offre", "جدّد / رقِّ باقتك") + "</button>";
       var nameOf = function (id) { var x = (PLANS || []).filter(function (y) { return y.id === id; })[0]; return esc(x ? x.name : id); };
       if (store.plan_expires_at) {
@@ -920,11 +1021,12 @@
     document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-goplan]")) { tab = "plan"; history.replaceState(null, "", location.pathname + location.search + "#plan"); shell(); window.scrollTo(0, 0); } });
     function shell() {
       var nNew = data.orders.filter(function (o) { return o.status === "new"; }).length;
-      var tabs = [["over", t("t_over")], ["prod", t("t_prod"), data.products.length], ["req", t("t_req"), nNew], ["promo", t("t_promo")], ["store", t("t_store")], ["plan", t("t_plan")]];
+      var AD = store.kind === "ad";
+      var tabs = AD ? [["over", t("t_over")], ["prod", T3x("My ad", "Mon annonce", "إعلاني")], ["req", t("t_req"), nNew], ["plan", T3x("Renew", "Renouveler", "تجديد")]] : [["over", t("t_over")], ["prod", t("t_prod"), data.products.length], ["req", t("t_req"), nNew], ["promo", t("t_promo")], ["store", t("t_store")], ["plan", t("t_plan")]];
       app.innerHTML = (adminView ? '<div class="mk-msg warn">' + t("admin_mode") + ' <a href="/manage.html">' + t("to_admin") + "</a></div>" : "") +
         '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button type="button" class="mk-btn" data-tuto>▶ ' + (L() === "fr" ? "Tutoriel" : "Tutorial") + '</button><button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
         planBanner() +
-        '<div class="mk-topacts"><button class="btn btn-primary" type="button" data-top="add">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" type="button" data-top="quick">⚡ ' + T3x("Many products", "Plusieurs produits", "منتجات كثيرة") + '</button><button class="btn btn-outline" type="button" data-top="edit">✏ ' + t("t_store") + "</button></div>" +
+        (store.kind === "ad" ? "" : '<div class="mk-topacts"><button class="btn btn-primary" type="button" data-top="add">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" type="button" data-top="quick">⚡ ' + T3x("Many products", "Plusieurs produits", "منتجات كثيرة") + '</button><button class="btn btn-outline" type="button" data-top="edit">✏ ' + t("t_store") + "</button></div>") +
         '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="tabBody"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", location.pathname + location.search + "#" + tab); shell(); }); });
       $("#lo").addEventListener("click", async function () { await sb.auth.signOut(); location.href = "/sell.html?mode=login"; });
@@ -945,7 +1047,7 @@
       var totSold = data.products.reduce(function (a, p) { return a + (p.sold || 0); }, 0), low = data.products.filter(function (p) { return p.stock != null && p.stock <= 3; }).length;
       B().innerHTML = banner + '<div class="mk-visits" id="mkVisits"><div class="mk-skel" style="min-height:90px"></div></div>' + '<div class="mk-kpis"><div class="mk-kpi"><b>' + totSold + "</b><span>" + T3x("items sold", "articles vendus", "قطعة مُباعة") + '</span></div><div class="mk-kpi"><b' + (low ? ' style="color:#b7791f"' : "") + ">" + low + "</b><span>" + T3x("low / out of stock", "stock faible / épuisé", "مخزون قليل / نافد") + "</span></div>" + '<div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
         '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
-        (function () { var sent = false; try { sent = localStorage.getItem("mk_brand_" + store.slug) === "1"; } catch (e) {} return '<div style="margin-top:22px">' + brandCard(sent ? '<span class="mk-status s-approved">' + T3x("Request sent ✔", "Demande envoyée ✔", "أُرسل الطلب ✔") + "</span>" : '<button type="button" class="mk-btn gold" id="brandGo">' + T3x("I want my brand", "Je veux ma marque", "أريد علامتي التجارية") + "</button>") + '<div id="brandM"></div></div>'; })() +
+        (store.kind === "ad" ? "" : (function () { var sent = false; try { sent = localStorage.getItem("mk_brand_" + store.slug) === "1"; } catch (e) {} return '<div style="margin-top:22px">' + brandCard(sent ? '<span class="mk-status s-approved">' + T3x("Request sent ✔", "Demande envoyée ✔", "أُرسل الطلب ✔") + "</span>" : '<button type="button" class="mk-btn gold" id="brandGo">' + T3x("I want my brand", "Je veux ma marque", "أريد علامتي التجارية") + "</button>") + '<div id="brandM"></div></div>'; })()) +
 
         '<p class="mk-small">' + T3x("You can change your store details at any time: name, city, country (or both countries), phone, WhatsApp, logo, sections and payment numbers.", "Vous pouvez modifier les informations de votre boutique à tout moment : nom, ville, pays (ou les deux pays), téléphone, WhatsApp, logo, rubriques et numéros de paiement.", "يمكنك تعديل بيانات متجرك في أي وقت: الاسم، المدينة، الدولة (أو البلدين)، الهاتف، واتساب، الشعار، الأقسام وأرقام الدفع.") + "</p>";
       $("#cp").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
@@ -1125,6 +1227,15 @@
       draw();
     }
 
+    function tRenewAd() {
+      var pid = adPlanFor((data.products[0] || {}).category_id || store.category_id), px = (PLANS || []).filter(function (x) { return x.id === pid; })[0] || {}, NG = store.country === "NG", receipt = "";
+      var unit = NG && px.price_ngn ? px.price_ngn : (px.price_xof || AD_PRICE[pid]), cur = NG && px.price_ngn ? "NGN" : "XOF";
+      B().innerHTML = '<div class="mk-panel"><h3 style="margin-top:0">📢 ' + T3x("Renew my ad", "Renouveler mon annonce", "تجديد إعلاني") + " — " + money(unit, cur) + " / " + T3x("week", "semaine", "أسبوع") + '</h3><p>' + adPayInfo(store.country) + '</p><form class="mk-form" id="rnF"><div><label>' + T3x("Duration", "Durée", "المدة") + '</label><select name="w">' + [1, 2, 3, 4].map(function (n) { return '<option value="' + n + '">' + n + " " + T3x("week(s)", "semaine(s)", "أسبوع") + "</option>"; }).join("") + '</select></div><div><label>' + t("method") + '</label><select name="pm">' + (NG ? '<option value="other">GTBank</option><option value="other">Access Bank</option><option value="other">Moniepoint</option>' : '<option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option>') + '</select></div><div class="full"><b id="rnT"></b></div><div><label>' + t("pay_ref") + ' *</label><input name="ref" required maxlength="80"></div><div><label>' + t("receipt") + '</label><div class="mk-imgs" id="rnRc"></div></div><div class="full"><button class="btn btn-primary btn-sm" type="submit">' + t("submit_pay") + '</button><div id="rnM"></div></div></form></div>';
+      var f = $("#rnF"); function tot() { $("#rnT").textContent = T3x("Total", "Total", "المجموع") + ": " + money(unit * +f.w.value, cur); } f.w.onchange = tot; tot();
+      function rc() { var b = $("#rnRc"); b.innerHTML = receipt ? '<div class="im"><img src="' + esc(receipt) + '" alt=""><button type="button">✕</button></div>' : '<label class="add">＋<input type="file" accept="image/*" hidden></label>'; var xb = $("button", b); if (xb) xb.onclick = function () { receipt = ""; rc(); }; var i = $("input", b); if (i) i.onchange = async function () { b.innerHTML = '<div class="add">' + t("uploading") + "</div>"; try { receipt = await upload(i.files[0], "r"); } catch (e) {} rc(); }; }
+      rc();
+      f.addEventListener("submit", async function (e) { e.preventDefault(); var r = await sb.from("plan_requests").insert({ store_id: store.id, plan_id: pid, months: +f.w.value, payment_method: f.pm.value, payment_ref: f.ref.value.trim(), receipt_url: receipt || null }); if (r.error) return msg($("#rnM"), "err", esc(r.error.message)); msg($("#rnM"), "ok", t("pay_sent")); await loadAll(); setTimeout(shell, 1500); });
+    }
     function tReq() {
       B().innerHTML = '<div class="mk-list">' + (data.orders.length ? data.orders.map(function (o) {
         var waT = (L() === "fr" ? "Bonjour " : L() === "ar" ? "السلام عليكم " : "Hello ") + o.customer_name + " — " + store.name + " (" + o.ref + ")";
@@ -1165,6 +1276,7 @@
     }
 
     function tPlan() {
+      if (store.kind === "ad") return tRenewAd();
       var pl = plan(), C = window.SITE_CONFIG && window.SITE_CONFIG.payments || {}, NG = store.country === "NG";
       function pp(x) { return NG ? (x.price_ngn || 0) : x.price_xof; }
       function mm(n) { return money(n, NG ? "NGN" : "XOF"); }
@@ -1252,7 +1364,7 @@
       B().innerHTML = '<p><button class="btn btn-primary btn-sm" id="newSt" type="button">＋ Create a store for a seller</button></p><div class="mk-bar"><select id="fSt">' + ["", "pending", "approved", "suspended", "rejected"].map(function (s) { return '<option value="' + s + '"' + (filt.st === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ" type="search" placeholder="Search name, phone, city…" value="' + esc(filt.q) + '"></div><div class="mk-list">' +
         (list.length ? list.map(function (s) {
           var pl = PLANS.filter(function (x) { return x.id === s.plan_id; })[0] || {};
-          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + esc((s.profiles || {}).email || "") + "</small><small>" + cName(s.country || "CI") + " · 📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.custom_product_limit ? " ★ " + (s.custom_product_limit >= 100000 ? "unlimited" : s.custom_product_limit) + " products" : "") + (s.custom_image_limit ? " · " + s.custom_image_limit + " photos" : "") + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
+          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + (s.kind === "ad" ? "📢 [Annonce] " : "") + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + esc((s.profiles || {}).email || "") + "</small><small>" + cName(s.country || "CI") + " · 📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.custom_product_limit ? " ★ " + (s.custom_product_limit >= 100000 ? "unlimited" : s.custom_product_limit) + " products" : "") + (s.custom_image_limit ? " · " + s.custom_image_limit + " photos" : "") + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
             '<div class="acts">' + (s.status !== "approved" ? '<button class="mk-btn ok" data-a="approve" data-id="' + s.id + '">Approve</button>' : "") + (s.status === "pending" ? '<button class="mk-btn no" data-a="reject" data-id="' + s.id + '">Reject</button>' : "") + (s.status === "approved" ? '<button class="mk-btn no" data-a="suspend" data-id="' + s.id + '">Suspend</button>' : "") +
             '<button class="mk-btn" data-a="verify" data-id="' + s.id + '">' + (s.verified ? "Unverify" : "Verify ✔") + '</button><button class="mk-btn gold" data-a="plan" data-id="' + s.id + '">Plan</button><a class="mk-btn" target="_blank" href="/' + esc(s.slug) + '">View</a><a class="mk-btn dark" href="/sell.html?store=' + s.id + '">Manage</a><button class="mk-btn" data-a="owner" data-id="' + s.id + '">Give to seller</button><a class="mk-btn" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, "AL MANARAH GLOBAL SERVICES — " + s.name) + '">WA</a><button class="mk-btn no" data-a="delete" data-id="' + s.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("🏪", "No stores")) + "</div>";
@@ -1329,7 +1441,7 @@
     function aPay() {
       B().innerHTML = '<div class="mk-list">' + (D2.preqs.length ? D2.preqs.map(function (r) {
         var pl = PLANS.filter(function (x) { return x.id === r.plan_id; })[0] || {};
-        return '<div class="mk-row">' + (r.receipt_url ? '<a href="' + esc(r.receipt_url) + '" target="_blank"><img class="th" src="' + esc(r.receipt_url) + '" alt="receipt"></a>' : '<span class="th">🧾</span>') + '<div class="mid"><b>' + esc((r.stores || {}).name || "") + " → " + esc(pl.name || r.plan_id) + " × " + r.months + " month(s)</b><small>Expected: <b>" + ((r.stores || {}).country === "NG" ? money((pl.price_ngn || 0) * r.months, "NGN") : money((pl.price_xof || 0) * r.months)) + "</b> · " + esc(r.payment_method || "") + " · Ref: " + esc(r.payment_ref || "—") + " · " + dateFmt(r.created_at) + "</small></div>" + stLabel(r.status) +
+        return '<div class="mk-row">' + (r.receipt_url ? '<a href="' + esc(r.receipt_url) + '" target="_blank"><img class="th" src="' + esc(r.receipt_url) + '" alt="receipt"></a>' : '<span class="th">🧾</span>') + '<div class="mid"><b>' + esc((r.stores || {}).name || "") + " → " + (/^ad/.test(r.plan_id) ? "📢 " : "") + esc(pl.name || r.plan_id) + " × " + r.months + (/^ad/.test(r.plan_id) ? " week(s)" : " month(s)") + "</b><small>Expected: <b>" + ((r.stores || {}).country === "NG" && pl.price_ngn ? money((pl.price_ngn || 0) * r.months, "NGN") : money((pl.price_xof || 0) * r.months)) + "</b> · " + esc(r.payment_method || "") + " · Ref: " + esc(r.payment_ref || "—") + " · " + dateFmt(r.created_at) + "</small></div>" + stLabel(r.status) +
           (r.status === "pending" ? '<div class="acts"><button class="mk-btn ok" data-a="ok" data-id="' + r.id + '">Confirm payment</button><button class="mk-btn no" data-a="no" data-id="' + r.id + '">Reject</button></div>' : "") + "</div>";
       }).join("") : emptyBox("🧾", "No payment requests")) + "</div>";
       $$("[data-a]", B()).forEach(function (b) { b.addEventListener("click", function () { var id = b.dataset.id, q = sb.from("plan_requests"); if (b.dataset.a === "ok" && confirm("Payment received? The plan will be activated.")) act(q.update({ status: "approved" }).eq("id", id)); if (b.dataset.a === "no") { var n = prompt("Reason:"); if (n !== null) act(q.update({ status: "rejected", admin_note: n }).eq("id", id)); } }); });

@@ -568,7 +568,7 @@
         var my = ++seq, sq = encodeURIComponent("%" + q.replace(/[%,()*]/g, " ") + "%");
         if (!CATS2) CATS2 = sbGet("categories?select=slug,icon,name_en,name_fr,active&active=eq.true");
         var r = await Promise.all([
-          sbGet("stores?select=name,slug,city,logo_url,verified&status=eq.approved&or=(name.ilike." + sq + ",city.ilike." + sq + ",description.ilike." + sq + ")&limit=6"),
+          sbGet("stores?select=name,slug,city,logo_url,verified&status=eq.approved&kind=neq.ad&or=(name.ilike." + sq + ",city.ilike." + sq + ",description.ilike." + sq + ")&limit=6"),
           sbGet("products?select=id,title,price,currency,images,stores(name,slug,country)&status=eq.approved&or=(title.ilike." + sq + ",description.ilike." + sq + ")&order=created_at.desc&limit=8"),
           CATS2
         ]);
