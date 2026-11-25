@@ -909,9 +909,16 @@
       app.innerHTML = (adminView ? '<div class="mk-msg warn">' + t("admin_mode") + ' <a href="/manage.html">' + t("to_admin") + "</a></div>" : "") +
         '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button type="button" class="mk-btn" data-tuto>▶ ' + (L() === "fr" ? "Tutoriel" : "Tutorial") + '</button><button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
         planBanner() +
+        '<div class="mk-topacts"><button class="btn btn-primary" type="button" data-top="add">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" type="button" data-top="quick">⚡ ' + T3x("Many products", "Plusieurs produits", "منتجات كثيرة") + '</button><button class="btn btn-outline" type="button" data-top="edit">✏ ' + t("t_store") + "</button></div>" +
         '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="tabBody"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", location.pathname + location.search + "#" + tab); shell(); }); });
       $("#lo").addEventListener("click", async function () { await sb.auth.signOut(); location.href = "/sell.html?mode=login"; });
+      $$("[data-top]", app).forEach(function (b) { b.addEventListener("click", function () {
+        var k = b.dataset.top;
+        if (k === "edit") { tab = "store"; history.replaceState(null, "", location.pathname + location.search + "#store"); shell(); return; }
+        if (data.products.length >= plan().product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; }
+        if (k === "add") productModal(null); else quickModal();
+      }); });
       ({ over: tOver, prod: tProd, req: tReq, promo: tPromo, store: tStore, plan: tPlan })[tab] ? ({ over: tOver, prod: tProd, req: tReq, promo: tPromo, store: tStore, plan: tPlan })[tab]() : tOver();
     }
     rerender = shell;
@@ -924,17 +931,17 @@
       B().innerHTML = banner + '<div class="mk-kpis"><div class="mk-kpi"><b>' + totSold + "</b><span>" + T3x("items sold", "articles vendus", "قطعة مُباعة") + '</span></div><div class="mk-kpi"><b' + (low ? ' style="color:#b7791f"' : "") + ">" + low + "</b><span>" + T3x("low / out of stock", "stock faible / épuisé", "مخزون قليل / نافد") + "</span></div>" + '<div class="mk-kpi"><b>' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + "</b><span>" + t("used") + '</span></div><div class="mk-kpi"><b>' + nNew + "</b><span>" + t("new_reqs") + '</span></div><div class="mk-kpi"><b>' + esc(pl.name) + "</b><span>" + t("cur_plan") + (store.plan_expires_at ? " · " + t("until") + " " + dateFmt(store.plan_expires_at) : "") + "</span></div></div>" +
         '<div class="st-share"><b>' + t("your_link") + "</b> <code>" + esc(link) + '</code> <button class="mk-btn" id="cp" type="button">' + t("copy") + '</button> <a class="mk-btn" href="/' + esc(store.slug) + '" target="_blank">' + t("view_store") + '</a> <a class="mk-btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(store.name + " — " + link) + '">' + t("wa") + '</a> <button class="mk-btn gold" id="ovQr" type="button">▦ ' + t("qr_dl") + "</button></div>" +
         (function () { var sent = false; try { sent = localStorage.getItem("mk_brand_" + store.slug) === "1"; } catch (e) {} return '<div style="margin-top:22px">' + brandCard(sent ? '<span class="mk-status s-approved">' + T3x("Request sent ✔", "Demande envoyée ✔", "أُرسل الطلب ✔") + "</span>" : '<button type="button" class="mk-btn gold" id="brandGo">' + T3x("I want my brand", "Je veux ma marque", "أريد علامتي التجارية") + "</button>") + '<div id="brandM"></div></div>'; })() +
-        '<p style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="goAdd" type="button">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" id="goEdit" type="button">' + t("t_store") + "</button></p>" +
+
         '<p class="mk-small">' + T3x("You can change your store details at any time: name, city, country (or both countries), phone, WhatsApp, logo, sections and payment numbers.", "Vous pouvez modifier les informations de votre boutique à tout moment : nom, ville, pays (ou les deux pays), téléphone, WhatsApp, logo, rubriques et numéros de paiement.", "يمكنك تعديل بيانات متجرك في أي وقت: الاسم، المدينة، الدولة (أو البلدين)، الهاتف، واتساب، الشعار، الأقسام وأرقام الدفع.") + "</p>";
       $("#cp").addEventListener("click", function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = t("copied"); }).catch(function () { prompt(t("copy"), link); }); });
-      $("#goAdd").addEventListener("click", function () { productModal(null); });
+
       var bg = $("#brandGo"); if (bg) bg.addEventListener("click", async function () {
         if (!confirm(T3x("Request the brand creation service (" + money(BRAND_PRICE, "XOF") + ")? AL MANARAH will contact you.", "Demander la création de votre marque (" + money(BRAND_PRICE, "XOF") + ") ? AL MANARAH vous contactera.", "طلب خدمة صناعة العلامة التجارية (" + money(BRAND_PRICE, "XOF") + ")؟ ستتواصل معك المنارة."))) return;
         bg.disabled = true; var ok = await brandRequest(store);
         msg($("#brandM"), ok ? "ok" : "err", ok ? T3x("Thank you! AL MANARAH will contact you soon.", "Merci ! AL MANARAH vous contactera très vite.", "شكرًا! ستتواصل معك المنارة قريبًا.") : t("fail"));
         if (ok) bg.outerHTML = '<span class="mk-status s-approved">' + T3x("Request sent ✔", "Demande envoyée ✔", "أُرسل الطلب ✔") + "</span>"; else bg.disabled = false;
       });
-      $("#goEdit").addEventListener("click", function () { var b = document.querySelector('.mk-tabs [data-t="store"]'); if (b) b.click(); window.scrollTo(0, 0); });
+
       $("#ovQr").addEventListener("click", function () { qrModal(store); });
     }
 
@@ -953,14 +960,11 @@
     }
     function tProd() {
       var pl = plan();
-      B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + '</p><button class="btn btn-primary btn-sm" id="addP" type="button">＋ ' + t("add_prod") + "</button></div>" +
-        '<p style="margin:-4px 0 16px"><button class="btn btn-outline btn-sm" id="quickP" type="button">' + t("quick") + "</button></p>" +
+      B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + "</p></div>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
           return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.hidden_by_plan ? '<small style="color:#8b2a22">' + T3x("Hidden: plan ended", "Masqué : offre terminée", "مخفي: انتهت الباقة") + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn ok" data-sell="' + p.id + '">' + T3x("＋1 sold", "＋1 vendu", "＋1 مُباع") + '</button><button class="mk-btn" data-stk="' + p.id + '">📦 ' + T3x("Stock", "Stock", "المخزون") + '</button><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
-      $("#addP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } productModal(null); });
-      $("#quickP").addEventListener("click", function () { if (data.products.length >= pl.product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; } quickModal(); });
       B().addEventListener("click", async function (e) {
         var b = e.target.closest("button"); if (!b) return;
         var find = function (id) { return data.products.filter(function (p) { return p.id === id; })[0]; };

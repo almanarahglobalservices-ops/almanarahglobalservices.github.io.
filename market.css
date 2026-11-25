@@ -271,3 +271,6 @@
 .mk-brand-ck{display:flex;gap:8px;align-items:center;font-weight:700;color:#101B45;cursor:pointer}.mk-brand-ck input{width:auto}
 .mk-ownbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:150;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:#101B45;color:#fff;padding:10px 14px;border-radius:16px;box-shadow:0 10px 30px rgba(16,27,69,.35);max-width:calc(100% - 20px);animation:mkIn .35s ease both}
 .mk-ownbar span{font-weight:700;font-size:.9rem}.mk-ownbar .mk-btn{text-decoration:none}
+.mk-topacts{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+.mk-topacts .btn{flex:1 1 auto;justify-content:center}
+@media (max-width:560px){.mk-topacts .btn{flex:1 1 100%;padding:12px}}
