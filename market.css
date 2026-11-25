@@ -286,3 +286,4 @@
   #mkCountry .mk-chip{padding:7px 4px;font-size:.74rem;text-align:center;overflow:hidden;text-overflow:ellipsis}
   .mk-stats{gap:10px}
 }
+@media (max-width:640px){.mk-hero .actions .btn:nth-child(2){grid-column:1 / -1}}
