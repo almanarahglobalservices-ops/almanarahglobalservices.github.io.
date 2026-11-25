@@ -228,13 +228,15 @@
     var CC = myCountry();
     var hc = $("#mkCountry"); if (hc) { hc.innerHTML = ["", "CI", "NG"].map(function (c) { return '<button type="button" class="mk-chip' + (CC === c ? " on" : "") + '" data-cc="' + c + '">' + (c ? cName(c) : "🌍 " + t("all_countries")) + "</button>"; }).join(""); hc.addEventListener("click", function (e) { var b = e.target.closest("[data-cc]"); if (!b) return; setCountry(b.dataset.cc); location.reload(); }); }
     function PQ() { var q = sb.from("products").select(CC ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved"); return CC ? q.eq("stores.country", CC) : q; }
-    var [cnt, recent, feat, stores] = await Promise.all([
+    var [cnt, stc, recent, feat, stores] = await Promise.all([
       sb.from("products").select("category_id,store_id").eq("status", "approved").limit(5000),
+      sb.from("stores").select("category_id").eq("status", "approved").limit(5000),
       PQ().order("created_at", { ascending: false }).limit(12),
       PQ().gt("featured_until", new Date().toISOString()).limit(8),
       (CC ? sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified").eq("country", CC) : sb.from("stores").select("id,name,slug,logo_url,cover_url,city,country,category_id,verified")).eq("status", "approved").order("verified", { ascending: false }).order("created_at", { ascending: false }).limit(8)
     ]);
-    var byCat = {}, byStore = {};
+    var byCat = {}, byStore = {}, stCat = {};
+    (stc.data || []).forEach(function (r) { stCat[r.category_id] = (stCat[r.category_id] || 0) + 1; });
     (cnt.data || []).forEach(function (r) { byCat[r.category_id] = (byCat[r.category_id] || 0) + 1; byStore[r.store_id] = (byStore[r.store_id] || 0) + 1; });
     var now = new Date().toISOString();
     var [ban, prm, disc] = await Promise.all([
@@ -272,7 +274,7 @@
       $("#mkCats").innerHTML = CATS.filter(function (c) { return c.active; }).map(function (c) {
         var trv = c.slug === "travel";
         return '<a class="mk-cat' + (trv ? " travel" : "") + '" href="' + "/shop.html?cat=" + c.slug + '"><span class="ico">' + esc(c.icon || "🛍️") + "</span>" + esc(catName(c)) +
-          '<span class="cnt">' + (trv ? (L() === "fr" ? "Omra · Hajj · Hôtels · Visas" : L() === "ar" ? "عمرة · حج · فنادق · تأشيرات" : "Umrah · Hajj · Hotels · Visas") : (byCat[c.id] || 0) + " " + t("products")) + "</span></a>";
+          '<span class="cnt">' + (false ? (L() === "fr" ? "Omra · Hajj · Hôtels · Visas" : L() === "ar" ? "عمرة · حج · فنادق · تأشيرات" : "Umrah · Hajj · Hotels · Visas") : (stCat[c.id] || 0) + " " + (L() === "fr" ? "boutique(s)" : L() === "ar" ? "متجر" : "store(s)") + " · " + (byCat[c.id] || 0) + " " + t("products")) + "</span></a>";
       }).join("");
       var f = feat.data || [];
       $("#mkFeatWrap").classList.toggle("mk-hide", !f.length);
@@ -312,7 +314,7 @@
       var c = CATS.filter(function (x) { return x.slug === state.cat; })[0];
       var tb = $("#shopTravel"); if (!tb) { tb = document.createElement("div"); tb.id = "shopTravel"; $("#shopChips").after(tb); }
       tb.innerHTML = false ? '<a class="mk-trv" style="max-width:none;margin:0 0 18px" href="/services.html"><span class="ico">✈️</span><span class="t"><b>' + (L() === "fr" ? "Voyages par AL MANARAH" : L() === "ar" ? "السفريات مع المنارة" : "Travel by AL MANARAH") + "</b><small>" + (L() === "fr" ? "Omra, Hajj, hôtels, visas (Schengen, Chine, Qatar…)" : L() === "ar" ? "عمرة، حج، فنادق، تأشيرات (شنغن، الصين، قطر…)" : "Umrah, Hajj, hotels, visas (Schengen, China, Qatar…)") + '</small></span><span class="go">→</span></a>' : "";
-      $("#shopTitle").textContent = state.fav ? "♥ " + t("saved") : c ? catName(c) : (state.q ? "“" + state.q + "”" : (L() === "fr" ? "Tous les produits" : L() === "ar" ? "كل المنتجات" : "All products"));
+      $("#shopTitle").textContent = state.fav ? "♥ " + t("saved") : c ? catName(c) : (state.q ? "“" + state.q + "”" : (L() === "fr" ? "Toutes les boutiques" : L() === "ar" ? "كل المتاجر" : "All stores"));
       input.placeholder = t("search"); $("#shopGo").textContent = t("go"); $("#shopMore").textContent = t("more");
       sort.innerHTML = '<option value="new">' + t("newest") + '</option><option value="asc">' + t("cheap") + '</option><option value="desc">' + t("dear") + "</option>"; sort.value = state.sort;
     }
