@@ -891,7 +891,9 @@
       var switchL = '<div class="full" style="text-align:center"><a href="#" id="auHow" class="mk-small">' + (P ? T3x("I have an email account → use email", "J’ai un compte e-mail → utiliser l’e-mail", "لدي حساب بالبريد ← استخدم البريد") : T3x("← Use my phone number instead", "← Utiliser mon numéro de téléphone", "→ استخدم رقم هاتفي")) + "</a></div>";
       var body;
       if (mode === "forgot") {
-        body = P ? '<div class="mk-msg info" style="margin:0">' + T3x("Forgot your secret code? Message AL MANARAH on WhatsApp with your name and phone number. We will give you a new code.", "Code secret oublié ? Écrivez à AL MANARAH sur WhatsApp avec votre nom et votre numéro. Nous vous donnerons un nouveau code.", "نسيت الرمز السري؟ راسل المنارة على واتساب باسمك ورقمك وسنعطيك رمزًا جديدًا.") + '</div><p style="text-align:center;margin-top:14px"><a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa("+2250506122337", T3x("Hello AL MANARAH, I forgot my store secret code. My name: … My phone: …", "Bonjour AL MANARAH, j’ai oublié le code secret de ma boutique. Mon nom : … Mon numéro : …", "السلام عليكم، نسيت الرمز السري لمتجري. اسمي: … رقمي: …")) + '">WhatsApp AL MANARAH</a></p>' + switchL
+        body = P ? '<form id="fgF" class="mk-form"><div class="full mk-msg info" style="margin:0">' + T3x("Forgot your secret code? Write your name and phone number. AL MANARAH will send you a new code on WhatsApp. Your store and products stay safe.", "Code secret oublié ? Écrivez votre nom et votre numéro. AL MANARAH vous enverra un nouveau code sur WhatsApp. Votre boutique et vos produits restent intacts.", "نسيت الرمز السري؟ اكتب اسمك ورقمك وسترسل لك المنارة رمزًا جديدًا على واتساب. متجرك ومنتجاتك تبقى كما هي.") + '</div>' +
+            '<div class="full"><label>👤 ' + t("owner") + ' *</label><input name="fname" required maxlength="80" ' + big + '></div>' + phoneF +
+            '<div class="full"><button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:14px">' + T3x("Ask for a new code", "Demander un nouveau code", "اطلب رمزًا جديدًا") + '</button></div></form>' + switchL
           : '<form id="auF" class="mk-form"><div class="full"><label>' + t("email") + '</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><button class="btn btn-primary">' + t("send_reset") + "</button></div>" + switchL + "</form>";
       } else {
         body = '<form id="auF" class="mk-form">' +
@@ -905,6 +907,15 @@
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { showAuth(b.dataset.m, how); }); });
       var hw = $("#auHow"); if (hw) hw.addEventListener("click", function (e) { e.preventDefault(); var n = P ? "email" : "phone"; try { localStorage.setItem("mk_auth_how", n); } catch (x) {} showAuth(mode === "forgot" ? "login" : mode, n); });
       var fg = $("#auForgot"); if (fg) fg.addEventListener("click", function (e) { e.preventDefault(); showAuth("forgot", how); });
+      var FG = $("#fgF"); if (FG) FG.addEventListener("submit", async function (e) {
+        e.preventDefault(); var f = e.target, b = f.querySelector("button"), M = $("#auM"), ph = intl(f.phone.value);
+        if (ph.length < 8) return msg(M, "err", T3x("Please write your full phone number with the country code (+225 or +234).", "Écrivez votre numéro complet avec l’indicatif (+225 ou +234).", "اكتب رقمك كاملًا مع رمز الدولة (+225 أو +234)."));
+        b.disabled = true;
+        var r = await sb.rpc("submit_message", { p_name: f.fname.value.trim(), p_phone: "+" + ph, p_email: null, p_country: ph.indexOf("234") === 0 ? "NG" : "CI", p_subject: "problem", p_message: "🔒 FORGOT SECRET CODE — please give a new code.\nPhone: +" + ph + "\nName: " + f.fname.value.trim() + "\n(Admin → Stores → find the store → 🔒 New PIN)" });
+        b.disabled = false;
+        if (r.error) return msg(M, "err", t("fail"));
+        f.innerHTML = '<div class="full mk-msg ok" style="margin:0">✅ ' + T3x("Request sent. AL MANARAH will send your new code on WhatsApp soon.", "Demande envoyée. AL MANARAH vous enverra votre nouveau code sur WhatsApp bientôt.", "تم إرسال الطلب. سترسل لك المنارة رمزك الجديد على واتساب قريبًا.") + "</div>";
+      });
       var F = $("#auF"); if (!F) return;
       F.addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button"), M = $("#auM"), r, email, pw;
@@ -1504,7 +1515,7 @@
             var np = prompt("New 6-digit secret code for " + s.name + " (send it to the seller on WhatsApp):", String(Math.floor(100000 + Math.random() * 900000))); if (!np) return;
             if (!/^\d{6}$/.test(np.trim())) return alert("The code must be exactly 6 numbers.");
             sb.rpc("admin_reset_pin", { p_user: s.owner_id, p_pin: np.trim() }).then(function (r) {
-              if (!r.error) alert("Done. New secret code: " + np.trim() + "\nSend it to the seller on WhatsApp.");
+              if (!r.error) { var w = wa(s.whatsapp || s.phone, "Assalamu alaikum. Your new AL MANARAH store secret code is: " + np.trim() + "\nSign in at " + location.origin + "/sell with your phone number and this code."); if (w && confirm("Done. New code: " + np.trim() + "\nSend it to the seller on WhatsApp now?")) window.open(w, "_blank"); else if (!w) alert("Done. New code: " + np.trim()); }
               else alert("Could not reset the code (" + r.error.message + ").");
             });
           }
