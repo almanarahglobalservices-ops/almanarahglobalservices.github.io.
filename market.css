@@ -314,3 +314,16 @@
 /* camera button next to photo pickers */
 .mk-imgs .add.mk-cam{background:#fff;border-color:var(--gold,#B78A32);color:var(--ink,#101B45);font-weight:600}
 label.btn.mk-cam{margin-inline-start:6px}
+/* simple seller home: big tiles */
+.mk-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 18px}
+@media (max-width:640px){.mk-tiles{grid-template-columns:repeat(2,1fr)}}
+.mk-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:110px;padding:14px 10px;border:1px solid var(--line);border-radius:16px;background:#fff;color:#101B45;cursor:pointer;text-align:center;font:inherit}
+.mk-tile span{font-size:2rem;line-height:1}
+.mk-tile b{font-size:1rem}
+.mk-tile small{color:var(--muted);font-size:.8rem}
+.mk-tile .n{display:inline-block;background:#B78A32;color:#fff;border-radius:999px;padding:0 8px;font-size:.8rem;margin-inline-start:4px}
+.mk-tile.main{grid-column:1/-1;background:#101B45;color:#fff;min-height:130px;border-color:#101B45}
+.mk-tile.main small{color:#d6dbef}
+.mk-tile.main span{font-size:2.6rem}
+.mk-tile:active{transform:scale(.98)}
+.mk-moreopt summary{cursor:pointer;font-weight:600;color:#101B45;padding:8px 0}

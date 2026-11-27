@@ -158,6 +158,10 @@
   function setCountry(c) { try { localStorage.setItem("mk_country", c || ""); } catch (e) {} }
   function qs(k) { return new URLSearchParams(location.search).get(k); }
   function digits(s) { return String(s || "").replace(/\D/g, ""); }
+  /* phone accounts: the phone number becomes the login name, the 6-digit PIN the password */
+  function phoneEmail(ph) { return intl(ph) + "@phone.almanarahglobalservices.com"; }
+  function pinPw(pin) { return "AMG-" + pin + "-pin"; }
+  function isPhoneAcct(email) { return /@phone\.almanarahglobalservices\.com$/.test(email || ""); }
   function intl(s) { var d = digits(s); if (!d) return ""; if (d.length === 10 && d[0] === "0") d = "225" + d; else if (d.length === 11 && d[0] === "0") d = "234" + d.slice(1); if (d.indexOf("00") === 0) d = d.slice(2); return d; }
   function wa(num, text) { var d = intl(num); return d ? "https://wa.me/" + d + (text ? "?text=" + encodeURIComponent(text) : "") : ""; }
   function tel(num) { var d = intl(num); return d ? "tel:+" + d : ""; }
@@ -874,25 +878,54 @@
       app.innerHTML = '<div class="mk-panel mk-auth"><h2>' + t("new_pw") + '</h2><form id="rcF" class="mk-form"><div class="full"><label>' + t("new_pw") + '</label><input name="pw" type="password" minlength="8" required autocomplete="new-password"></div><div class="full"><button class="btn btn-primary">' + t("save_pw") + '</button></div></form><div id="rcM"></div></div>';
       $("#rcF").addEventListener("submit", async function (e) { e.preventDefault(); var r = await sb.auth.updateUser({ password: e.target.pw.value }); if (r.error) msg($("#rcM"), "err", esc(r.error.message)); else { msg($("#rcM"), "ok", t("pw_saved")); setTimeout(function () { location.href = "/sell.html"; }, 1200); } });
     }
-    function showAuth(mode) {
+    /* Sign up / sign in. Default: phone number + 6-digit PIN (no email needed). Email accounts still work. */
+    function showAuth(mode, how) {
       mode = mode || (qs("mode") === "login" ? "login" : "signup");
-      rerender = function () { showAuth(mode); };
-      app.innerHTML = '<div class="mk-panel mk-auth"><div class="mk-tabs"><button type="button" data-m="signup"' + (mode === "signup" ? ' class="on"' : "") + ">" + t("signup") + '</button><button type="button" data-m="login"' + (mode === "login" ? ' class="on"' : "") + ">" + t("login") + "</button></div>" +
-        (mode === "forgot" ? '<form id="auF" class="mk-form"><div class="full"><label>' + t("email") + '</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><button class="btn btn-primary">' + t("send_reset") + "</button></div></form>" :
-          '<form id="auF" class="mk-form">' + (mode === "signup" ? '<div class="full"><label>' + t("owner") + ' *</label><input name="full_name" required maxlength="80" autocomplete="name"></div><div class="full"><label>' + t("store_phone") + ' *</label><input name="phone" type="tel" required maxlength="30" autocomplete="tel"><div class="hint">' + t("phone_hint") + "</div></div>" : "") +
-          '<div class="full"><label>' + t("email") + ' *</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><label>' + t("password") + ' *</label><input name="pw" type="password" minlength="8" required autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '"><div class="hint">' + t("pw_hint") + "</div></div>" +
-          '<div class="full"><button class="btn btn-primary" style="width:100%">' + (mode === "signup" ? t("signup") : t("login")) + "</button></div>" + (mode === "login" ? '<div class="full"><a href="#" id="auForgot" class="mk-small">' + t("forgot") + "</a></div>" : "") + "</form>") +
-        '<div id="auM"></div></div>';
-      $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { showAuth(b.dataset.m); }); });
-      var fg = $("#auForgot"); if (fg) fg.addEventListener("click", function (e) { e.preventDefault(); showAuth("forgot"); });
-      $("#auF").addEventListener("submit", async function (e) {
-        e.preventDefault(); var f = e.target, b = f.querySelector("button"), M = $("#auM"); b.disabled = true; msg(M, "info", t("loading"));
-        var r;
-        if (mode === "forgot") { r = await sb.auth.resetPasswordForEmail(f.email.value.trim(), { redirectTo: location.origin + "/sell.html" }); b.disabled = false; return r.error ? msg(M, "err", esc(r.error.message)) : msg(M, "ok", t("reset_sent")); }
-        if (mode === "login") r = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.pw.value });
-        else r = await sb.auth.signUp({ email: f.email.value.trim(), password: f.pw.value, options: { emailRedirectTo: location.origin + "/sell.html", data: { full_name: f.full_name.value.trim(), phone: f.phone.value.trim() } } });
+      how = how || (function () { try { return localStorage.getItem("mk_auth_how") || "phone"; } catch (e) { return "phone"; } })();
+      rerender = function () { showAuth(mode, how); };
+      var P = how === "phone";
+      var big = 'style="font-size:1.15rem;padding:14px;letter-spacing:.04em"';
+      var phoneF = '<div class="full"><label>📱 ' + T3x("Your phone number (WhatsApp)", "Votre numéro de téléphone (WhatsApp)", "رقم هاتفك (واتساب)") + ' *</label><input name="phone" type="tel" inputmode="tel" required maxlength="30" autocomplete="tel" ' + big + '><div class="hint">' + t("phone_hint") + "</div></div>";
+      var pinF = '<div class="full"><label>🔒 ' + T3x("Secret code (6 digits)", "Code secret (6 chiffres)", "الرمز السري (6 أرقام)") + ' *</label><input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '" ' + big + '><div class="hint">' + (mode === "signup" ? T3x("Choose 6 numbers you will remember. Don’t share them.", "Choisissez 6 chiffres faciles à retenir. Ne les partagez pas.", "اختر 6 أرقام تتذكرها. لا تعطها لأحد.") : "") + "</div></div>";
+      var pin2F = mode === "signup" && P ? '<div class="full"><label>🔒 ' + T3x("Type the code again", "Retapez le code", "أعد كتابة الرمز") + ' *</label><input name="pin2" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" ' + big + "></div>" : "";
+      var switchL = '<div class="full" style="text-align:center"><a href="#" id="auHow" class="mk-small">' + (P ? T3x("I have an email account → use email", "J’ai un compte e-mail → utiliser l’e-mail", "لدي حساب بالبريد ← استخدم البريد") : T3x("← Use my phone number instead", "← Utiliser mon numéro de téléphone", "→ استخدم رقم هاتفي")) + "</a></div>";
+      var body;
+      if (mode === "forgot") {
+        body = P ? '<div class="mk-msg info" style="margin:0">' + T3x("Forgot your secret code? Message AL MANARAH on WhatsApp with your name and phone number. We will give you a new code.", "Code secret oublié ? Écrivez à AL MANARAH sur WhatsApp avec votre nom et votre numéro. Nous vous donnerons un nouveau code.", "نسيت الرمز السري؟ راسل المنارة على واتساب باسمك ورقمك وسنعطيك رمزًا جديدًا.") + '</div><p style="text-align:center;margin-top:14px"><a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa("+2250506122337", T3x("Hello AL MANARAH, I forgot my store secret code. My name: … My phone: …", "Bonjour AL MANARAH, j’ai oublié le code secret de ma boutique. Mon nom : … Mon numéro : …", "السلام عليكم، نسيت الرمز السري لمتجري. اسمي: … رقمي: …")) + '">WhatsApp AL MANARAH</a></p>' + switchL
+          : '<form id="auF" class="mk-form"><div class="full"><label>' + t("email") + '</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><button class="btn btn-primary">' + t("send_reset") + "</button></div>" + switchL + "</form>";
+      } else {
+        body = '<form id="auF" class="mk-form">' +
+          (mode === "signup" ? '<div class="full"><label>👤 ' + t("owner") + ' *</label><input name="full_name" required maxlength="80" autocomplete="name" ' + big + "></div>" : "") +
+          (P ? phoneF + pinF + pin2F :
+            (mode === "signup" ? phoneF : "") + '<div class="full"><label>' + t("email") + ' *</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><label>' + t("password") + ' *</label><input name="pw" type="password" minlength="8" required autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '"><div class="hint">' + t("pw_hint") + "</div></div>") +
+          '<div class="full"><button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:14px">' + (mode === "signup" ? t("signup") : t("login")) + "</button></div>" +
+          (mode === "login" ? '<div class="full" style="text-align:center"><a href="#" id="auForgot" class="mk-small">' + (P ? T3x("Forgot my secret code?", "Code secret oublié ?", "نسيت الرمز السري؟") : t("forgot")) + "</a></div>" : "") + switchL + "</form>";
+      }
+      app.innerHTML = '<div class="mk-panel mk-auth"><div class="mk-tabs"><button type="button" data-m="signup"' + (mode === "signup" ? ' class="on"' : "") + ">" + t("signup") + '</button><button type="button" data-m="login"' + (mode === "login" ? ' class="on"' : "") + ">" + t("login") + "</button></div>" + body + '<div id="auM"></div></div>';
+      $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { showAuth(b.dataset.m, how); }); });
+      var hw = $("#auHow"); if (hw) hw.addEventListener("click", function (e) { e.preventDefault(); var n = P ? "email" : "phone"; try { localStorage.setItem("mk_auth_how", n); } catch (x) {} showAuth(mode === "forgot" ? "login" : mode, n); });
+      var fg = $("#auForgot"); if (fg) fg.addEventListener("click", function (e) { e.preventDefault(); showAuth("forgot", how); });
+      var F = $("#auF"); if (!F) return;
+      F.addEventListener("submit", async function (e) {
+        e.preventDefault(); var f = e.target, b = f.querySelector("button"), M = $("#auM"), r, email, pw;
+        if (mode === "forgot") { b.disabled = true; r = await sb.auth.resetPasswordForEmail(f.email.value.trim(), { redirectTo: location.origin + "/sell.html" }); b.disabled = false; return r.error ? msg(M, "err", esc(r.error.message)) : msg(M, "ok", t("reset_sent")); }
+        if (P) {
+          var ph = intl(f.phone.value);
+          if (ph.length < 8) return msg(M, "err", T3x("Please write your full phone number with the country code (+225 or +234).", "Écrivez votre numéro complet avec l’indicatif (+225 ou +234).", "اكتب رقمك كاملًا مع رمز الدولة (+225 أو +234)."));
+          if (!/^\d{6}$/.test(f.pin.value)) return msg(M, "err", T3x("The secret code must be 6 numbers.", "Le code secret doit avoir 6 chiffres.", "الرمز السري يجب أن يكون 6 أرقام."));
+          if (f.pin2 && f.pin2.value !== f.pin.value) return msg(M, "err", T3x("The two codes are not the same.", "Les deux codes ne sont pas identiques.", "الرمزان غير متطابقين."));
+          email = phoneEmail(ph); pw = pinPw(f.pin.value);
+        } else { email = f.email.value.trim(); pw = f.pw.value; }
+        b.disabled = true; msg(M, "info", t("loading"));
+        if (mode === "login") r = await sb.auth.signInWithPassword({ email: email, password: pw });
+        else r = await sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: location.origin + "/sell.html", data: { full_name: f.full_name.value.trim(), phone: f.phone.value.trim() } } });
         b.disabled = false;
-        if (r.error) return msg(M, "err", mode === "login" ? t("bad_login") : esc(r.error.message));
+        if (r.error) {
+          if (mode === "login") return msg(M, "err", P ? T3x("Phone number or secret code is incorrect.", "Numéro ou code secret incorrect.", "الرقم أو الرمز السري غير صحيح.") : t("bad_login"));
+          if (P && /already|registered|exists/i.test(r.error.message)) return msg(M, "err", T3x("This phone number already has an account. Tap “Sign in”.", "Ce numéro a déjà un compte. Touchez « Se connecter ».", "هذا الرقم لديه حساب. اضغط «تسجيل الدخول»."));
+          return msg(M, "err", esc(r.error.message));
+        }
+        try { localStorage.setItem("mk_auth_how", how); } catch (x) {}
         if (!r.data.session) return msg(M, "ok", t("confirm_email"));
         location.reload();
       });
@@ -1095,12 +1128,14 @@
       app.innerHTML = (adminView ? '<div class="mk-msg warn">' + t("admin_mode") + ' <a href="/manage.html">' + t("to_admin") + "</a></div>" : "") +
         '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button type="button" class="mk-btn" data-tuto>▶ ' + (L() === "fr" ? "Tutoriel" : "Tutorial") + '</button><button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
         planBanner() +
-        (store.kind === "ad" ? "" : '<div class="mk-topacts"><button class="btn btn-primary" type="button" data-top="add">＋ ' + t("add_prod") + '</button><button class="btn btn-outline" type="button" data-top="quick">⚡ ' + T3x("Many products", "Plusieurs produits", "منتجات كثيرة") + '</button><button class="btn btn-outline" type="button" data-top="edit">✏ ' + t("t_store") + "</button></div>") +
+        (store.kind === "ad" ? "" : '<div class="mk-tiles"><button type="button" class="mk-tile main" data-top="add"><span>📷</span><b>' + T3x("Add a product", "Ajouter un produit", "أضف منتجًا") + "</b><small>" + T3x("Take a photo, we write the rest", "Prenez une photo, on écrit le reste", "التقط صورة ونكتب الباقي") + '</small></button><button type="button" class="mk-tile" data-top="prodtab"><span>📦</span><b>' + T3x("My products", "Mes produits", "منتجاتي") + " (" + data.products.length + ')</b></button><button type="button" class="mk-tile" data-top="reqtab"><span>🛒</span><b>' + T3x("Customer orders", "Commandes clients", "طلبات الزبائن") + (nNew ? ' <span class="n">' + nNew + "</span>" : "") + '</b></button><button type="button" class="mk-tile" data-top="share"><span>🔗</span><b>' + T3x("Share my shop", "Partager ma boutique", "شارك متجري") + '</b></button><button type="button" class="mk-tile" data-top="quick"><span>⚡</span><b>' + T3x("Many products at once", "Plusieurs produits", "منتجات كثيرة") + '</b></button><button type="button" class="mk-tile" data-top="edit"><span>✏</span><b>' + t("t_store") + "</b></button></div>") +
         '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="tabBody"></div>';
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { tab = b.dataset.t; history.replaceState(null, "", location.pathname + location.search + "#" + tab); shell(); }); });
       $("#lo").addEventListener("click", async function () { await sb.auth.signOut(); location.href = "/sell.html?mode=login"; });
       $$("[data-top]", app).forEach(function (b) { b.addEventListener("click", function () {
         var k = b.dataset.top;
+        if (k === "prodtab" || k === "reqtab") { tab = k === "prodtab" ? "prod" : "req"; history.replaceState(null, "", location.pathname + location.search + "#" + tab); shell(); var tb = $("#tabBody"); if (tb) tb.scrollIntoView({ behavior: "smooth" }); return; }
+        if (k === "share") { shareModal({ name: store.name, url: storeUrl(store.slug), logo: store.logo_url, file: "boutique" }); return; }
         if (k === "edit") { tab = "store"; history.replaceState(null, "", location.pathname + location.search + "#store"); shell(); return; }
         if (data.products.length >= plan().product_limit && !(me && me.role === "admin")) { tab = "plan"; shell(); alert(t("limit")); return; }
         if (k === "add") productModal(null); else quickModal();
@@ -1178,9 +1213,10 @@
     }
 
     function productModal(p) {
-      p = p || {}; var imgs = (p.images || []).slice();
+      p = p || {}; var imgs = (p.images || []).slice(), autoAi = false, pf;
       var both = (store.markets || []).length > 1, scur = store.country === "NG" ? "NGN" : "XOF", pcu = pcur(p, store.country);
       var pXOF = p.id && pcu === "XOF" && p.price > 0 ? p.price : "", pNGN = p.id ? (pcu === "NGN" ? (p.price > 0 ? p.price : "") : (p.price_ngn > 0 ? p.price_ngn : "")) : "";
+      if (!both && p.id) { var pv = p.price > 0 ? p.price : ""; if (scur === "NGN") { pNGN = pv; pXOF = ""; } else { pXOF = pv; pNGN = ""; } } /* one-country store: its own currency */
       var pc0 = !p.id ? scur : pXOF !== "" && pNGN !== "" ? "BOTH" : pcu === "NGN" || (pXOF === "" && pNGN !== "") ? "NGN" : "XOF";
       var m = document.createElement("div"); m.className = "mk-modal";
       var catOpts = CATS.filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + ((p.category_id || store.category_id) === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
@@ -1195,10 +1231,11 @@
         '<div data-pc="XOF"><label>' + T3x("Price in FCFA", "Prix en FCFA", "السعر بالفرنك") + ' <span class="mk-small">(' + T3x("optional", "facultatif", "اختياري") + ')</span></label><input name="price" type="number" min="0" step="1" value="' + esc(pXOF) + '"></div>' +
         '<div data-pc="NGN"><label>' + T3x("Price in Naira (₦)", "Prix en Naira (₦)", "السعر بالنيرة (₦)") + ' <span class="mk-small">(' + T3x("optional", "facultatif", "اختياري") + ')</span></label><input name="pngn" type="number" min="0" step="1" value="' + esc(pNGN) + '"></div>' +
         '<div class="full mk-small" style="margin-top:-6px">' + T3x("Leave the price empty if you prefer to keep it private: buyers will see “Price on request”.", "Laissez le prix vide si vous préférez le garder privé : les acheteurs verront « Prix sur devis ».", "اترك السعر فارغًا إن أردت إخفاءه: سيظهر للمشتري «السعر عند الطلب».") + "</div>" +
+        '<details class="full mk-moreopt"' + (p.id ? " open" : "") + '><summary>⚙ ' + T3x("More options (old price, stock, condition)", "Plus d’options (ancien prix, stock, état)", "خيارات أخرى (السعر القديم، المخزون، الحالة)") + '</summary><div class="mk-form" style="padding:0;margin-top:10px">' +
         '<div><label>' + t("old_price") + '</label><input name="old" type="number" min="0" step="1" value="' + esc(p.compare_at_price || "") + '"></div>' +
         '<div><label>' + t("qty_stock") + '</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock != null ? p.stock : "") + '"></div>' +
         '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + ((p.condition || "new") === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
-        '<div><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" name="neg" style="width:auto"' + (p.negotiable ? " checked" : "") + "> " + t("negotiable") + "</label></div>" +
+        '<div><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" name="neg" style="width:auto"' + (p.negotiable ? " checked" : "") + "> " + t("negotiable") + "</label></div>" + "</div></details>" +
         '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="3000">' + esc(p.description || "") + "</textarea></div>" +
         '<div class="full"><div class="mk-msg warn" style="margin:0 0 10px">⚠ ' + t("one_rule") + '<span id="hRule"></span></div><p class="mk-small">' + t("review_note") + ' <a href="/seller-terms.html" target="_blank">' + t("agreement") + '</a></p><button class="btn btn-primary" type="submit">' + t("save") + '</button><div id="pM"></div></div></form></div>';
       document.body.appendChild(m);
@@ -1212,10 +1249,12 @@
           var files = Array.prototype.slice.call(inp.files, 0, maxImg - imgs.length); var add = $(".add", b); if (add) add.textContent = t("uploading");
           for (var i = 0; i < files.length; i++) { try { imgs.push(await upload(files[i], "p")); } catch (e) { msg($("#pM", m), "err", t("fail")); } }
           drawImgs();
+          /* beginners: after the first photo, the AI writes the name and description automatically */
+          if (imgs.length && pf && !pf.ptitle.value.trim() && !autoAi) { autoAi = true; $("#aiGo", m).click(); }
         };
       }
       drawImgs();
-      var pf = $("#pF", m);
+      pf = $("#pF", m);
       function pcVis() { var v = both ? pf.pcur.value : scur; $$("[data-pc]", m).forEach(function (d) { d.classList.toggle("mk-hide", !(v === "BOTH" || d.dataset.pc === v)); }); }
       if (pf.pcur) pf.pcur.addEventListener("change", pcVis); pcVis();
       function hRule() { $("#hRule", m).innerHTML = isHealth(+pf.category_id.value) ? "<br>🌿 " + t("health_rule") : ""; }
@@ -1445,9 +1484,9 @@
       B().innerHTML = '<p><button class="btn btn-primary btn-sm" id="newSt" type="button">＋ Create a store for a seller</button></p><div class="mk-bar"><select id="fSt">' + ["", "pending", "approved", "suspended", "rejected"].map(function (s) { return '<option value="' + s + '"' + (filt.st === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ" type="search" placeholder="Search name, phone, city…" value="' + esc(filt.q) + '"></div><div class="mk-list">' +
         (list.length ? list.map(function (s) {
           var pl = PLANS.filter(function (x) { return x.id === s.plan_id; })[0] || {};
-          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + (s.kind === "ad" ? "📢 [Annonce] " : "") + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + esc((s.profiles || {}).email || "") + "</small><small>" + cName(s.country || "CI") + " · 📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.custom_product_limit ? " ★ " + (s.custom_product_limit >= 100000 ? "unlimited" : s.custom_product_limit) + " products" : "") + (s.custom_image_limit ? " · " + s.custom_image_limit + " photos" : "") + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
+          return '<div class="mk-row">' + (s.logo_url ? '<img class="th" src="' + esc(s.logo_url) + '" alt="">' : '<span class="th">🏪</span>') + '<div class="mid"><b>' + (s.kind === "ad" ? "📢 [Annonce] " : "") + esc(s.name) + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + "</b><small>" + esc(s.owner_name) + " · " + esc(s.phone) + (s.whatsapp ? " / WA " + esc(s.whatsapp) : "") + " · " + (isPhoneAcct((s.profiles || {}).email) ? "📱 phone + PIN account" : esc((s.profiles || {}).email || "")) + "</small><small>" + cName(s.country || "CI") + " · 📍 " + esc(s.city) + (s.address ? ", " + esc(s.address) : "") + " · " + esc(catName(catById(s.category_id))) + " · /" + esc(s.slug) + "</small><small>Plan: <b>" + esc(pl.name || s.plan_id) + "</b>" + (s.custom_product_limit ? " ★ " + (s.custom_product_limit >= 100000 ? "unlimited" : s.custom_product_limit) + " products" : "") + (s.custom_image_limit ? " · " + s.custom_image_limit + " photos" : "") + (s.plan_expires_at ? " until " + dateFmt(s.plan_expires_at) : "") + " · " + pcount(s.id) + " products · joined " + dateFmt(s.created_at) + "</small>" + (s.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(s.admin_note) + "</small>" : "") + "</div>" + stLabel(s.status) +
             '<div class="acts">' + (s.status !== "approved" ? '<button class="mk-btn ok" data-a="approve" data-id="' + s.id + '">Approve</button>' : "") + (s.status === "pending" ? '<button class="mk-btn no" data-a="reject" data-id="' + s.id + '">Reject</button>' : "") + (s.status === "approved" ? '<button class="mk-btn no" data-a="suspend" data-id="' + s.id + '">Suspend</button>' : "") +
-            '<button class="mk-btn" data-a="verify" data-id="' + s.id + '">' + (s.verified ? "Unverify" : "Verify ✔") + '</button><button class="mk-btn gold" data-a="plan" data-id="' + s.id + '">Plan</button><a class="mk-btn" target="_blank" href="/' + esc(s.slug) + '">View</a><a class="mk-btn dark" href="/sell.html?store=' + s.id + '">Manage</a><button class="mk-btn" data-a="owner" data-id="' + s.id + '">Give to seller</button><a class="mk-btn" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, "AL MANARAH GLOBAL SERVICES — " + s.name) + '">WA</a><button class="mk-btn no" data-a="delete" data-id="' + s.id + '">Delete</button></div></div>';
+            '<button class="mk-btn" data-a="verify" data-id="' + s.id + '">' + (s.verified ? "Unverify" : "Verify ✔") + '</button><button class="mk-btn gold" data-a="plan" data-id="' + s.id + '">Plan</button><a class="mk-btn" target="_blank" href="/' + esc(s.slug) + '">View</a><a class="mk-btn dark" href="/sell.html?store=' + s.id + '">Manage</a><button class="mk-btn" data-a="owner" data-id="' + s.id + '">Give to seller</button>' + (isPhoneAcct((s.profiles || {}).email) ? '<button class="mk-btn" data-a="pin" data-id="' + s.id + '">🔒 New PIN</button>' : "") + '<a class="mk-btn" target="_blank" rel="noopener" href="' + wa(s.whatsapp || s.phone, "AL MANARAH GLOBAL SERVICES — " + s.name) + '">WA</a><button class="mk-btn no" data-a="delete" data-id="' + s.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("🏪", "No stores")) + "</div>";
       $("#fSt").onchange = function () { filt.st = this.value; aStores(); };
       $("#newSt").onclick = function () { adminStoreModal(); };
@@ -1461,8 +1500,21 @@
           if (b.dataset.a === "verify") act(q.update({ verified: !s.verified }).eq("id", id));
           if (b.dataset.a === "delete" && confirm("Delete the store \"" + s.name + "\" and ALL its products permanently? This cannot be undone.")) act(q.delete().eq("id", id));
           if (b.dataset.a === "plan") planModal(s);
+          if (b.dataset.a === "pin") {
+            var np = prompt("New 6-digit secret code for " + s.name + " (send it to the seller on WhatsApp):", String(Math.floor(100000 + Math.random() * 900000))); if (!np) return;
+            if (!/^\d{6}$/.test(np.trim())) return alert("The code must be exactly 6 numbers.");
+            sb.auth.getSession().then(function (ss) {
+              var tk = ss.data.session && ss.data.session.access_token;
+              return fetch("/api/reset-pin", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + tk }, body: JSON.stringify({ user_id: s.owner_id, pin: np.trim() }) }).then(function (r) { return r.json(); });
+            }).then(function (j) {
+              if (j.ok) alert("Done. New secret code: " + np.trim() + "\nSend it to the seller on WhatsApp.");
+              else if (j.error === "setup") alert("PIN reset needs a one-time setup on Cloudflare (SUPABASE_SERVICE_ROLE_KEY). Ask Claude to finish it.");
+              else alert("Could not reset the code (" + j.error + ").");
+            }).catch(function () { alert("Could not reset the code. Check your connection."); });
+          }
           if (b.dataset.a === "owner") {
-            var em = prompt("Seller's email (the seller must first create an account on /sell):"); if (!em) return;
+            var em = prompt("Seller's email OR phone number (the seller must first create an account on /sell):"); if (!em) return;
+            if (em.indexOf("@") < 0) em = phoneEmail(em);
             sb.from("profiles").select("id,email").ilike("email", em.trim()).maybeSingle().then(function (r) { if (!r.data) return alert("No account with this email yet. Ask the seller to create an account on /sell first."); act(sb.from("stores").update({ owner_id: r.data.id }).eq("id", id)); alert("Done. The store now belongs to " + r.data.email + "."); });
           }
         });
