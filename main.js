@@ -1094,11 +1094,15 @@
     var done = false, ev = ["scroll", "pointerdown", "keydown", "touchstart", "mousemove"];
     function go() {
       if (done) return; done = true;
+      window.AMG_CHAT_LOADED = true;
       ev.forEach(function (e) { window.removeEventListener(e, go, true); });
       var s = document.createElement("script");
       s.src = "https://client.crisp.chat/l.js"; s.async = true;
       document.head.appendChild(s);
     }
+    window.AMG_LOAD_CHAT = go;
+    /* inside the installed phone app the chat is heavy: load it only when "Aide" is tapped */
+    if (document.documentElement.classList.contains("is-app")) { document.body.classList.add("has-chat"); return; }
     ev.forEach(function (e) { window.addEventListener(e, go, { capture: true, passive: true, once: true }); });
     if (document.readyState === "complete") setTimeout(go, 3500);
     else window.addEventListener("load", function () { setTimeout(go, 3500); });

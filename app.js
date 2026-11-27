@@ -43,6 +43,10 @@
     + ".am-tabs a.sell .dot{width:44px;height:44px;margin-top:-20px;border-radius:50%;background:#101b45;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -6px rgba(16,27,69,.6);border:3px solid #fff}"
     + ".am-tabs a.sell .dot svg{stroke:#fff;width:22px;height:22px}"
     + ".am-tabs a.sell.on .dot{background:#b78a32}"
+    + ".am-load{position:fixed;top:0;left:0;height:3px;width:0;background:#b78a32;z-index:1000;opacity:0;pointer-events:none}"
+    + ".am-load.go{opacity:1;width:85%;transition:width 2.5s cubic-bezier(.1,.7,.2,1)}"
+    + ".am-tabs a:active{transform:scale(.92)}"
+    + "html.is-app{-webkit-tap-highlight-color:transparent}"
     + ".am-tabs span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}"
     + ".am-inst{position:fixed;left:12px;right:12px;bottom:12px;z-index:500;display:flex;gap:12px;align-items:center;background:#101b45;color:#fff;border-radius:18px;padding:12px 12px 12px 12px;box-shadow:0 18px 40px -12px rgba(0,0,0,.55);font-family:Manrope,system-ui,sans-serif;transform:translateY(150%);transition:transform .35s ease;max-width:520px;margin:0 auto}"
     + ".am-inst.show{transform:none}"
@@ -94,11 +98,26 @@
       a.appendChild(s);
       if (t.k === "help") a.addEventListener("click", function (e) {
         /* open the live chat when this page has it; otherwise go to Contact */
-        if (window.$crisp && window.$crisp.push) { e.preventDefault(); window.$crisp.push(["do", "chat:show"]); window.$crisp.push(["do", "chat:open"]); }
+        if (window.$crisp && window.$crisp.push) {
+          e.preventDefault();
+          if (window.AMG_LOAD_CHAT) window.AMG_LOAD_CHAT();
+          window.$crisp.push(["do", "chat:show"]); window.$crisp.push(["do", "chat:open"]);
+        }
       });
       nav.appendChild(a);
     });
     body.appendChild(nav);
+
+    /* instant feedback when a link is tapped: thin gold bar at the top while the next page loads */
+    var bar = document.createElement("div"); bar.className = "am-load"; body.appendChild(bar);
+    document.addEventListener("click", function (e) {
+      if (e.defaultPrevented) return;
+      var a = e.target.closest && e.target.closest("a[href]"); if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+      var u; try { u = new URL(a.href, location.href); } catch (x) { return; }
+      if (u.origin !== location.origin || (u.pathname === location.pathname && u.search === location.search)) return;
+      bar.className = "am-load go";
+    });
+    window.addEventListener("pageshow", function () { bar.className = "am-load"; });
 
     /* chat bubble would sit on the tab bar: keep it hidden, open it from "Aide" */
     var hideChat = function () {

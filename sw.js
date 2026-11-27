@@ -2,7 +2,7 @@
    Pages: always fresh from the internet (saved copy only when offline).
    Versioned files (?v=…), icons and images: kept on the phone so the app opens fast.
    Supabase, payments, admin and other sites: never touched. */
-var VER = "am-app-2";
+var VER = "am-app-3";
 var CORE = ["/offline.html", "/logo.png", "/img/app/icon-192.png"];
 
 self.addEventListener("install", function (e) {
@@ -31,9 +31,24 @@ self.addEventListener("fetch", function (e) {
 
   // Pages: network first, offline copy as fallback
   if (req.mode === "navigate") {
-    e.respondWith(fetch(req).then(function (res) { return put(req, res); }).catch(function () {
-      return caches.match(req).then(function (m) { return m || caches.match("/offline.html"); });
+    /* fresh page from the internet; if the connection is very slow (over 3 s), show the saved copy */
+    var net = fetch(req).then(function (res) { return put(req, res); });
+    e.respondWith(new Promise(function (resolve) {
+      var done = false;
+      function fallback() {
+        caches.match(req).then(function (m) {
+          if (done) return;
+          if (m) { done = true; resolve(m); }
+        });
+      }
+      var t = setTimeout(fallback, 3000);
+      net.then(function (res) { if (!done) { done = true; clearTimeout(t); resolve(res); } })
+        .catch(function () {
+          clearTimeout(t);
+          caches.match(req).then(function (m) { if (!done) { done = true; resolve(m || caches.match("/offline.html")); } });
+        });
     }));
+    e.waitUntil(net.catch(function () {}));
     return;
   }
 
