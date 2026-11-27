@@ -9,8 +9,12 @@
   if (!window.supabase) return;
   // retry on weak mobile networks (a request that fails is tried again up to 3 times)
   function rfetch(u, o) { var n = 0; function go() { return fetch(u, o).catch(function (e) { if (++n > 3) throw e; return new Promise(function (r) { setTimeout(r, 500 * n); }).then(go); }); } return go(); }
+  /* password-reset link: remember it BEFORE Supabase reads and clears the address */
+  var RECOVERY_LINK = /type=recovery/.test(location.hash + location.search);
+  var LINK_EXPIRED = /error_code=otp_expired|error=access_denied/.test(location.hash + location.search);
   var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }, global: { fetch: rfetch } });
   window.AMG_MARKET = sb;
+  sb.auth.onAuthStateChange(function (ev) { if (ev === "PASSWORD_RECOVERY") RECOVERY_LINK = true; });
 
   /* ---------------- i18n ---------------- */
   function L() { try { var q = (location.search.match(/[?&]lang=(en|fr|ar)/) || [])[1]; return (window.AMG_SITE && window.AMG_SITE.lang()) || q || localStorage.getItem("langUser") || localStorage.getItem("lang") || (localStorage.getItem("mk_country") === "NG" ? "en" : "fr"); } catch (e) { return "fr"; } }
@@ -872,6 +876,11 @@
     });
     var u = await user();
     if (recovering) return;
+    if (RECOVERY_LINK && u) { recovering = true; _user = u; history.replaceState(null, "", "/sell.html"); return showRecovery(); }
+    if ((RECOVERY_LINK || LINK_EXPIRED) && !u) {
+      app.innerHTML = '<div class="mk-panel mk-auth"><div class="mk-msg err">' + T3x("This reset link has expired or was already used. Ask for a new one below.", "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau ci-dessous.", "انتهت صلاحية هذا الرابط أو استُعمل. اطلب رابطًا جديدًا بالأسفل.") + "</div></div>";
+      return setTimeout(function () { showAuth("forgot", "email"); }, 2500);
+    }
     if (!u) return showAuth();
     var me = await profile(), adminView = qs("store"), store;
     if (adminView && me && me.role === "admin") store = (await sb.from("stores").select("*").eq("id", adminView).maybeSingle()).data;
