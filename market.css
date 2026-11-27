@@ -327,3 +327,5 @@ label.btn.mk-cam{margin-inline-start:6px}
 .mk-tile.main span{font-size:2.6rem}
 .mk-tile:active{transform:scale(.98)}
 .mk-moreopt summary{cursor:pointer;font-weight:600;color:#101B45;padding:8px 0}
+.mk-card .seller[data-store]{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(183,138,50,.5);text-underline-offset:3px}
+.mk-card .seller[data-store]:hover{color:#B78A32}

@@ -191,6 +191,9 @@
   }, true);
   function stars(n) { n = Math.round(n || 0); return '<span class="mk-stars">' + "★★★★★".slice(0, n) + '<span style="color:#ccc">' + "★★★★★".slice(0, 5 - n) + "</span></span>"; }
   var rerender = function () {};
+  /* the store name on a product card opens the store (the rest of the card opens the product) */
+  document.addEventListener("click", function (e) { var sn = e.target.closest && e.target.closest("[data-store]"); if (!sn) return; e.preventDefault(); e.stopPropagation(); location.href = "/" + sn.dataset.store; }, true);
+  document.addEventListener("keydown", function (e) { if (e.key !== "Enter") return; var sn = e.target.closest && e.target.closest("[data-store]"); if (sn) { e.preventDefault(); location.href = "/" + sn.dataset.store; } }, true);
   document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-setlang]")) setTimeout(function () { rerender(); }, 60); });
 
   async function compress(file, max) {
@@ -331,13 +334,13 @@
   function card(p, pm) {
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
-    return '<a class="mk-card" href="/product.html?id=' + p.id + '"><div class="img">' +
+    return '<a class="mk-card" href="/product?id=' + p.id + '"><div class="img">' +
       (img ? '<img src="' + esc(thumb(img)) + '" alt="' + esc(p.title) + '" loading="lazy" decoding="async">' : '<span class="noimg">' + esc((catById(p.category_id) || {}).icon || "🛍️") + "</span>") +
       (p.stock === 0 ? '<span class="mk-badge" style="background:#6b7280">' + T3x("Out of stock", "Épuisé", "نفد") + "</span>" : feat ? '<span class="mk-badge top">' + t("top") + "</span>" : pr.off ? '<span class="mk-badge">-' + pr.off + "%</span>" : "") +
       '<button type="button" class="mk-fav" data-fav="' + p.id + '" aria-label="' + t("saved") + '">' + (isFav(p.id) ? "♥" : "♡") + "</button>" +
       (p.condition && p.condition !== "new" ? '<span class="mk-cond">' + t("c_" + p.condition) + "</span>" : "") +
       '</div><div class="body"><h3>' + esc(p.title) + "</h3>" + priceHtml(pr) +
-      '<span class="seller">' + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + (s.city ? " · " + esc(s.city) : "") + "</span></div></a>";
+      '<span class="seller"' + (s.slug && s.kind !== "ad" ? ' data-store="' + esc(s.slug) + '" role="link" tabindex="0"' : "") + '>' + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + (s.city ? " · " + esc(s.city) : "") + "</span></div></a>";
   }
   function emptyBox(e, a, b, cta) { return '<div class="mk-empty"><span class="e">' + (e || "🛍️") + "</span><b>" + esc(a) + "</b><p>" + esc(b || "") + "</p>" + (cta ? '<a class="btn btn-primary btn-sm" href="/sell.html">' + t("open_store") + "</a>" : "") + "</div>"; }
   function storeCard(s, n) {
@@ -354,7 +357,7 @@
   }
   function storeOffer(gr, smap, badge, sub) {
     var p = gr.p, s = Object.assign({}, p.stores || {}, smap[p.store_id] || {}), img = thumb((p.images || [])[0]);
-    if (s.kind === "ad") return '<a class="mk-store mk-offer" href="/product.html?id=' + p.id + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + '><span class="ob">📢 ' + T3x("Ad", "Annonce", "إعلان") + '</span></div><div class="info"><span class="logo">📢</span><h3>' + esc(p.title) + '</h3><span class="meta">' + money(p.price, pcur(p, s.country)) + (s.city ? " · " + esc(s.city) : "") + '</span><span class="go">' + T3x("See the ad →", "Voir l’annonce →", "شاهد الإعلان ←") + "</span></div></a>";
+    if (s.kind === "ad") return '<a class="mk-store mk-offer" href="/product?id=' + p.id + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + '><span class="ob">📢 ' + T3x("Ad", "Annonce", "إعلان") + '</span></div><div class="info"><span class="logo">📢</span><h3>' + esc(p.title) + '</h3><span class="meta">' + money(p.price, pcur(p, s.country)) + (s.city ? " · " + esc(s.city) : "") + '</span><span class="go">' + T3x("See the ad →", "Voir l’annonce →", "شاهد الإعلان ←") + "</span></div></a>";
     return '<a class="mk-store mk-offer" href="/' + esc(s.slug || "") + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + ">" + (badge ? '<span class="ob">' + badge + "</span>" : "") + '</div><div class="info">' +
       (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name || "") + "</span>") +
       "<h3>" + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + '</h3><span class="meta">' + (s.city ? esc(s.city) + " · " : "") + sub + '</span><span class="go">' + (L() === "fr" ? "Voir la boutique →" : L() === "ar" ? "ادخل المتجر ←" : "Visit store →") + "</span></div></a>";
@@ -379,7 +382,7 @@
         var cs = CATS.filter(function (c) { return c.active && [c.name_en, c.name_fr, c.name_ar, c.slug].some(function (n) { return norm(n).indexOf(nq) > -1; }); }).slice(0, 3);
         var html = cs.map(function (c) { return '<a href="/shop.html?cat=' + c.slug + '"><span class="i">' + esc(c.icon) + "</span><span>" + esc(catName(c)) + "</span></a>"; }).join("") +
           (st.data || []).map(function (x) { return '<a href="/' + esc(x.slug) + '"><span class="i">' + (x.logo_url ? '<img src="' + esc(x.logo_url) + '" alt="">' : "🏪") + "</span><span><b>" + esc(x.name) + "</b>" + (x.verified ? " ✔" : "") + "<small>" + esc(x.city || "") + "</small></span></a>"; }).join("") +
-          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(thumb(x.images[0])) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, pcur(x)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
+          (pr.data || []).map(function (x) { return '<a href="/product?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(thumb(x.images[0])) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, pcur(x)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
         box.innerHTML = html || '<div class="mk-sug-none">' + t("none") + "</div>";
         box.classList.remove("mk-hide");
       }, 250);
@@ -631,7 +634,7 @@
     if (!slug) { box.innerHTML = '<div class="container section">' + emptyBox("🔎", t("not_found")) + "</div>"; return; }
     var r = await sb.from("stores").select("*").eq("slug", slug).maybeSingle(), s = r.data;
     if (!s) { box.innerHTML = '<div class="container section">' + emptyBox("🔎", t("not_found")) + "</div>"; return; }
-    if (s.kind === "ad") { var ap = (await sb.from("products").select("id").eq("store_id", s.id).limit(1)).data || []; if (ap.length) { location.replace("/product.html?id=" + ap[0].id); return; } }
+    if (s.kind === "ad") { var ap = (await sb.from("products").select("id").eq("store_id", s.id).limit(1)).data || []; if (ap.length) { location.replace("/product?id=" + ap[0].id); return; } }
     document.title = s.name + " | AL MANARAH GLOBAL SERVICES";
     var md = document.querySelector('meta[name="description"]'); if (md && s.description) md.content = s.description.slice(0, 160);
     var pr = await sb.from("products").select(PSEL).eq("store_id", s.id).eq("status", "approved").order("created_at", { ascending: false }).limit(1000);
@@ -1575,9 +1578,9 @@
       var now = new Date().toISOString();
       B().innerHTML = '<div class="mk-bar"><select id="fPr">' + ["", "pending", "approved", "rejected", "hidden"].map(function (s) { return '<option value="' + s + '"' + (filt.pr === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ2" type="search" placeholder="Search product or store…" value="' + esc(filt.q) + '">' + (filt.pr === "pending" && list.length ? '<button class="mk-btn ok" id="apAll">Approve all shown</button>' : "") + '</div><div class="mk-list">' +
         (list.length ? list.slice(0, 300).map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(thumb(p.images[0])) + '" alt="" loading="lazy"></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p)) + (p.price_ngn > 0 && pcur(p) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(thumb(p.images[0])) + '" alt="" loading="lazy"></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p)) + (p.price_ngn > 0 && pcur(p) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts">' + (p.status !== "approved" ? '<button class="mk-btn ok" data-a="ok" data-id="' + p.id + '">Approve</button>' : "") + (p.status !== "rejected" ? '<button class="mk-btn no" data-a="no" data-id="' + p.id + '">Reject</button>' : "") + (p.status === "approved" ? '<button class="mk-btn" data-a="hide" data-id="' + p.id + '">Hide</button>' : "") +
-            (p.featured_until > now ? '<button class="mk-btn" data-a="unfeat" data-id="' + p.id + '">Unfeature</button>' : '<button class="mk-btn gold" data-a="feat" data-id="' + p.id + '">Feature</button>') + '<a class="mk-btn" target="_blank" href="/product.html?id=' + p.id + '">View</a><button class="mk-btn no" data-a="del" data-id="' + p.id + '">Delete</button></div></div>';
+            (p.featured_until > now ? '<button class="mk-btn" data-a="unfeat" data-id="' + p.id + '">Unfeature</button>' : '<button class="mk-btn gold" data-a="feat" data-id="' + p.id + '">Feature</button>') + '<a class="mk-btn" target="_blank" href="/product?id=' + p.id + '">View</a><button class="mk-btn no" data-a="del" data-id="' + p.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("📦", "Nothing here")) + "</div>";
       $("#fPr").onchange = function () { filt.pr = this.value; aProducts(); };
       $("#fQ2").oninput = function () { filt.q = this.value.toLowerCase(); var p = this.selectionStart; aProducts(); var i = $("#fQ2"); i.focus(); i.setSelectionRange(p, p); };
@@ -1622,7 +1625,7 @@
     function aReports() {
       B().innerHTML = '<div class="mk-list">' + (D2.reports.length ? D2.reports.map(function (r) {
         return '<div class="mk-row"><div class="mid"><b>⚑ ' + esc(t(r.reason) || r.reason) + "</b><small>🏪 " + esc((r.stores || {}).name || "") + (r.products ? " · 📦 " + esc(r.products.title) : "") + " · " + dateFmt(r.created_at) + "</small>" + (r.details ? "<small>" + esc(r.details) + "</small>" : "") + (r.contact ? "<small>📞 " + esc(r.contact) + "</small>" : "") + '</div><span class="mk-status ' + (r.status === "open" ? "s-pending" : "s-approved") + '">' + esc(r.status) + "</span>" +
-          '<div class="acts">' + (r.product_id ? '<a class="mk-btn" target="_blank" href="/product.html?id=' + r.product_id + '">View product</a>' : "") + (r.stores ? '<a class="mk-btn" target="_blank" href="/' + esc(r.stores.slug) + '">View store</a>' : "") + (r.status === "open" ? '<button class="mk-btn ok" data-id="' + r.id + '">Mark handled</button>' : "") + "</div></div>";
+          '<div class="acts">' + (r.product_id ? '<a class="mk-btn" target="_blank" href="/product?id=' + r.product_id + '">View product</a>' : "") + (r.stores ? '<a class="mk-btn" target="_blank" href="/' + esc(r.stores.slug) + '">View store</a>' : "") + (r.status === "open" ? '<button class="mk-btn ok" data-id="' + r.id + '">Mark handled</button>' : "") + "</div></div>";
       }).join("") : emptyBox("⚑", "No reports")) + "</div>";
       $$("button[data-id]", B()).forEach(function (b) { b.addEventListener("click", function () { act(sb.from("reports").update({ status: "closed" }).eq("id", b.dataset.id)); }); });
     }
