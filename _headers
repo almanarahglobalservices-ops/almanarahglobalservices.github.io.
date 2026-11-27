@@ -9,3 +9,9 @@
   Cache-Control: public, max-age=604800
 /*.webmanifest
   Cache-Control: public, max-age=86400
+/sw.js
+  ! Cache-Control
+  Cache-Control: no-cache
+/app.js
+  ! Cache-Control
+  Cache-Control: public, max-age=3600

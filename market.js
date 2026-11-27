@@ -788,7 +788,7 @@
   }
   window.AMG_SHARE = shareModal;
 
-  var RESERVED = ["index","shop","store","product","sell","manage","about","contact","travel","umrah","hajj","hotels","visas","services","partners","track","pay","privacy","terms","experiences","library","admin","seller-terms","s","api","www","mail","help","support","login","account","almanarah"];
+  var RESERVED = ["index","shop","store","product","sell","manage","about","contact","travel","umrah","hajj","hotels","visas","services","partners","track","pay","privacy","terms","experiences","library","admin","seller-terms","s","api","www","mail","help","support","login","account","almanarah","app","offline","sw"];
   var PAYS_ALL = { CI: [["pay_mtn", "MTN Mobile Money"], ["pay_orange", "Orange Money"], ["pay_moov", "Moov Money"], ["pay_wave", "Wave"]], NG: [["pay_opay", "OPay"], ["pay_palmpay", "PalmPay"], ["pay_bank", "Bank transfer (bank – account no.)"]] };
   var PAYS = PAYS_ALL.CI.concat(PAYS_ALL.NG);
   function hasPay(s) { return PAYS.some(function (p) { return s && s[p[0]]; }); }
