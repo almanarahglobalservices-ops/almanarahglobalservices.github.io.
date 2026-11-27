@@ -162,6 +162,7 @@
   function phoneEmail(ph) { return intl(ph) + "@phone.almanarahglobalservices.com"; }
   function pinPw(pin) { return "AMG-" + pin + "-pin"; }
   function isPhoneAcct(email) { return /@phone\.almanarahglobalservices\.com$/.test(email || ""); }
+  function isPinUser(u) { return !!u && (isPhoneAcct(u.email) || !!((u.user_metadata || {}).pin)); }
   var RQ = [["mother", "Your mother’s first name", "Le prénom de votre mère", "اسم أمك الأول"], ["school", "Your first school", "Votre première école", "أول مدرسة درست فيها"], ["town", "Your home town / village", "Votre ville ou village d’origine", "مدينتك أو قريتك الأصلية"], ["friend", "Your best friend’s name", "Le nom de votre meilleur ami", "اسم أعز أصدقائك"]];
   function rqText(k) { var q = RQ.filter(function (x) { return x[0] === k; })[0] || RQ[0]; return T3x(q[1], q[2], q[3]); }
   function intl(s) { var d = digits(s); if (!d) return ""; if (d.length === 10 && d[0] === "0") d = "225" + d; else if (d.length === 11 && d[0] === "0") d = "234" + d.slice(1); if (d.indexOf("00") === 0) d = d.slice(2); return d; }
@@ -877,8 +878,15 @@
     return dashboard(store, me, !!adminView);
 
     function showRecovery() {
-      app.innerHTML = '<div class="mk-panel mk-auth"><h2>' + t("new_pw") + '</h2><form id="rcF" class="mk-form"><div class="full"><label>' + t("new_pw") + '</label><input name="pw" type="password" minlength="8" required autocomplete="new-password"></div><div class="full"><button class="btn btn-primary">' + t("save_pw") + '</button></div></form><div id="rcM"></div></div>';
-      $("#rcF").addEventListener("submit", async function (e) { e.preventDefault(); var r = await sb.auth.updateUser({ password: e.target.pw.value }); if (r.error) msg($("#rcM"), "err", esc(r.error.message)); else { msg($("#rcM"), "ok", t("pw_saved")); setTimeout(function () { location.href = "/sell.html"; }, 1200); } });
+      var pinU = isPinUser(_user), big = 'style="font-size:1.15rem;padding:14px"';
+      var fld = pinU ? '<div class="full"><label>🔒 ' + T3x("New secret code (6 digits)", "Nouveau code secret (6 chiffres)", "الرمز السري الجديد (6 أرقام)") + '</label><input name="pw" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" ' + big + "></div>" : '<div class="full"><label>' + t("new_pw") + '</label><input name="pw" type="password" minlength="8" required autocomplete="new-password"></div>';
+      app.innerHTML = '<div class="mk-panel mk-auth"><h2>' + (pinU ? T3x("Choose a new secret code", "Choisissez un nouveau code secret", "اختر رمزًا سريًا جديدًا") : t("new_pw")) + '</h2><form id="rcF" class="mk-form">' + fld + '<div class="full"><button class="btn btn-primary" style="width:100%">' + t("save") + '</button></div></form><div id="rcM"></div></div>';
+      $("#rcF").addEventListener("submit", async function (e) {
+        e.preventDefault(); var v = e.target.pw.value;
+        if (pinU && !/^\d{6}$/.test(v)) return msg($("#rcM"), "err", T3x("The secret code must be 6 numbers.", "Le code secret doit avoir 6 chiffres.", "الرمز السري يجب أن يكون 6 أرقام."));
+        var r = await sb.auth.updateUser({ password: pinU ? pinPw(v) : v });
+        if (r.error) msg($("#rcM"), "err", esc(r.error.message)); else { msg($("#rcM"), "ok", "✅ " + t("pw_saved")); setTimeout(function () { location.href = "/sell.html"; }, 1200); }
+      });
     }
     /* Sign up / sign in. Default: phone number + 6-digit PIN (no email needed). Email accounts still work. */
     function showAuth(mode, how) {
@@ -893,12 +901,12 @@
       var switchL = '<div class="full" style="text-align:center"><a href="#" id="auHow" class="mk-small">' + (P ? T3x("I have an email account → use email", "J’ai un compte e-mail → utiliser l’e-mail", "لدي حساب بالبريد ← استخدم البريد") : T3x("← Use my phone number instead", "← Utiliser mon numéro de téléphone", "→ استخدم رقم هاتفي")) + "</a></div>";
       var body;
       if (mode === "forgot") {
-        body = P ? '<div class="mk-msg info" style="margin:0">🔑 ' + T3x("Forgot your secret code? Send us a WhatsApp message from your own number and we will help you right away. Your store and products stay safe.", "Code secret oublié ? Envoyez-nous un message WhatsApp depuis votre propre numéro et nous vous aidons tout de suite. Votre boutique et vos produits restent intacts.", "نسيت الرمز السري؟ أرسل لنا رسالة واتساب من رقمك نفسه وسنساعدك فورًا. متجرك ومنتجاتك في أمان.") + '</div><p style="text-align:center;margin-top:14px"><a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa("+2250506122337", T3x("Hello AL MANARAH, I forgot my store secret code.", "Bonjour AL MANARAH, j’ai oublié le code secret de ma boutique.", "السلام عليكم، نسيت الرمز السري لمتجري.")) + '">WhatsApp</a></p>' + switchL
+        body = P ? '<form id="fgF" class="mk-form"><div class="full mk-msg info" style="margin:0">🔑 ' + T3x("Write your phone number. We send a link to the email you gave when you opened your store, and you choose a new code yourself.", "Écrivez votre numéro. Nous envoyons un lien à l’e-mail donné à l’ouverture de votre boutique, et vous choisissez vous-même un nouveau code.", "اكتب رقمك. نرسل رابطًا إلى البريد الذي وضعته عند فتح متجرك، وتختار رمزًا جديدًا بنفسك.") + '</div>' + phoneF + '<div class="full"><button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:14px">' + T3x("Send me the link", "Envoyez-moi le lien", "أرسل لي الرابط") + '</button></div></form>' + switchL
           : '<form id="auF" class="mk-form"><div class="full"><label>' + t("email") + '</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><button class="btn btn-primary">' + t("send_reset") + "</button></div>" + switchL + "</form>";
       } else {
         body = '<form id="auF" class="mk-form">' +
           (mode === "signup" ? '<div class="full"><label>👤 ' + t("owner") + ' *</label><input name="full_name" required maxlength="80" autocomplete="name" ' + big + "></div>" : "") +
-          (P ? phoneF + pinF + pin2F :
+          (P ? phoneF + pinF + pin2F + (mode === "signup" ? '<div class="full"><label>📧 ' + T3x("Email (optional)", "E-mail (facultatif)", "البريد الإلكتروني (اختياري)") + '</label><input name="remail" type="email" autocomplete="email" ' + big + '><div class="hint">' + T3x("Recommended: if you forget your code, a link to make a new one is sent to this email.", "Conseillé : si vous oubliez votre code, un lien pour en créer un nouveau sera envoyé à cet e-mail.", "مُستحسن: إن نسيت رمزك يصلك رابط على هذا البريد لتضع رمزًا جديدًا.") + "</div></div>" : "") :
             (mode === "signup" ? phoneF : "") + '<div class="full"><label>' + t("email") + ' *</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><label>' + t("password") + ' *</label><input name="pw" type="password" minlength="8" required autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '"><div class="hint">' + t("pw_hint") + "</div></div>") +
           '<div class="full"><button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:14px">' + (mode === "signup" ? t("signup") : t("login")) + "</button></div>" +
           (mode === "login" ? '<div class="full" style="text-align:center"><a href="#" id="auForgot" class="mk-small">' + (P ? T3x("Forgot my secret code?", "Code secret oublié ?", "نسيت الرمز السري؟") : t("forgot")) + "</a></div>" : "") + switchL + "</form>";
@@ -907,27 +915,17 @@
       $$(".mk-tabs button", app).forEach(function (b) { b.addEventListener("click", function () { showAuth(b.dataset.m, how); }); });
       var hw = $("#auHow"); if (hw) hw.addEventListener("click", function (e) { e.preventDefault(); var n = P ? "email" : "phone"; try { localStorage.setItem("mk_auth_how", n); } catch (x) {} showAuth(mode === "forgot" ? "login" : mode, n); });
       var fg = $("#auForgot"); if (fg) fg.addEventListener("click", function (e) { e.preventDefault(); showAuth("forgot", how); });
-      var FG = $("#fgF"); if (FG) { var step = 1; FG.addEventListener("submit", async function (e) {
-        e.preventDefault(); var f = e.target, b = f.querySelector("button[class*=btn]"), M = $("#auM"), ph = intl(f.phone.value), r;
+      var FG = $("#fgF"); if (FG) FG.addEventListener("submit", async function (e) {
+        e.preventDefault(); var f = e.target, b = f.querySelector("button"), M = $("#auM"), ph = intl(f.phone.value);
         if (ph.length < 8) return msg(M, "err", T3x("Please write your full phone number with the country code (+225 or +234).", "Écrivez votre numéro complet avec l’indicatif (+225 ou +234).", "اكتب رقمك كاملًا مع رمز الدولة (+225 أو +234)."));
         b.disabled = true; msg(M, "info", t("loading"));
-        if (step === 1) {
-          r = await sb.rpc("pin_recovery_question", { p_phone: ph }); b.disabled = false;
-          if (r.error || !r.data) return msg(M, "err", T3x("No secret question found for this number. Check the number, or sign in with email if you used email.", "Aucune question secrète pour ce numéro. Vérifiez le numéro, ou connectez-vous par e-mail si vous avez utilisé l’e-mail.", "لا يوجد سؤال سري لهذا الرقم. تحقق من الرقم أو ادخل بالبريد إن كنت استعملته."));
-          step = 2; msg(M, "", ""); f.phone.readOnly = true;
-          var q = $("#fgQ", f); q.classList.remove("mk-hide");
-          q.innerHTML = '<label>❓ ' + esc(rqText(r.data)) + ' *</label><input name="ra" required maxlength="60" autocomplete="off" ' + big + '><label style="margin-top:10px">🔒 ' + T3x("New secret code (6 digits)", "Nouveau code secret (6 chiffres)", "الرمز السري الجديد (6 أرقام)") + ' *</label><input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" ' + big + '><label style="margin-top:10px">🔒 ' + T3x("Type the new code again", "Retapez le nouveau code", "أعد كتابة الرمز الجديد") + ' *</label><input name="pin2" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" ' + big + ">";
-          b.textContent = T3x("Save my new code", "Enregistrer mon nouveau code", "احفظ رمزي الجديد"); f.ra.focus(); return;
-        }
-        if (!/^\d{6}$/.test(f.pin.value)) { b.disabled = false; return msg(M, "err", T3x("The secret code must be 6 numbers.", "Le code secret doit avoir 6 chiffres.", "الرمز السري يجب أن يكون 6 أرقام.")); }
-        if (f.pin2.value !== f.pin.value) { b.disabled = false; return msg(M, "err", T3x("The two codes are not the same.", "Les deux codes ne sont pas identiques.", "الرمزان غير متطابقين.")); }
-        r = await sb.rpc("reset_pin_self", { p_phone: ph, p_answer: f.ra.value, p_pin: f.pin.value });
-        if (r.error || r.data !== "ok") { b.disabled = false; return msg(M, "err", r.data === "locked" ? T3x("Too many wrong answers. Try again in 30 minutes.", "Trop de mauvaises réponses. Réessayez dans 30 minutes.", "إجابات خاطئة كثيرة. حاول بعد 30 دقيقة.") : T3x("The answer is not correct.", "La réponse n’est pas correcte.", "الجواب غير صحيح.")); }
-        var li = await sb.auth.signInWithPassword({ email: phoneEmail(ph), password: pinPw(f.pin.value) });
-        b.disabled = false;
-        if (li.error) { msg(M, "ok", T3x("New code saved. Please sign in.", "Nouveau code enregistré. Connectez-vous.", "تم حفظ الرمز الجديد. سجّل الدخول.")); return setTimeout(function () { showAuth("login", "phone"); }, 1200); }
-        location.reload();
-      }); }
+        var le = await sb.rpc("login_email", { p_phone: ph }), em = le.data || "";
+        if (!em || isPhoneAcct(em)) { b.disabled = false; return msg(M, "err", T3x("No email was given for this number, so the code cannot be reset by email. Message us on WhatsApp from this number:", "Aucun e-mail n’a été donné pour ce numéro. Écrivez-nous sur WhatsApp depuis ce numéro :", "لم يُسجَّل بريد لهذا الرقم. راسلنا على واتساب من نفس الرقم:") + ' <a target="_blank" rel="noopener" href="' + wa("+2250506122337", "Hello AL MANARAH, I forgot my store secret code. My number: +" + ph) + '">WhatsApp</a>'); }
+        var r = await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + "/sell.html" }); b.disabled = false;
+        if (r.error) return msg(M, "err", t("fail"));
+        var mk = em.replace(/^(.)(.*)(.@.*)$/, function (_, a1, a2, a3) { return a1 + a2.replace(/./g, "•") + a3; });
+        f.innerHTML = '<div class="full mk-msg ok" style="margin:0">✅ ' + T3x("Link sent to ", "Lien envoyé à ", "أرسلنا الرابط إلى ") + esc(mk) + ". " + T3x("Open your email and tap the link to choose a new code.", "Ouvrez votre e-mail et touchez le lien pour choisir un nouveau code.", "افتح بريدك واضغط الرابط لتختار رمزًا جديدًا.") + "</div>";
+      });
       var F = $("#auF"); if (!F) return;
       F.addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button"), M = $("#auM"), r, email, pw;
@@ -938,10 +936,15 @@
           if (!/^\d{6}$/.test(f.pin.value)) return msg(M, "err", T3x("The secret code must be 6 numbers.", "Le code secret doit avoir 6 chiffres.", "الرمز السري يجب أن يكون 6 أرقام."));
           if (f.pin2 && f.pin2.value !== f.pin.value) return msg(M, "err", T3x("The two codes are not the same.", "Les deux codes ne sont pas identiques.", "الرمزان غير متطابقين."));
           email = phoneEmail(ph); pw = pinPw(f.pin.value);
+          if (mode === "signup" && f.remail && f.remail.value.trim()) email = f.remail.value.trim();
         } else { email = f.email.value.trim(); pw = f.pw.value; }
         b.disabled = true; msg(M, "info", t("loading"));
-        if (mode === "login") r = await sb.auth.signInWithPassword({ email: email, password: pw });
-        else r = await sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: location.origin + "/sell.html", data: { full_name: f.full_name.value.trim(), phone: f.phone.value.trim() } } });
+        if (mode === "signup" && P) { var ex = await sb.rpc("login_email", { p_phone: ph }); if (ex.data) { b.disabled = false; return msg(M, "err", T3x("This phone number already has an account. Tap “Sign in”.", "Ce numéro a déjà un compte. Touchez « Se connecter ».", "هذا الرقم لديه حساب. اضغط «تسجيل الدخول».")); } }
+        if (mode === "login") {
+          r = await sb.auth.signInWithPassword({ email: email, password: pw });
+          if (r.error && P) { var le = await sb.rpc("login_email", { p_phone: ph }); if (le.data && le.data !== email) r = await sb.auth.signInWithPassword({ email: le.data, password: pw }); }
+        }
+        else r = await sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: location.origin + "/sell.html", data: P ? { full_name: f.full_name.value.trim(), phone: f.phone.value.trim(), phone_intl: ph, pin: true } : { full_name: f.full_name.value.trim(), phone: f.phone.value.trim() } } });
         b.disabled = false;
         if (r.error) {
           if (mode === "login") return msg(M, "err", P ? T3x("Phone number or secret code is incorrect.", "Numéro ou code secret incorrect.", "الرقم أو الرمز السري غير صحيح.") : t("bad_login"));
@@ -1166,7 +1169,7 @@
       var AD = store.kind === "ad";
       var tabs = AD ? [["over", t("t_over")], ["prod", T3x("My ad", "Mon annonce", "إعلاني")], ["req", t("t_req"), nNew], ["plan", T3x("Renew", "Renouveler", "تجديد")]] : [["over", t("t_over")], ["prod", t("t_prod"), data.products.length], ["req", t("t_req"), nNew], ["promo", t("t_promo")], ["store", t("t_store")], ["plan", t("t_plan")]];
       app.innerHTML = (adminView ? '<div class="mk-msg warn">' + t("admin_mode") + ' <a href="/manage.html">' + t("to_admin") + "</a></div>" : "") +
-        '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button type="button" class="mk-btn" data-tuto>▶ ' + (L() === "fr" ? "Tutoriel" : "Tutorial") + '</button>' + (isPhoneAcct((_user || {}).email) ? '<button class="mk-btn" id="myPin" type="button">🔒 ' + T3x("My secret code", "Mon code secret", "رمزي السري") + "</button>" : "") + '<button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
+        '<div class="mk-inline" style="justify-content:space-between;margin-bottom:10px"><div class="mk-inline">' + (store.logo_url ? '<img src="' + esc(store.logo_url) + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover">' : "") + '<h2 style="margin:0">' + esc(store.name) + "</h2> " + stLabel(store.status) + (store.verified ? ' <span class="mk-verified">✔ ' + t("verified") + "</span>" : "") + '</div><div class="mk-inline">' + (me && me.role === "admin" ? '<a class="mk-btn dark" href="/manage.html">' + t("to_admin") + "</a>" : "") + '<button type="button" class="mk-btn" data-tuto>▶ ' + (L() === "fr" ? "Tutoriel" : "Tutorial") + '</button>' + (isPinUser(_user) ? '<button class="mk-btn" id="myPin" type="button">🔒 ' + T3x("My secret code", "Mon code secret", "رمزي السري") + "</button>" : "") + '<button class="mk-btn" id="lo" type="button">' + t("logout") + "</button></div></div>" +
         planBanner() +
         (store.kind === "ad" ? "" : '<div class="mk-tiles"><button type="button" class="mk-tile main" data-top="add"><span>📷</span><b>' + T3x("Add a product", "Ajouter un produit", "أضف منتجًا") + "</b><small>" + T3x("Take a photo, we write the rest", "Prenez une photo, on écrit le reste", "التقط صورة ونكتب الباقي") + '</small></button><button type="button" class="mk-tile" data-top="prodtab"><span>📦</span><b>' + T3x("My products", "Mes produits", "منتجاتي") + " (" + data.products.length + ')</b></button><button type="button" class="mk-tile" data-top="reqtab"><span>🛒</span><b>' + T3x("Customer orders", "Commandes clients", "طلبات الزبائن") + (nNew ? ' <span class="n">' + nNew + "</span>" : "") + '</b></button><button type="button" class="mk-tile" data-top="share"><span>🔗</span><b>' + T3x("Share my shop", "Partager ma boutique", "شارك متجري") + '</b></button><button type="button" class="mk-tile" data-top="quick"><span>⚡</span><b>' + T3x("Many products at once", "Plusieurs produits", "منتجات كثيرة") + '</b></button><button type="button" class="mk-tile" data-top="edit"><span>✏</span><b>' + t("t_store") + "</b></button></div>") +
         '<div class="mk-tabs">' + tabs.map(function (x) { return '<button type="button" data-t="' + x[0] + '"' + (tab === x[0] ? ' class="on"' : "") + ">" + x[1] + (x[2] ? ' <span class="n">' + x[2] + "</span>" : "") + "</button>"; }).join("") + '</div><div id="tabBody"></div>';
