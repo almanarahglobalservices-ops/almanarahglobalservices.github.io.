@@ -228,7 +228,13 @@
   var _prof;
   async function profile() { if (_prof !== undefined) return _prof; var u = await user(); if (!u) return (_prof = null); var r = await sb.from("profiles").select("*").eq("id", u.id).maybeSingle(); _prof = r.data || null; return _prof; }
   var CATS = null, PLANS = null;
-  async function cats() { if (CATS) return CATS; var r = await sb.from("categories").select("*").order("sort_order"); CATS = r.data || []; return CATS; }
+  /* speed: categories are kept on the phone and refreshed in the background, so pages don't wait for them */
+  async function cats(fresh) {
+    if (CATS && !fresh) return CATS;
+    function save(d) { try { localStorage.setItem("mk_cats", JSON.stringify(d)); } catch (e) {} }
+    if (!fresh) { try { var c = JSON.parse(localStorage.getItem("mk_cats") || "null"); if (c && c.length) { CATS = c; sb.from("categories").select("*").order("sort_order").then(function (r) { if (r.data && r.data.length) { CATS = r.data; save(r.data); } }, function () {}); return CATS; } } catch (e) {} }
+    var r = await sb.from("categories").select("*").order("sort_order"); CATS = r.data || []; if (CATS.length) save(CATS); return CATS;
+  }
   async function plans() { if (PLANS) return PLANS; var r = await sb.from("plans").select("*").order("sort_order"); PLANS = r.data || []; return PLANS; }
   function catById(id) { return (CATS || []).filter(function (c) { return c.id === id; })[0]; }
   /* "Create my brand" service: name, logo, visual identity + 1 month follow-up (20 000 FCFA). Goes to AL MANARAH's messages. */
@@ -413,7 +419,7 @@
   async function pageHome() {
     setTimeout(function () { welcome(false); }, 900);
     var wv = $("#mkVideo"); if (wv) wv.addEventListener("click", function () { welcome(true); });
-    await cats();
+    var catsP = cats(); /* runs at the same time as the home queries below */
     var CC = myCountry();
     var hc = $("#mkCountry"); if (hc) { hc.innerHTML = ["", "CI", "NG"].map(function (c) { return '<button type="button" class="mk-chip' + (CC === c ? " on" : "") + '" data-cc="' + c + '">' + (c ? cName(c) : "🌍 " + t("all_countries")) + "</button>"; }).join(""); hc.addEventListener("click", function (e) { var b = e.target.closest("[data-cc]"); if (!b) return; setCountry(b.dataset.cc); location.reload(); }); }
     function PQ() { var q = sb.from("products").select(CC ? PSEL.replace("stores(", "stores!inner(") : PSEL).eq("status", "approved"); return CC ? q.or(mkOr(CC), { referencedTable: "stores" }) : q; }
@@ -427,7 +433,7 @@
       sb.from("banners").select("*").eq("active", true).order("sort_order"),
       sb.from("promotions").select("product_id,store_id").eq("status", "approved").lte("starts_at", now).or("ends_at.is.null,ends_at.gt." + now).limit(100),
       PQ().not("compare_at_price", "is", null).order("created_at", { ascending: false }).limit(24)
-    ]);
+    ]).then(async function (x) { await catsP; return x; });
     var byCat = {}, byStore = {}, stCat = {}, totalP = 0;
     if (mc && mc.data && !mc.error) { byCat = mc.data.cat_products || {}; stCat = mc.data.cat_stores || {}; byStore = mc.data.store_products || {}; totalP = mc.data.total || 0; }
     else {
@@ -1397,7 +1403,7 @@
       if (!CATS.some(function (c) { return c.slug === "sante"; })) {
         var bt = CATS.filter(function (c) { return /beaut/.test(c.slug); })[0];
         var hr = await sb.from("categories").insert({ icon: "🌿", slug: "sante", name_en: "Health & Wellness", name_fr: "Santé & Bien-être", name_ar: "الصحة والعافية", sort_order: bt ? bt.sort_order : CATS.length + 1, active: true });
-        if (!hr.error) { CATS = null; await cats(); }
+        if (!hr.error) { CATS = null; await cats(true); }
       }
     } catch (e) {}
     var tab = (location.hash || "#over").slice(1), D2 = {}, filt = { st: "", pr: "", q: "" };
