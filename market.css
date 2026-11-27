@@ -327,5 +327,5 @@ label.btn.mk-cam{margin-inline-start:6px}
 .mk-tile.main span{font-size:2.6rem}
 .mk-tile:active{transform:scale(.98)}
 .mk-moreopt summary{cursor:pointer;font-weight:600;color:#101B45;padding:8px 0}
-.mk-card .seller[data-store]{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(183,138,50,.5);text-underline-offset:3px}
+.mk-card .seller[data-store]{cursor:pointer;align-self:flex-start;max-width:100%;min-height:34px;margin:6px 0 0 -4px;padding:6px 12px 6px 9px;border-radius:999px;background:rgba(183,138,50,.13);border:1px solid rgba(183,138,50,.35);color:#101B45;font-weight:700;font-size:.8rem;line-height:1.2;position:relative;z-index:2;-webkit-tap-highlight-color:rgba(183,138,50,.25);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.mk-card .seller[data-store]:active{background:rgba(183,138,50,.3)}.mk-card .seller[data-store] .go{margin-left:auto;padding-left:4px;color:#B78A32}html[data-theme=dark] .mk-card .seller[data-store]{color:#f3e7cc}
 .mk-card .seller[data-store]:hover{color:#B78A32}

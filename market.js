@@ -344,7 +344,7 @@
       '<button type="button" class="mk-fav" data-fav="' + p.id + '" aria-label="' + t("saved") + '">' + (isFav(p.id) ? "♥" : "♡") + "</button>" +
       (p.condition && p.condition !== "new" ? '<span class="mk-cond">' + t("c_" + p.condition) + "</span>" : "") +
       '</div><div class="body"><h3>' + esc(p.title) + "</h3>" + priceHtml(pr) +
-      '<span class="seller"' + (s.slug && s.kind !== "ad" ? ' data-store="' + esc(s.slug) + '" role="link" tabindex="0"' : "") + '>' + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + (s.city ? " · " + esc(s.city) : "") + "</span></div></a>";
+      '<span class="seller"' + (s.slug && s.kind !== "ad" ? ' data-store="' + esc(s.slug) + '" role="link" tabindex="0" title="' + esc(s.name || "") + '"' : "") + '>' + (s.slug && s.kind !== "ad" ? "🏪 " : "") + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + (s.city ? " · " + esc(s.city) : "") + (s.slug && s.kind !== "ad" ? '<span class="go">›</span>' : "") + "</span></div></a>";
   }
   function emptyBox(e, a, b, cta) { return '<div class="mk-empty"><span class="e">' + (e || "🛍️") + "</span><b>" + esc(a) + "</b><p>" + esc(b || "") + "</p>" + (cta ? '<a class="btn btn-primary btn-sm" href="/sell.html">' + t("open_store") + "</a>" : "") + "</div>"; }
   function storeCard(s, n) {
