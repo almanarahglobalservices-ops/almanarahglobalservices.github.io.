@@ -311,3 +311,6 @@
 .mk-paybox{background:#f6f7fb;border-radius:14px;padding:14px}
 .mk-mic{white-space:nowrap}.mk-mic.on{background:#b42318;color:#fff;border-color:#b42318;animation:mkPulse 1.6s infinite}
 .mk-alt{display:block;font-size:.78em;color:#6b7189;font-weight:600}
+/* camera button next to photo pickers */
+.mk-imgs .add.mk-cam{background:#fff;border-color:var(--gold,#B78A32);color:var(--ink,#101B45);font-weight:600}
+label.btn.mk-cam{margin-inline-start:6px}

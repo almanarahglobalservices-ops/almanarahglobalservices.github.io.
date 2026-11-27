@@ -122,6 +122,23 @@
   };
   function t(k) { var r = D[k]; if (!r) return k; var l = L(); return l === "fr" ? r[1] : l === "ar" ? (r[2] || r[0]) : r[0]; }
 
+  /* camera: next to every photo picker, add a "Take photo" button that opens the phone camera directly */
+  function camEnhance(root) {
+    $$('label input[type=file][accept^="image"]:not([data-cam]):not([capture])', root).forEach(function (inp) {
+      var lab = inp.closest("label"); if (!lab || !lab.parentNode) return; inp.setAttribute("data-cam", "1");
+      var c = document.createElement("label"); c.className = lab.className + " mk-cam"; c.style.cssText = lab.style.cssText;
+      c.innerHTML = "📷 " + esc(T3x("Take photo", "Prendre une photo", "التقاط صورة")) + '<input type="file" accept="image/*" capture="environment" hidden>';
+      lab.parentNode.insertBefore(c, lab.nextSibling);
+      var ci = c.querySelector("input");
+      ci.addEventListener("change", function () {
+        if (!ci.files || !ci.files.length) return;
+        try { inp.files = ci.files; } catch (e) { return; }
+        inp.dispatchEvent(new Event("change"));
+      });
+    });
+  }
+  try { new MutationObserver(function () { camEnhance(document); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+
   /* ---------------- helpers ---------------- */
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -266,14 +283,18 @@
     });
     return map;
   }
+  /* currency of a product's main price: trust the saved currency, fall back to the store's country */
+  function pcur(p, country) { return p && (p.currency === "NGN" || p.currency === "XOF") ? p.currency : curOf(country || ((p || {}).stores || {}).country || (p || {}).__country); }
   function priceOf(p, pm) {
-    var r = priceOf0(p, pm); r.cur = p.currency === "NGN" ? "NGN" : curOf((p.stores || {}).country || p.__country);
-    if (p.price_ngn > 0 && r.cur !== "NGN" && p.price > 0) {
-      var k = p.price_ngn / p.price, ng = { now: Math.round(r.now * k), was: r.was ? Math.round(r.was * k) : null, off: r.off, cur: "NGN" }, cc = myCountry();
-      if (cc === "NG") { ng.alt = r.now; ng.altCur = r.cur; ng.altOnly = true; return ng; }
-      if (!cc) { r.alt = ng.now; r.altCur = "NGN"; }
-    }
-    return r;
+    var cur = pcur(p), main = priceOf0(p, pm); main.cur = cur;
+    if (!(cur === "XOF" && p.price_ngn > 0)) return main;
+    /* product has a Naira price as well (store sells in both countries) */
+    var d = (pm && (pm.p[p.id] || pm.s[p.store_id])) || 0, k = p.price > 0 ? p.price_ngn / p.price : 0;
+    var ng = { now: d ? Math.round(p.price_ngn * (100 - d) / 100) : p.price_ngn, was: d ? p.price_ngn : (main.was && k ? Math.round(main.was * k) : null), off: d || (main.was && k ? main.off : 0), cur: "NGN" };
+    var cc = myCountry();
+    if (cc === "NG" || !(p.price > 0)) return ng;            /* Nigerian visitor, or no FCFA price given */
+    if (cc === "CI") return main;                             /* Ivorian visitor: FCFA only */
+    main.alt = ng.now; main.altCur = "NGN"; return main;      /* no country chosen: show both */
   }
   function priceOf0(p, pm) {
     var d = (pm && (pm.p[p.id] || pm.s[p.store_id])) || 0;
@@ -309,7 +330,7 @@
   }
   function storeOffer(gr, smap, badge, sub) {
     var p = gr.p, s = Object.assign({}, p.stores || {}, smap[p.store_id] || {}), img = (p.images || [])[0];
-    if (s.kind === "ad") return '<a class="mk-store mk-offer" href="/product.html?id=' + p.id + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + '><span class="ob">📢 ' + T3x("Ad", "Annonce", "إعلان") + '</span></div><div class="info"><span class="logo">📢</span><h3>' + esc(p.title) + '</h3><span class="meta">' + money(p.price, p.currency === "NGN" ? "NGN" : curOf(s.country)) + (s.city ? " · " + esc(s.city) : "") + '</span><span class="go">' + T3x("See the ad →", "Voir l’annonce →", "شاهد الإعلان ←") + "</span></div></a>";
+    if (s.kind === "ad") return '<a class="mk-store mk-offer" href="/product.html?id=' + p.id + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + '><span class="ob">📢 ' + T3x("Ad", "Annonce", "إعلان") + '</span></div><div class="info"><span class="logo">📢</span><h3>' + esc(p.title) + '</h3><span class="meta">' + money(p.price, pcur(p, s.country)) + (s.city ? " · " + esc(s.city) : "") + '</span><span class="go">' + T3x("See the ad →", "Voir l’annonce →", "شاهد الإعلان ←") + "</span></div></a>";
     return '<a class="mk-store mk-offer" href="/' + esc(s.slug || "") + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + ">" + (badge ? '<span class="ob">' + badge + "</span>" : "") + '</div><div class="info">' +
       (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name || "") + "</span>") +
       "<h3>" + esc(s.name || "") + (s.verified ? ' <span class="mk-verified">✔</span>' : "") + '</h3><span class="meta">' + (s.city ? esc(s.city) + " · " : "") + sub + '</span><span class="go">' + (L() === "fr" ? "Voir la boutique →" : L() === "ar" ? "ادخل المتجر ←" : "Visit store →") + "</span></div></a>";
@@ -334,7 +355,7 @@
         var cs = CATS.filter(function (c) { return c.active && [c.name_en, c.name_fr, c.name_ar, c.slug].some(function (n) { return norm(n).indexOf(nq) > -1; }); }).slice(0, 3);
         var html = cs.map(function (c) { return '<a href="/shop.html?cat=' + c.slug + '"><span class="i">' + esc(c.icon) + "</span><span>" + esc(catName(c)) + "</span></a>"; }).join("") +
           (st.data || []).map(function (x) { return '<a href="/' + esc(x.slug) + '"><span class="i">' + (x.logo_url ? '<img src="' + esc(x.logo_url) + '" alt="">' : "🏪") + "</span><span><b>" + esc(x.name) + "</b>" + (x.verified ? " ✔" : "") + "<small>" + esc(x.city || "") + "</small></span></a>"; }).join("") +
-          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(x.images[0]) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, x.currency === "NGN" ? "NGN" : curOf((x.stores || {}).country)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
+          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(x.images[0]) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, pcur(x)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
         box.innerHTML = html || '<div class="mk-sug-none">' + t("none") + "</div>";
         box.classList.remove("mk-hide");
       }, 250);
@@ -885,7 +906,7 @@
       '<div class="full mk-ai"><p>' + t("ai_box") + '</p><div class="mk-ai-row"><input name="aihint" maxlength="200" placeholder="' + esc(t("ai_hint")) + '">' + micBtn("adMic") + '<button type="button" class="mk-btn gold" id="adAi">' + t("ai_btn") + '</button></div><div id="adAiM"></div></div>' +
       '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120"></div>' +
       '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
-      '<div><label>' + T3x("Price", "Prix", "السعر") + ' *</label><input name="price" type="number" min="0" step="1" required></div>' +
+      '<div><label><span id="adPL">' + T3x("Price", "Prix", "السعر") + '</span> <span class="mk-small">(' + T3x("optional", "facultatif", "اختياري") + ')</span></label><input name="price" type="number" min="0" step="1" placeholder="' + esc(T3x("Empty = Price on request", "Vide = Prix sur devis", "فارغ = السعر عند الطلب")) + '"></div>' +
       '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '">' + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
       '<div><label>' + t("country") + ' *</label><select name="country">' + Object.keys(COUNTRIES).map(function (c) { return '<option value="' + c + '"' + ((myCountry() || "CI") === c ? " selected" : "") + ">" + cName(c) + "</option>"; }).join("") + "</select></div>" +
       '<div class="full"><label>' + t("desc") + '</label><textarea name="description" maxlength="2000"></textarea></div>' +
@@ -905,6 +926,8 @@
       $("#adPay").innerHTML = adPayInfo(f.country.value);
       f.pm.innerHTML = NG ? '<option value="other">GTBank</option><option value="other">Access Bank</option><option value="other">Moniepoint</option>' : '<option value="mtn_momo">MTN MoMo</option><option value="wave">Wave</option><option value="other">Other</option>';
     }
+    function adPL() { var e = $("#adPL"); if (e) e.textContent = T3x("Price", "Prix", "السعر") + (f.country.value === "NG" ? " (₦ Naira)" : " (FCFA)"); }
+    f.country.addEventListener("change", adPL); adPL();
     ["category_id", "country", "weeks"].forEach(function (k) { f[k].addEventListener("change", totals); }); totals();
     function drawImgs() {
       var b = $("#adImgs");
@@ -1012,7 +1035,7 @@
     async function loadAll() {
       var [p, o, pr, rq, st] = await Promise.all([
         sb.from("products").select("*").eq("store_id", store.id).order("created_at", { ascending: false }),
-        sb.from("orders").select("*,products(title)").eq("store_id", store.id).order("created_at", { ascending: false }).limit(300),
+        sb.from("orders").select("*,products(title,currency)").eq("store_id", store.id).order("created_at", { ascending: false }).limit(300),
         sb.from("promotions").select("*").eq("store_id", store.id).order("created_at", { ascending: false }),
         sb.from("plan_requests").select("*").eq("store_id", store.id).order("created_at", { ascending: false }),
         sb.from("stores").select("*").eq("id", store.id).single()
@@ -1122,7 +1145,7 @@
       var pl = plan();
       B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + "</p></div>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf(store.country)) + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.hidden_by_plan ? '<small style="color:#8b2a22">' + T3x("Hidden: plan ended", "Masqué : offre terminée", "مخفي: انتهت الباقة") + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p, store.country)) + (p.price_ngn > 0 && pcur(p, store.country) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.hidden_by_plan ? '<small style="color:#8b2a22">' + T3x("Hidden: plan ended", "Masqué : offre terminée", "مخفي: انتهت الباقة") + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn ok" data-sell="' + p.id + '">' + T3x("＋1 sold", "＋1 vendu", "＋1 مُباع") + '</button><button class="mk-btn" data-stk="' + p.id + '">📦 ' + T3x("Stock", "Stock", "المخزون") + '</button><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
       B().addEventListener("click", async function (e) {
@@ -1139,6 +1162,9 @@
 
     function productModal(p) {
       p = p || {}; var imgs = (p.images || []).slice();
+      var both = (store.markets || []).length > 1, scur = store.country === "NG" ? "NGN" : "XOF", pcu = pcur(p, store.country);
+      var pXOF = p.id && pcu === "XOF" && p.price > 0 ? p.price : "", pNGN = p.id ? (pcu === "NGN" ? (p.price > 0 ? p.price : "") : (p.price_ngn > 0 ? p.price_ngn : "")) : "";
+      var pc0 = !p.id ? scur : pXOF !== "" && pNGN !== "" ? "BOTH" : pcu === "NGN" || (pXOF === "" && pNGN !== "") ? "NGN" : "XOF";
       var m = document.createElement("div"); m.className = "mk-modal";
       var catOpts = CATS.filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + ((p.category_id || store.category_id) === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join("");
       m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + (p.id ? t("edit") : t("add_prod")) + '</h2><form class="mk-form" id="pF">' +
@@ -1147,8 +1173,11 @@
         '<div class="full"><label>' + t("title") + ' *</label><input name="ptitle" required maxlength="120" value="' + esc(p.title || "") + '"></div>' +
         '<div><label>' + t("category") + ' *</label><select name="category_id" required>' + catOpts + "</select></div>" +
         ((store.sections || []).length ? '<div><label>' + T3x("Section", "Rubrique", "القسم") + '</label><select name="section"><option value="">—</option>' + store.sections.map(function (x) { return '<option' + (p.section === x ? " selected" : "") + ">" + esc(x) + "</option>"; }).join("") + "</select></div>" : "") +
-        ((store.markets || []).length > 1 ? '<div><label>' + T3x("Price in FCFA (Côte d’Ivoire)", "Prix en FCFA (Côte d’Ivoire)", "السعر بالفرنك (ساحل العاج)") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.currency === "NGN" ? "" : p.price != null ? p.price : "") + '"></div><div><label>' + T3x("Price in Naira (Nigeria)", "Prix en Naira (Nigeria)", "السعر بالنيرة (نيجيريا)") + '</label><input name="pngn" type="number" min="0" step="1" value="' + esc(p.currency === "NGN" ? p.price : p.price_ngn || "") + '"></div>' :
-        '<div><label>' + t("price").replace("FCFA", store.country === "NG" ? "₦" : "FCFA").replace("فرنك", store.country === "NG" ? "نيرة" : "فرنك") + ' *</label><input name="price" type="number" min="0" step="1" required value="' + esc(p.price != null ? p.price : "") + '"></div>') +
+        (both ? '<div class="full"><label>' + T3x("Which price do you want to show for this product?", "Quel prix voulez-vous afficher pour ce produit ?", "أي سعر تريد عرضه لهذا المنتج؟") + '</label><select name="pcur">' +
+          [["XOF", T3x("FCFA only (Côte d’Ivoire)", "FCFA seulement (Côte d’Ivoire)", "بالفرنك فقط (ساحل العاج)")], ["NGN", T3x("Naira only (Nigeria)", "Naira seulement (Nigeria)", "بالنيرة فقط (نيجيريا)")], ["BOTH", T3x("Both: FCFA and Naira", "Les deux : FCFA et Naira", "الاثنان: بالفرنك وبالنيرة")]].map(function (o) { return '<option value="' + o[0] + '"' + (pc0 === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></div>" : "") +
+        '<div data-pc="XOF"><label>' + T3x("Price in FCFA", "Prix en FCFA", "السعر بالفرنك") + ' <span class="mk-small">(' + T3x("optional", "facultatif", "اختياري") + ')</span></label><input name="price" type="number" min="0" step="1" value="' + esc(pXOF) + '"></div>' +
+        '<div data-pc="NGN"><label>' + T3x("Price in Naira (₦)", "Prix en Naira (₦)", "السعر بالنيرة (₦)") + ' <span class="mk-small">(' + T3x("optional", "facultatif", "اختياري") + ')</span></label><input name="pngn" type="number" min="0" step="1" value="' + esc(pNGN) + '"></div>' +
+        '<div class="full mk-small" style="margin-top:-6px">' + T3x("Leave the price empty if you prefer to keep it private: buyers will see “Price on request”.", "Laissez le prix vide si vous préférez le garder privé : les acheteurs verront « Prix sur devis ».", "اترك السعر فارغًا إن أردت إخفاءه: سيظهر للمشتري «السعر عند الطلب».") + "</div>" +
         '<div><label>' + t("old_price") + '</label><input name="old" type="number" min="0" step="1" value="' + esc(p.compare_at_price || "") + '"></div>' +
         '<div><label>' + t("qty_stock") + '</label><input name="stock" type="number" min="0" step="1" value="' + esc(p.stock != null ? p.stock : "") + '"></div>' +
         '<div><label>' + t("condition") + '</label><select name="cond">' + ["new", "used", "refurbished"].map(function (c) { return '<option value="' + c + '"' + ((p.condition || "new") === c ? " selected" : "") + ">" + t("c_" + c) + "</option>"; }).join("") + "</select></div>" +
@@ -1170,6 +1199,8 @@
       }
       drawImgs();
       var pf = $("#pF", m);
+      function pcVis() { var v = both ? pf.pcur.value : scur; $$("[data-pc]", m).forEach(function (d) { d.classList.toggle("mk-hide", !(v === "BOTH" || d.dataset.pc === v)); }); }
+      if (pf.pcur) pf.pcur.addEventListener("change", pcVis); pcVis();
       function hRule() { $("#hRule", m).innerHTML = isHealth(+pf.category_id.value) ? "<br>🌿 " + t("health_rule") : ""; }
       pf.category_id.addEventListener("change", hRule); hRule();
       wireMic($("#aiMic", m), pf.aihint, function () { $("#aiGo", m).click(); });
@@ -1190,10 +1221,11 @@
       });
       $("#pF", m).addEventListener("submit", async function (e) {
         e.preventDefault(); var f = e.target, b = f.querySelector("button[type=submit]"), M = $("#pM", m);
-        var row = { title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: Math.max(0, Math.round(+f.price.value || 0)), compare_at_price: +f.old.value ? Math.round(+f.old.value) : null, stock: f.stock.value === "" ? null : Math.max(0, Math.round(+f.stock.value)), description: f.description.value.trim() || null, images: imgs, condition: f.cond.value, negotiable: f.neg.checked };
+        var v = both ? f.pcur.value : scur, nX = Math.max(0, Math.round(+f.price.value || 0)), nN = Math.max(0, Math.round(+f.pngn.value || 0));
+        var row = { title: f.ptitle.value.trim(), category_id: +f.category_id.value, price: v === "NGN" ? nN : nX, compare_at_price: +f.old.value ? Math.round(+f.old.value) : null, stock: f.stock.value === "" ? null : Math.max(0, Math.round(+f.stock.value)), description: f.description.value.trim() || null, images: imgs, condition: f.cond.value, negotiable: f.neg.checked };
         if (f.section) row.section = f.section.value || null;
-        if (f.pngn) { row.currency = "XOF"; row.price_ngn = f.pngn.value === "" ? null : Math.max(0, Math.round(+f.pngn.value)); }
-        else row.currency = store.country === "NG" ? "NGN" : "XOF";
+        row.currency = v === "NGN" ? "NGN" : "XOF"; row.price_ngn = v === "BOTH" && nN > 0 ? nN : null;
+        if (v === "BOTH" && !nX && nN) { row.currency = "NGN"; row.price = nN; row.price_ngn = null; }
         if (!row.title || !row.category_id) return msg(M, "err", t("required"));
         b.disabled = true;
         var r = p.id ? await sb.from("products").update(row).eq("id", p.id) : await sb.from("products").insert(Object.assign({ store_id: store.id }, row));
@@ -1208,10 +1240,11 @@
       var rows = [], cur = store.country === "NG" ? "NGN" : "XOF", m = document.createElement("div"); m.className = "mk-modal";
       var catOpts = function (sel) { return CATS.filter(function (c) { return c.active; }).map(function (c) { return '<option value="' + c.id + '"' + (sel === c.id ? " selected" : "") + ">" + esc(c.icon + " " + catName(c)) + "</option>"; }).join(""); };
       m.innerHTML = '<div class="box wide"><button class="x" type="button">✕</button><h2 style="margin-top:0">' + t("quick_t") + '</h2><p class="mk-small">' + t("quick_how") + '</p><div class="mk-msg warn" style="margin:0 0 12px">⚠ ' + t("one_rule") + '</div>' +
-        '<div class="mk-inline" style="margin-bottom:12px"><label class="btn btn-primary btn-sm" style="cursor:pointer">' + t("quick_pick") + '<input type="file" id="qF" accept="image/*" multiple hidden></label><button type="button" class="mk-btn gold" id="qAi">' + t("quick_ai") + '</button><span class="mk-small" id="qLeft"></span></div><div id="qM"></div><div class="mk-qlist" id="qL"></div>' +
+        '<div class="mk-inline" style="margin-bottom:12px"><label class="btn btn-primary btn-sm" style="cursor:pointer">' + t("quick_pick") + '<input type="file" id="qF" accept="image/*" multiple hidden></label><button type="button" class="mk-btn gold" id="qAi">' + t("quick_ai") + '</button><span class="mk-small" id="qLeft"></span></div>' + ((store.markets || []).length > 1 ? '<div class="mk-inline" style="margin-bottom:12px"><label class="mk-small" for="qCur"><b>' + T3x("Which price do you want for these products?", "Quel prix voulez-vous pour ces produits ?", "أي سعر تريد لهذه المنتجات؟") + '</b></label><select id="qCur" style="width:auto"><option value="XOF"' + (cur === "XOF" ? " selected" : "") + '>FCFA (Côte d’Ivoire)</option><option value="NGN"' + (cur === "NGN" ? " selected" : "") + '>Naira ₦ (Nigeria)</option></select></div>' : "") + '<div class="mk-small" style="margin-bottom:10px">' + T3x("The price is optional — leave it empty to show “Price on request”.", "Le prix est facultatif — laissez-le vide pour afficher « Prix sur devis ».", "السعر اختياري — اتركه فارغًا ليظهر «السعر عند الطلب».") + '</div><div id="qM"></div><div class="mk-qlist" id="qL"></div>' +
         '<div style="margin-top:14px"><button class="btn btn-primary" type="button" id="qPub">' + t("quick_pub") + '</button> <span class="mk-small">' + t("review_note") + '</span><div id="qM2"></div></div></div>';
       document.body.appendChild(m);
       var M = $("#qM", m), L2 = $("#qL", m);
+      var qc = $("#qCur", m); if (qc) qc.addEventListener("change", function () { sync(); cur = qc.value; draw(); });
       function close() { m.remove(); }
       $(".x", m).onclick = close;
       function sync() { $$("[data-qi]", L2).forEach(function (el) { var r = rows[+el.dataset.qi]; if (!r) return; r.title = $("[name=qt]", el).value; r.price = $("[name=qp]", el).value; r.cat = +$("[name=qc]", el).value; }); }
@@ -1270,7 +1303,7 @@
     function tReq() {
       B().innerHTML = '<div class="mk-list">' + (data.orders.length ? data.orders.map(function (o) {
         var waT = (L() === "fr" ? "Bonjour " : L() === "ar" ? "السلام عليكم " : "Hello ") + o.customer_name + " — " + store.name + " (" + o.ref + ")";
-        return '<div class="mk-row"><div class="mid"><b>' + esc(o.customer_name) + ' <span class="mk-small">' + esc(o.ref) + "</span></b><small>" + esc(o.product_title || (o.products || {}).title || "") + (o.unit_price ? " · " + money(o.unit_price, curOf(store.country)) : "") + " · " + t("qty") + ": " + o.quantity + "</small><small>📞 " + esc(o.customer_phone) + (o.customer_city ? " · " + esc(o.customer_city) : "") + " · " + dateFmt(o.created_at) + "</small>" + (o.note ? "<small>💬 " + esc(o.note) + "</small>" : "") + "</div>" +
+        return '<div class="mk-row"><div class="mid"><b>' + esc(o.customer_name) + ' <span class="mk-small">' + esc(o.ref) + "</span></b><small>" + esc(o.product_title || (o.products || {}).title || "") + (o.unit_price ? " · " + money(o.unit_price, pcur(o.products || {}, store.country)) : "") + " · " + t("qty") + ": " + o.quantity + "</small><small>📞 " + esc(o.customer_phone) + (o.customer_city ? " · " + esc(o.customer_city) : "") + " · " + dateFmt(o.created_at) + "</small>" + (o.note ? "<small>💬 " + esc(o.note) + "</small>" : "") + "</div>" +
           '<div class="acts"><a class="mk-btn ok" target="_blank" rel="noopener" href="' + wa(o.customer_phone, waT) + '">' + t("reply_wa") + '</a><a class="mk-btn" href="' + tel(o.customer_phone) + '">' + t("call") + '</a><select class="mk-btn" data-o="' + o.id + '">' + ["new", "contacted", "completed", "cancelled"].map(function (s) { return '<option value="' + s + '"' + (o.status === s ? " selected" : "") + ">" + t("st_" + s) + "</option>"; }).join("") + "</select></div></div>";
       }).join("") : emptyBox("📭", t("no_req"))) + "</div>";
       $$("select[data-o]", B()).forEach(function (s) { s.addEventListener("change", async function () {
@@ -1441,7 +1474,7 @@
       var now = new Date().toISOString();
       B().innerHTML = '<div class="mk-bar"><select id="fPr">' + ["", "pending", "approved", "rejected", "hidden"].map(function (s) { return '<option value="' + s + '"' + (filt.pr === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ2" type="search" placeholder="Search product or store…" value="' + esc(filt.q) + '">' + (filt.pr === "pending" && list.length ? '<button class="mk-btn ok" id="apAll">Approve all shown</button>' : "") + '</div><div class="mk-list">' +
         (list.length ? list.slice(0, 300).map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, p.currency === "NGN" ? "NGN" : curOf((p.stores || {}).country)) + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p)) + (p.price_ngn > 0 && pcur(p) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts">' + (p.status !== "approved" ? '<button class="mk-btn ok" data-a="ok" data-id="' + p.id + '">Approve</button>' : "") + (p.status !== "rejected" ? '<button class="mk-btn no" data-a="no" data-id="' + p.id + '">Reject</button>' : "") + (p.status === "approved" ? '<button class="mk-btn" data-a="hide" data-id="' + p.id + '">Hide</button>' : "") +
             (p.featured_until > now ? '<button class="mk-btn" data-a="unfeat" data-id="' + p.id + '">Unfeature</button>' : '<button class="mk-btn gold" data-a="feat" data-id="' + p.id + '">Feature</button>') + '<a class="mk-btn" target="_blank" href="/product.html?id=' + p.id + '">View</a><button class="mk-btn no" data-a="del" data-id="' + p.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("📦", "Nothing here")) + "</div>";
