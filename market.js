@@ -162,7 +162,7 @@
   function wa(num, text) { var d = intl(num); return d ? "https://wa.me/" + d + (text ? "?text=" + encodeURIComponent(text) : "") : ""; }
   function tel(num) { var d = intl(num); return d ? "tel:+" + d : ""; }
   function storeUrl(slug) { return location.origin + "/" + slug; }
-  function productUrl(id) { return location.origin + "/product.html?id=" + id; }
+  function productUrl(id) { return location.origin + "/product?id=" + id; }
   function initials(s) { return esc(String(s || "?").trim().split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join("").toUpperCase()); }
   function slugify(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40); }
   function catName(c) { if (!c) return ""; var l = L(); return l === "fr" ? c.name_fr : l === "ar" ? c.name_ar : c.name_en; }
@@ -202,14 +202,25 @@
     var u = await user(); if (!u) throw new Error("auth");
     var blob = await compress(file, folder === "r" ? 1600 : 1280);
     var ext = blob.type === "image/webp" ? "webp" : blob.type === "image/png" ? "png" : "jpg";
-    var path = u.id + "/" + folder + "/" + rnd() + "." + ext;
+    var base = u.id + "/" + folder + "/" + rnd(), path = base + "." + ext;
+    /* speed: product photos also get a small copy (-T_t) used in lists; the "-T" mark in the name says the small copy exists */
+    if (folder === "p") {
+      try {
+        var tb = await compress(file, 480);
+        if (tb && tb !== file && (tb.type === blob.type)) {
+          var tr = await sb.storage.from("market").upload(base + "-T_t." + ext, tb, { contentType: tb.type, upsert: false });
+          if (!tr.error) path = base + "-T." + ext;
+        }
+      } catch (e) {}
+    }
     var r = await sb.storage.from("market").upload(path, blob, { contentType: blob.type || "image/jpeg", upsert: false });
     if (r.error) throw r.error;
     return pubUrl(path);
   }
+  function thumb(url) { return url && /-T\.(webp|jpg|png)$/.test(url) ? url.replace(/-T\.(webp|jpg|png)$/, "-T_t.$1") : url; }
   async function removeImg(url) {
     var u = await user(); if (!u || !url) return;
-    var m = url.split("/object/public/market/")[1]; if (m && m.indexOf(u.id + "/") === 0) { try { await sb.storage.from("market").remove([m]); } catch (e) {} }
+    var m = url.split("/object/public/market/")[1]; if (m && m.indexOf(u.id + "/") === 0) { try { var tm = thumb(m); await sb.storage.from("market").remove(tm !== m ? [m, tm] : [m]); } catch (e) {} }
   }
 
   var _user;
@@ -308,7 +319,7 @@
     var pr = priceOf(p, pm), s = p.stores || {}, img = (p.images || [])[0];
     var feat = p.featured_until && p.featured_until > new Date().toISOString();
     return '<a class="mk-card" href="/product.html?id=' + p.id + '"><div class="img">' +
-      (img ? '<img src="' + esc(img) + '" alt="' + esc(p.title) + '" loading="lazy">' : '<span class="noimg">' + esc((catById(p.category_id) || {}).icon || "🛍️") + "</span>") +
+      (img ? '<img src="' + esc(thumb(img)) + '" alt="' + esc(p.title) + '" loading="lazy" decoding="async">' : '<span class="noimg">' + esc((catById(p.category_id) || {}).icon || "🛍️") + "</span>") +
       (p.stock === 0 ? '<span class="mk-badge" style="background:#6b7280">' + T3x("Out of stock", "Épuisé", "نفد") + "</span>" : feat ? '<span class="mk-badge top">' + t("top") + "</span>" : pr.off ? '<span class="mk-badge">-' + pr.off + "%</span>" : "") +
       '<button type="button" class="mk-fav" data-fav="' + p.id + '" aria-label="' + t("saved") + '">' + (isFav(p.id) ? "♥" : "♡") + "</button>" +
       (p.condition && p.condition !== "new" ? '<span class="mk-cond">' + t("c_" + p.condition) + "</span>" : "") +
@@ -329,7 +340,7 @@
     return order.map(function (id) { return g[id]; });
   }
   function storeOffer(gr, smap, badge, sub) {
-    var p = gr.p, s = Object.assign({}, p.stores || {}, smap[p.store_id] || {}), img = (p.images || [])[0];
+    var p = gr.p, s = Object.assign({}, p.stores || {}, smap[p.store_id] || {}), img = thumb((p.images || [])[0]);
     if (s.kind === "ad") return '<a class="mk-store mk-offer" href="/product.html?id=' + p.id + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + '><span class="ob">📢 ' + T3x("Ad", "Annonce", "إعلان") + '</span></div><div class="info"><span class="logo">📢</span><h3>' + esc(p.title) + '</h3><span class="meta">' + money(p.price, pcur(p, s.country)) + (s.city ? " · " + esc(s.city) : "") + '</span><span class="go">' + T3x("See the ad →", "Voir l’annonce →", "شاهد الإعلان ←") + "</span></div></a>";
     return '<a class="mk-store mk-offer" href="/' + esc(s.slug || "") + '"><div class="cover"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + ">" + (badge ? '<span class="ob">' + badge + "</span>" : "") + '</div><div class="info">' +
       (s.logo_url ? '<img class="logo" src="' + esc(s.logo_url) + '" alt="">' : '<span class="logo">' + initials(s.name || "") + "</span>") +
@@ -355,7 +366,7 @@
         var cs = CATS.filter(function (c) { return c.active && [c.name_en, c.name_fr, c.name_ar, c.slug].some(function (n) { return norm(n).indexOf(nq) > -1; }); }).slice(0, 3);
         var html = cs.map(function (c) { return '<a href="/shop.html?cat=' + c.slug + '"><span class="i">' + esc(c.icon) + "</span><span>" + esc(catName(c)) + "</span></a>"; }).join("") +
           (st.data || []).map(function (x) { return '<a href="/' + esc(x.slug) + '"><span class="i">' + (x.logo_url ? '<img src="' + esc(x.logo_url) + '" alt="">' : "🏪") + "</span><span><b>" + esc(x.name) + "</b>" + (x.verified ? " ✔" : "") + "<small>" + esc(x.city || "") + "</small></span></a>"; }).join("") +
-          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(x.images[0]) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, pcur(x)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
+          (pr.data || []).map(function (x) { return '<a href="/product.html?id=' + x.id + '"><span class="i">' + ((x.images || [])[0] ? '<img src="' + esc(thumb(x.images[0])) + '" alt="">' : "🛍️") + "</span><span>" + esc(x.title) + "<small>" + money(x.price, pcur(x)) + " · " + esc((x.stores || {}).name || "") + "</small></span></a>"; }).join("");
         box.innerHTML = html || '<div class="mk-sug-none">' + t("none") + "</div>";
         box.classList.remove("mk-hide");
       }, 250);
@@ -1145,7 +1156,7 @@
       var pl = plan();
       B().innerHTML = '<div class="mk-inline" style="justify-content:space-between;margin-bottom:14px"><p class="mk-small" style="margin:0">' + data.products.length + " / " + (pl.product_limit >= 100000 ? "∞" : pl.product_limit) + " " + t("used") + " · " + t("review_note") + "</p></div>" +
         '<div class="mk-list">' + (data.products.length ? data.products.map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(p.images[0]) + '" alt="">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p, store.country)) + (p.price_ngn > 0 && pcur(p, store.country) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.hidden_by_plan ? '<small style="color:#8b2a22">' + T3x("Hidden: plan ended", "Masqué : offre terminée", "مخفي: انتهت الباقة") + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<img class="th" src="' + esc(thumb(p.images[0])) + '" alt="" loading="lazy">' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p, store.country)) + (p.price_ngn > 0 && pcur(p, store.country) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + "</small>" + stockLine(p) + (p.hidden_by_plan ? '<small style="color:#8b2a22">' + T3x("Hidden: plan ended", "Masqué : offre terminée", "مخفي: انتهت الباقة") + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">' + t("note_from") + " " + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts"><button class="mk-btn ok" data-sell="' + p.id + '">' + T3x("＋1 sold", "＋1 vendu", "＋1 مُباع") + '</button><button class="mk-btn" data-stk="' + p.id + '">📦 ' + T3x("Stock", "Stock", "المخزون") + '</button><button class="mk-btn" data-e="' + p.id + '">' + t("edit") + "</button>" + (p.status === "hidden" ? '<button class="mk-btn" data-s="' + p.id + '">' + t("show") + "</button>" : '<button class="mk-btn" data-h="' + p.id + '">' + t("hide") + "</button>") + '<button class="mk-btn no" data-d="' + p.id + '">' + t("del") + "</button></div></div>";
         }).join("") : emptyBox("📦", t("none"))) + "</div>";
       B().addEventListener("click", async function (e) {
@@ -1474,7 +1485,7 @@
       var now = new Date().toISOString();
       B().innerHTML = '<div class="mk-bar"><select id="fPr">' + ["", "pending", "approved", "rejected", "hidden"].map(function (s) { return '<option value="' + s + '"' + (filt.pr === s ? " selected" : "") + ">" + (s || "All") + "</option>"; }).join("") + '</select><input id="fQ2" type="search" placeholder="Search product or store…" value="' + esc(filt.q) + '">' + (filt.pr === "pending" && list.length ? '<button class="mk-btn ok" id="apAll">Approve all shown</button>' : "") + '</div><div class="mk-list">' +
         (list.length ? list.slice(0, 300).map(function (p) {
-          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(p.images[0]) + '" alt=""></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p)) + (p.price_ngn > 0 && pcur(p) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
+          return '<div class="mk-row">' + ((p.images || [])[0] ? '<a href="/product.html?id=' + p.id + '" target="_blank"><img class="th" src="' + esc(thumb(p.images[0])) + '" alt="" loading="lazy"></a>' : '<span class="th">🛍️</span>') + '<div class="mid"><b>' + esc(p.title) + "</b><small>" + money(p.price, pcur(p)) + (p.price_ngn > 0 && pcur(p) === "XOF" ? " / " + money(p.price_ngn, "NGN") : "") + " · " + esc(catName(catById(p.category_id))) + " · " + (p.images || []).length + " photo(s)</small><small>🏪 " + esc((p.stores || {}).name || "") + " · " + dateFmt(p.updated_at) + (p.featured_until > now ? " · ⭐ featured until " + dateFmt(p.featured_until) : "") + "</small>" + (p.description ? '<small>' + esc(p.description.slice(0, 160)) + "</small>" : "") + (p.admin_note ? '<small style="color:#8b2a22">Note: ' + esc(p.admin_note) + "</small>" : "") + "</div>" + stLabel(p.status) +
             '<div class="acts">' + (p.status !== "approved" ? '<button class="mk-btn ok" data-a="ok" data-id="' + p.id + '">Approve</button>' : "") + (p.status !== "rejected" ? '<button class="mk-btn no" data-a="no" data-id="' + p.id + '">Reject</button>' : "") + (p.status === "approved" ? '<button class="mk-btn" data-a="hide" data-id="' + p.id + '">Hide</button>' : "") +
             (p.featured_until > now ? '<button class="mk-btn" data-a="unfeat" data-id="' + p.id + '">Unfeature</button>' : '<button class="mk-btn gold" data-a="feat" data-id="' + p.id + '">Feature</button>') + '<a class="mk-btn" target="_blank" href="/product.html?id=' + p.id + '">View</a><button class="mk-btn no" data-a="del" data-id="' + p.id + '">Delete</button></div></div>';
         }).join("") : emptyBox("📦", "Nothing here")) + "</div>";

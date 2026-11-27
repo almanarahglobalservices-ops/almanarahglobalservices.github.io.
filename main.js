@@ -1680,3 +1680,18 @@
     cmsFetch();
   });
 })();
+/* Speed: the host redirects "page.html" to "page". Go straight to the final address so each click skips one round trip.
+   Runs last (bubbling) and only if no other code handled the click. */
+(function () {
+  document.addEventListener("click", function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest && e.target.closest("a[href]");
+    if (!a || a.target && a.target !== "_self" || a.hasAttribute("download")) return;
+    var u; try { u = new URL(a.href, location.href); } catch (x) { return; }
+    if (u.origin !== location.origin || !/\.html$/.test(u.pathname)) return;
+    var clean = function (p) { return p.replace(/(^|\/)index(\.html)?$/, "$1").replace(/\.html$/, ""); }, to = clean(u.pathname);
+    if (to === clean(location.pathname) && u.search === location.search && u.hash) return; /* same-page anchor */
+    e.preventDefault();
+    location.assign(to + u.search + u.hash);
+  });
+})();
