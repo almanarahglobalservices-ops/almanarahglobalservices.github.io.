@@ -890,17 +890,15 @@
       var phoneF = '<div class="full"><label>📱 ' + T3x("Your phone number (WhatsApp)", "Votre numéro de téléphone (WhatsApp)", "رقم هاتفك (واتساب)") + ' *</label><input name="phone" type="tel" inputmode="tel" required maxlength="30" autocomplete="tel" ' + big + '><div class="hint">' + t("phone_hint") + "</div></div>";
       var pinF = '<div class="full"><label>🔒 ' + T3x("Secret code (6 digits)", "Code secret (6 chiffres)", "الرمز السري (6 أرقام)") + ' *</label><input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '" ' + big + '><div class="hint">' + (mode === "signup" ? T3x("Choose 6 numbers you will remember. Don’t share them.", "Choisissez 6 chiffres faciles à retenir. Ne les partagez pas.", "اختر 6 أرقام تتذكرها. لا تعطها لأحد.") : "") + "</div></div>";
       var pin2F = mode === "signup" && P ? '<div class="full"><label>🔒 ' + T3x("Type the code again", "Retapez le code", "أعد كتابة الرمز") + ' *</label><input name="pin2" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" ' + big + "></div>" : "";
-      var rqF = mode === "signup" && P ? '<div class="full mk-msg info" style="margin:0">🔑 ' + T3x("In case you forget your code: choose a question only you can answer. You will use it to make a new code yourself.", "Si vous oubliez votre code : choisissez une question dont vous seul connaissez la réponse. Elle vous permettra de créer un nouveau code vous-même.", "إن نسيت رمزك: اختر سؤالًا لا يعرف جوابه غيرك، ستستعمله لإنشاء رمز جديد بنفسك.") + '</div><div class="full"><label>' + T3x("Secret question", "Question secrète", "السؤال السري") + ' *</label><select name="rq" ' + big + '>' + RQ.map(function (q) { return '<option value="' + q[0] + '">' + esc(rqText(q[0])) + "</option>"; }).join("") + '</select></div><div class="full"><label>' + T3x("Your answer", "Votre réponse", "جوابك") + ' *</label><input name="ra" required maxlength="60" autocomplete="off" ' + big + "></div>" : "";
       var switchL = '<div class="full" style="text-align:center"><a href="#" id="auHow" class="mk-small">' + (P ? T3x("I have an email account → use email", "J’ai un compte e-mail → utiliser l’e-mail", "لدي حساب بالبريد ← استخدم البريد") : T3x("← Use my phone number instead", "← Utiliser mon numéro de téléphone", "→ استخدم رقم هاتفي")) + "</a></div>";
       var body;
       if (mode === "forgot") {
-        body = P ? '<form id="fgF" class="mk-form"><div class="full mk-msg info" style="margin:0">🔑 ' + T3x("Make a new secret code yourself. Your store and products stay the same.", "Créez vous-même un nouveau code secret. Votre boutique et vos produits restent les mêmes.", "أنشئ رمزًا سريًا جديدًا بنفسك. متجرك ومنتجاتك تبقى كما هي.") + '</div>' + phoneF +
-            '<div id="fgQ" class="full mk-hide"></div><div class="full"><button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:14px">' + T3x("Next", "Suivant", "التالي") + '</button></div></form>' + switchL
+        body = P ? '<div class="mk-msg info" style="margin:0">🔑 ' + T3x("Forgot your secret code? Send us a WhatsApp message from your own number and we will help you right away. Your store and products stay safe.", "Code secret oublié ? Envoyez-nous un message WhatsApp depuis votre propre numéro et nous vous aidons tout de suite. Votre boutique et vos produits restent intacts.", "نسيت الرمز السري؟ أرسل لنا رسالة واتساب من رقمك نفسه وسنساعدك فورًا. متجرك ومنتجاتك في أمان.") + '</div><p style="text-align:center;margin-top:14px"><a class="btn btn-wa2" target="_blank" rel="noopener" href="' + wa("+2250506122337", T3x("Hello AL MANARAH, I forgot my store secret code.", "Bonjour AL MANARAH, j’ai oublié le code secret de ma boutique.", "السلام عليكم، نسيت الرمز السري لمتجري.")) + '">WhatsApp</a></p>' + switchL
           : '<form id="auF" class="mk-form"><div class="full"><label>' + t("email") + '</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><button class="btn btn-primary">' + t("send_reset") + "</button></div>" + switchL + "</form>";
       } else {
         body = '<form id="auF" class="mk-form">' +
           (mode === "signup" ? '<div class="full"><label>👤 ' + t("owner") + ' *</label><input name="full_name" required maxlength="80" autocomplete="name" ' + big + "></div>" : "") +
-          (P ? phoneF + pinF + pin2F + rqF :
+          (P ? phoneF + pinF + pin2F :
             (mode === "signup" ? phoneF : "") + '<div class="full"><label>' + t("email") + ' *</label><input name="email" type="email" required autocomplete="email"></div><div class="full"><label>' + t("password") + ' *</label><input name="pw" type="password" minlength="8" required autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '"><div class="hint">' + t("pw_hint") + "</div></div>") +
           '<div class="full"><button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:14px">' + (mode === "signup" ? t("signup") : t("login")) + "</button></div>" +
           (mode === "login" ? '<div class="full" style="text-align:center"><a href="#" id="auForgot" class="mk-small">' + (P ? T3x("Forgot my secret code?", "Code secret oublié ?", "نسيت الرمز السري؟") : t("forgot")) + "</a></div>" : "") + switchL + "</form>";
@@ -951,7 +949,6 @@
           return msg(M, "err", esc(r.error.message));
         }
         try { localStorage.setItem("mk_auth_how", how); } catch (x) {}
-        if (mode === "signup" && P && r.data.session) { try { await sb.rpc("set_pin_recovery", { p_question: f.rq.value, p_answer: f.ra.value }); } catch (x) {} }
         if (!r.data.session) return msg(M, "ok", t("confirm_email"));
         location.reload();
       });
@@ -1152,7 +1149,6 @@
       m.innerHTML = '<div class="box"><button class="x" type="button">✕</button><h2 style="margin-top:0">🔒 ' + T3x("My secret code", "Mon code secret", "رمزي السري") + '</h2><form class="mk-form" id="mpF">' +
         '<div class="full"><label>' + T3x("New secret code (6 digits)", "Nouveau code secret (6 chiffres)", "الرمز السري الجديد (6 أرقام)") + ' *</label><input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" ' + big + '></div>' +
         '<div class="full"><label>' + T3x("Type it again", "Retapez-le", "أعد كتابته") + ' *</label><input name="pin2" type="password" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" ' + big + '></div>' +
-        '<div class="full"><label>' + T3x("Secret question (if you forget the code)", "Question secrète (si vous oubliez le code)", "السؤال السري (إن نسيت الرمز)") + ' *</label><select name="rq" ' + big + '>' + RQ.map(function (q) { return '<option value="' + q[0] + '">' + esc(rqText(q[0])) + "</option>"; }).join("") + '</select></div><div class="full"><label>' + T3x("Your answer", "Votre réponse", "جوابك") + ' *</label><input name="ra" required maxlength="60" autocomplete="off" ' + big + '></div>' +
         '<div class="full"><button class="btn btn-primary" type="submit" style="width:100%">' + t("save") + '</button><div id="mpM"></div></div></form></div>';
       document.body.appendChild(m);
       $(".x", m).onclick = function () { m.remove(); };
@@ -1162,7 +1158,6 @@
         if (f.pin2.value !== f.pin.value) return msg(M, "err", T3x("The two codes are not the same.", "Les deux codes ne sont pas identiques.", "الرمزان غير متطابقين."));
         var r = await sb.auth.updateUser({ password: pinPw(f.pin.value) });
         if (r.error) return msg(M, "err", esc(r.error.message));
-        await sb.rpc("set_pin_recovery", { p_question: f.rq.value, p_answer: f.ra.value }).then(function () {}, function () {});
         msg(M, "ok", "✅ " + t("pw_saved")); setTimeout(function () { m.remove(); }, 1200);
       });
     }
