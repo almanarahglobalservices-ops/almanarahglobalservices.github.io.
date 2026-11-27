@@ -890,7 +890,7 @@ body.has-chat .quote-float{bottom:96px}
 
 /* Full brand logo (Arabic, script name, flight path, emblem) as one image */
 .brand img{display:none}
-.brand span{display:block;width:158px;height:64px;background:url(logo-wide.png) no-repeat center/contain;background-origin:content-box}
+.brand span{display:block;width:158px;height:64px;background:url(logo-wide.png?v=2) no-repeat center/contain;background-origin:content-box}
 .brand span>*{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .footer .brand span,[data-theme="dark"] .brand span{background-color:#fff;border-radius:12px;padding:5px 10px}
 @media (max-width:560px){.brand span{width:126px;height:51px}}

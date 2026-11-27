@@ -400,7 +400,7 @@
     function done() { try { localStorage.setItem("mk_welcome", "1"); } catch (e) {} }
     var m = document.createElement("div"); m.className = "mk-modal mk-wel";
     m.innerHTML = '<div class="box"><button class="x" type="button" aria-label="close">✕</button>' +
-      '<img src="/logo-wide.png" alt="AL MANARAH GLOBAL SERVICES" class="wl-logo">' +
+      '<img src="/logo-wide.png?v=2" alt="AL MANARAH GLOBAL SERVICES" class="wl-logo">' +
       '<h2>' + T("Welcome 👋", "Bienvenue 👋", "مرحبًا بك 👋") + '</h2><p class="wl-sub">' + T("The marketplace of Côte d’Ivoire and Nigeria. What would you like to do?", "La marketplace de Côte d’Ivoire et du Nigeria. Que voulez-vous faire ?", "سوق ساحل العاج ونيجيريا. ماذا تريد أن تفعل؟") + "</p>" +
       '<div class="wl-ch"><a href="/shop.html" data-go class="wl-b"><span>🛍️</span><b>' + T("I want to buy", "Je veux acheter", "أريد الشراء") + "</b><small>" + T("Find stores near you", "Trouvez des boutiques près de chez vous", "اعثر على متاجر قريبة منك") + '</small></a>' +
       '<a href="/sell.html" data-go class="wl-b gold"><span>🏪</span><b>' + T("I want to sell", "Je veux vendre", "أريد البيع") + "</b><small>" + T("Open your store — free", "Ouvrez votre boutique — gratuit", "افتح متجرك مجانًا") + "</small></a></div>" +
@@ -745,7 +745,7 @@
     g.fillStyle = "#B78A32"; g.fillRect(0, 120, W, 6);
     var top = 160; g.fillStyle = "#101B45";
     for (var r = 0; r < n; r++) for (var col = 0; col < n; col++) if (qr.isDark(r, col)) g.fillRect(Math.floor(pad + col * cell), Math.floor(top + r * cell), Math.ceil(cell), Math.ceil(cell));
-    var src = store.logo_url || "/logo.png";
+    var src = store.logo_url || "/logo.png?v=2";
     await new Promise(function (res) { var im = new Image(); im.crossOrigin = "anonymous"; im.onload = function () { var L = size * 0.2, x = W / 2 - L / 2, y = top + size / 2 - L / 2; g.fillStyle = "#fff"; g.fillRect(x - 8, y - 8, L + 16, L + 16); g.drawImage(im, x, y, L, L); res(); }; im.onerror = res; im.src = src; });
     g.fillStyle = "#101B45"; g.font = "bold 30px Manrope, Arial, sans-serif"; g.fillText(t("scan_me"), W / 2, top + size + 60);
     g.fillStyle = "#555"; g.font = "22px Manrope, Arial, sans-serif"; g.fillText(url.replace(/^https?:\/\//, ""), W / 2, top + size + 100);
@@ -780,8 +780,8 @@
       if (b.dataset.sh === "copy") { try { await navigator.clipboard.writeText(url); } catch (x) {} b.textContent = "✓ " + t("copied"); }
       if (b.dataset.sh === "qr") {
         var box = $("#shQr", m); box.textContent = t("loading");
-        var c = await qrCanvas({ name: o.name, url: url, logo_url: o.logo || "/logo.png" }), d;
-        try { d = c.toDataURL("image/png"); } catch (x) { c = await qrCanvas({ name: o.name, url: url, logo_url: "/logo.png" }); d = c.toDataURL("image/png"); }
+        var c = await qrCanvas({ name: o.name, url: url, logo_url: o.logo || "/logo.png?v=2" }), d;
+        try { d = c.toDataURL("image/png"); } catch (x) { c = await qrCanvas({ name: o.name, url: url, logo_url: "/logo.png?v=2" }); d = c.toDataURL("image/png"); }
         box.innerHTML = '<img src="' + d + '" alt="QR" style="width:min(300px,100%);border:1px solid var(--line);border-radius:12px;margin:0 auto;display:block"><p><a class="btn btn-primary btn-sm" download="' + esc(o.file || "almanarah") + '-qr.png" href="' + d + '">⬇ ' + t("qr_dl") + "</a></p>";
       }
     });

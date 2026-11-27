@@ -2,7 +2,7 @@
    Pages: always fresh from the internet (saved copy only when offline).
    Versioned files (?v=…), icons and images: kept on the phone so the app opens fast.
    Supabase, payments, admin and other sites: never touched. */
-var VER = "am-app-1";
+var VER = "am-app-2";
 var CORE = ["/offline.html", "/logo.png", "/img/app/icon-192.png"];
 
 self.addEventListener("install", function (e) {
