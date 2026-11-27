@@ -1503,14 +1503,10 @@
           if (b.dataset.a === "pin") {
             var np = prompt("New 6-digit secret code for " + s.name + " (send it to the seller on WhatsApp):", String(Math.floor(100000 + Math.random() * 900000))); if (!np) return;
             if (!/^\d{6}$/.test(np.trim())) return alert("The code must be exactly 6 numbers.");
-            sb.auth.getSession().then(function (ss) {
-              var tk = ss.data.session && ss.data.session.access_token;
-              return fetch("/api/reset-pin", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + tk }, body: JSON.stringify({ user_id: s.owner_id, pin: np.trim() }) }).then(function (r) { return r.json(); });
-            }).then(function (j) {
-              if (j.ok) alert("Done. New secret code: " + np.trim() + "\nSend it to the seller on WhatsApp.");
-              else if (j.error === "setup") alert("PIN reset needs a one-time setup on Cloudflare (SUPABASE_SERVICE_ROLE_KEY). Ask Claude to finish it.");
-              else alert("Could not reset the code (" + j.error + ").");
-            }).catch(function () { alert("Could not reset the code. Check your connection."); });
+            sb.rpc("admin_reset_pin", { p_user: s.owner_id, p_pin: np.trim() }).then(function (r) {
+              if (!r.error) alert("Done. New secret code: " + np.trim() + "\nSend it to the seller on WhatsApp.");
+              else alert("Could not reset the code (" + r.error.message + ").");
+            });
           }
           if (b.dataset.a === "owner") {
             var em = prompt("Seller's email OR phone number (the seller must first create an account on /sell):"); if (!em) return;
